@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 WowAssist — 水豚乐园（原乌龟服亚服）客户端一站式插件/模组/字体管理器（纯 Python 标准库，零依赖）
+作者：Bro.Cui ｜ 定位：简单好用又省心的香草旧世魔兽游戏助手
+(C) 2026 Bro.Cui. All rights reserved. 原创自研作品，仅供玩家免费学习交流。
 
 功能：贴蓝奏云链接 → 自动下载 → 自动解压 → 一键安装到游戏 Interface/AddOns
 用法：双击 启动插件助手.bat，浏览器自动打开 http://127.0.0.1:8766
@@ -4085,7 +4087,7 @@ def _run_window(url):
         except Exception:
             _wx = _wy = None
         window = webview.create_window(
-            "WowAssist · 香草旧世助手", url,
+            "WowAssist · 简单好用又省心的香草旧世魔兽游戏助手", url,
             width=980, height=680, x=_wx, y=_wy,
             resizable=False, confirm_close=False,
         )

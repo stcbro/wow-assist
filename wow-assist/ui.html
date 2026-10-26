@@ -88,7 +88,7 @@ th{color:var(--sub);font-weight:600;font-size:12px}
       <button data-p="download">⬇️ 下载</button>
       <button data-p="changelog">📋 更新日志</button>
     </div>
-    <div class="foot">本地辅助工具 · 自研<br>不依赖任何官方服务</div>
+    <div class="foot">本地辅助工具 · 自研<br>不依赖任何官方服务<br>© 2026 Bro.Cui · 保留所有权利</div>
   </aside>
 
   <main class="main">
@@ -264,6 +264,14 @@ th{color:var(--sub);font-weight:600;font-size:12px}
     <!-- 更新日志 -->
     <section class="page" id="changelog">
       <h2>更新日志</h2>
+      <div class="card" style="max-width:720px;margin-bottom:12px">
+        <h3 style="margin-top:0">关于 WowAssist</h3>
+        <div style="font-size:13px;line-height:2">
+          简单好用又省心的<b>香草旧世魔兽游戏助手</b>。<br>
+          版本 <b id="about-ver">—</b>　作者 <b>Bro.Cui</b><br>
+          <span style="color:var(--sub);font-size:12px">© 2026 Bro.Cui · 原创自研作品，仅供玩家免费学习交流，请勿倒卖、冒充官方或用于商业用途。</span>
+        </div>
+      </div>
       <div class="card grow" style="max-width:720px">
         <div class="kv"><span class="k">v3.13 备份体系 WowAbak + 清理还原直删 + 日志带时间</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
@@ -518,6 +526,8 @@ async function loadTargets(){
   state.ver = d.ver||"";
   const bv = $('#brand-ver');
   if(bv) bv.textContent = d.app_ver ? 'v'+d.app_ver : '';
+  const av = $('#about-ver');
+  if(av) av.textContent = d.app_ver ? 'v'+d.app_ver : '—';
   // 路径框始终显示完整主程序路径（如 D:\game\twmoa_1181\WoW.exe），不会变回根目录
   $('#s-path').value = state.exe || (state.current ? state.current.replace(/[\\/]+$/,'') + '\\WoW.exe' : '');
   const rl = await api('/api/realmlist?target='+encodeURIComponent(state.current));

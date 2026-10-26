@@ -21,11 +21,15 @@ rem 清理旧产物
 if exist build rmdir /s /q build
 if exist dist rmdir /s /q dist
 
+rem 生成 exe 版本信息（版权/产品名写入文件属性，右键 exe→属性→详细信息可见）
+"%PY%" make_version_info.py %APPVER%
+
 "%PY%" -m PyInstaller ^
   --onefile ^
   --windowed ^
   --name "wowassist-v%APPVER%" ^
   --icon capy.ico ^
+  --version-file version_info.txt ^
   --add-data "ui.html;." ^
   --add-data "capy.ico;." ^
   --collect-all webview ^
