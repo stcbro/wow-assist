@@ -17,8 +17,8 @@ body{background:var(--bg);color:var(--txt);font-family:-apple-system,"Segoe UI",
 .side{width:200px;background:var(--side);border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:4px}
 .brand{font-size:17px;font-weight:700;padding:6px 10px 14px;display:flex;align-items:center;gap:8px}
 .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
-.nav{display:flex;flex-direction:column;gap:2px}
-.nav button{background:transparent;border:0;color:var(--sub);text-align:left;padding:11px 14px;border-radius:10px;cursor:pointer;font-size:14px;transition:.15s}
+.nav{display:flex;flex-direction:column;gap:3px}
+.nav button{background:transparent;border:0;color:var(--sub);text-align:left;padding:12px 16px;border-radius:10px;cursor:pointer;font-size:15px;letter-spacing:.5px;transition:.15s}
 .nav button:hover{background:var(--card);color:var(--txt)}
 .nav button.active{background:var(--card2);color:#fff;font-weight:600}
 .foot{margin-top:auto;font-size:11px;color:var(--sub);padding:8px 10px;line-height:1.5}
@@ -78,15 +78,15 @@ th{color:var(--sub);font-weight:600;font-size:12px}
 <body>
 <div class="app">
   <aside class="side">
-    <div class="brand"><span class="dot"></span>WowAssist</div>
+    <div class="brand"><span class="dot"></span>WowAssist <span id="brand-ver" style="font-size:12px;font-weight:400;color:var(--sub)"></span></div>
     <div class="nav" id="nav">
-      <button data-p="home" class="active">首页</button>
-      <button data-p="servers">服务器</button>
-      <button data-p="dll">模组</button>
-      <button data-p="addons">插件</button>
-      <button data-p="fonts">字体</button>
-      <button data-p="download">下载</button>
-      <button data-p="changelog">更新日志</button>
+      <button data-p="home" class="active">🏠 首页</button>
+      <button data-p="servers">🌐 服务器</button>
+      <button data-p="dll">🧩 模组</button>
+      <button data-p="addons">📦 插件</button>
+      <button data-p="fonts">🔤 字体</button>
+      <button data-p="download">⬇️ 下载</button>
+      <button data-p="changelog">📋 更新日志</button>
     </div>
     <div class="foot">本地辅助工具 · 自研<br>不依赖任何官方服务</div>
   </aside>
@@ -516,6 +516,8 @@ async function loadTargets(){
   state.current = d.current||"";
   state.exe = d.exe||"";
   state.ver = d.ver||"";
+  const bv = $('#brand-ver');
+  if(bv) bv.textContent = d.app_ver ? 'v'+d.app_ver : '';
   // 路径框始终显示完整主程序路径（如 D:\game\twmoa_1181\WoW.exe），不会变回根目录
   $('#s-path').value = state.exe || (state.current ? state.current.replace(/[\\/]+$/,'') + '\\WoW.exe' : '');
   const rl = await api('/api/realmlist?target='+encodeURIComponent(state.current));
@@ -649,6 +651,7 @@ $('#h-check').onclick = async ()=>{
   check_ok = !!r.ok;
   setLaunchEnabled(check_ok);
   toast((r.summary || (r.ok ? '配置组件完成' : '配置未通过')) + (statusStr? ('；'+statusStr) : ''));
+  loadHome();   // 已装插件数量等首页信息即时刷新（配置组件刚装完插件）
   refreshSession();
 };
 $('#h-launch').onclick = async ()=>{
@@ -673,7 +676,9 @@ async function refreshSession(p){
   const el = $('#h-session'); if(!el) return;
   // 没点过「配置组件」且当前没有安装在进行 → 一律显示「待检测」，不按磁盘判定已装
   if(!prechecked && (!p || p.done)){
-    el.innerHTML = '<span style="color:var(--sub)">模组 待检测　插件 待检测　字体 待检测（点「配置组件」检测后显示结果）</span>';
+    const pend = ['模组','插件','字体'].map(k=>
+      '<span style="color:var(--txt)">'+k+'</span> <b style="color:#e8b34b">待检测</b>').join('　');
+    el.innerHTML = pend + '　<span style="color:var(--sub);font-size:12px">点「配置组件」检测后显示结果</span>';
     return;
   }
   // p = 环境检测/安装进行中的进度对象。安装期间磁盘上的文件是拷一半的状态，
@@ -694,21 +699,23 @@ async function refreshSession(p){
   const mk = s => s==='ok'   ? '<b style="color:var(--accent)">✓已装</b>'
               : s==='busy' ? '<b style="color:var(--warn)">◉安装中…</b>'
               :              '<b style="color:var(--danger)">✗未装</b>';
+  const lb = k => '<span style="color:var(--txt)">'+k+'</span>';
   const allOk = st.mods==='ok' && st.addons==='ok' && st.fonts==='ok';
-  el.innerHTML = '模组 ' + mk(st.mods) + '　插件 ' + mk(st.addons) + '　字体 ' + mk(st.fonts)
+  el.innerHTML = lb('模组') + ' ' + mk(st.mods) + '　' + lb('插件') + ' ' + mk(st.addons)
+    + '　' + lb('字体') + ' ' + mk(st.fonts)
     + (allOk ? '　<b style="color:var(--accent)">已就绪</b>' : '');
 }
 // 【清理还原】：结束游戏 + 移除本次装入的模组/插件/字体(先备份到插件备份) + 恢复 dlls.txt，
 // 客户端恢复初始状态；倒计时结束后回到初始界面，程序继续可用（不退出）。
 // 注意：缓存【不删】，下次配置组件可直接复用。
 $('#h-exit').onclick = async ()=>{
-  if(!(await askConfirm('确定要移除全部已装入的模组、插件、字体，恢复客户端初始状态吗？'))) return;
+  if(!(await askConfirm('确定要清理还原吗？\n将移除已装入的模组、插件、字体，从 WowAbak 备份还原客户端原有内容（如有），最后清空 WowAbak 备份夹。'))) return;
   const ov = document.createElement('div');
   ov.style.cssText = 'position:fixed;inset:0;background:#0e1014;z-index:999;'
     + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px';
   ov.innerHTML = '<div style="font-size:64px;font-weight:800;color:#5ad17a" class="cd">5</div>'
     + '<div style="font-size:17px;color:#e6e9ef">正在清理还原客户端…</div>'
-    + '<div style="font-size:13px;color:#9aa3b2" class="cd-sub">游戏即将结束，已安装的模组+插件+字体将被彻底移除，恢复干净客户端</div>';
+    + '<div style="font-size:13px;color:#9aa3b2" class="cd-sub">游戏即将结束：移除已装组件 → 还原客户端原有内容 → 清空 WowAbak 备份夹</div>';
   document.body.appendChild(ov);
   const cd = ov.querySelector('.cd');
   api('/api/cleanup', {target: state.current});   // 后台开始清理（不阻塞界面）

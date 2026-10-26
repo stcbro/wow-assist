@@ -2009,7 +2009,7 @@ class Handler(BaseHTTPRequestHandler):
             current = saved if saved and os.path.isdir(saved) else (roots[0] if roots else "")
             return self._send(200, json.dumps(
                 {"targets": roots, "current": current, "exe": _find_game_exe(current),
-                 "ver": _game_version(current)}, ensure_ascii=False))
+                 "ver": _game_version(current), "app_ver": APP_VERSION}, ensure_ascii=False))
         if self.path.startswith("/api/addons_catalog"):
             # 插件目录（来自蓝奏云缓存包）：下载了但未装入的插件也列出来，标"未安装"
             d = _kind_dst("addons")
@@ -2196,7 +2196,7 @@ class Handler(BaseHTTPRequestHandler):
                     if not (t and os.path.isdir(_to_root(t))):
                         t = load_config().get("target", "")
                     _cleanup_restore(_to_addons(t), _l)
-                    _set_progress(100, "完成", "清理还原完成，客户端已恢复初始状态（已装组件已彻底移除，重新「配置组件」即可装回）", done=True)
+                    _set_progress(100, "完成", "清理还原完成：已装组件已移除、客户端原有内容已还原、WowAbak 已清空", done=True)
                 except Exception:
                     pass
             threading.Thread(target=_go, daemon=True).start()
@@ -3582,20 +3582,59 @@ def _teardown():
 
 
 def _cleanup_restore(target, log):
-    """手动清理还原：结束游戏 → 彻底移除已装模组/插件/字体（不备份）→ 恢复 dlls.txt。
-    不删下载缓存（持久化模型，缓存留盘复用）。
-    装入的组件来自本程序资源包，可随时重新「配置组件」装回，无需备份；
-    客户端原有 Fonts 仍按 fonts_backup 恢复原样。"""
+    """手动清理还原（三步，2026-10-27 用户定稿）：
+    ① 结束游戏并彻底移除已装的模组/插件/字体（不备份）；
+    ② 从 WowAbak 各类备份中还原客户端原有内容（取每类最早的时间戳备份 = 安装前原始状态）；
+    ③ 清空删除整个 WowAbak 备份夹（使命完成）。
+    不删下载缓存（持久化模型，缓存留盘复用）。"""
     if not target:
         return False, "未设置游戏路径"
     if _game_running():
         kill_game(log)
-    revert_overlay(target, log, kill=False, backup=False)  # 直删模式：装了的就清掉
+    revert_overlay(target, log, kill=False, backup=False)  # ① 直删已装组件
+    # ② 从 WowAbak 还原客户端原有内容（最早的时间戳备份）
+    root = client_root_of(target)
+    addons = normalize_addons_path(target, create=False)
+    bb = backups_base(target)
+    pat = re.compile(r"^(模组备份|插件备份|字体备份)_\d{8}_\d{6}$")
+    dst_of = {"模组备份": root, "插件备份": addons, "字体备份": fonts_dst(target)}
+    label_of = {"模组备份": "模组", "插件备份": "插件", "字体备份": "字体"}
+    if os.path.isdir(bb):
+        for tag in ("模组备份", "插件备份", "字体备份"):
+            cands = sorted(d for d in os.listdir(bb) if pat.match(d) and d.startswith(tag))
+            if not cands:
+                continue
+            src_dir = os.path.join(bb, cands[0])
+            dst = dst_of[tag]
+            if not dst:
+                continue
+            n = 0
+            for e in os.listdir(src_dir):
+                s, d2 = os.path.join(src_dir, e), os.path.join(dst, e)
+                try:
+                    os.makedirs(os.path.dirname(d2) or dst, exist_ok=True)
+                    if os.path.isdir(s):
+                        shutil.copytree(s, d2, dirs_exist_ok=True)
+                    else:
+                        shutil.copy2(s, d2)
+                    n += 1
+                except Exception as ex:
+                    log("[还原失败] " + e + "：" + str(ex))
+            if n:
+                log("[还原] 从 WowAbak\\" + cands[0] + " 还原客户端原有"
+                    + label_of[tag] + " " + str(n) + " 项")
+        # ③ 备份已完成使命：清空删除整个 WowAbak
+        try:
+            shutil.rmtree(bb, ignore_errors=True)
+            log("[备份] WowAbak 备份夹已清空删除")
+        except Exception:
+            pass
     cfg = load_config()
     cfg["install_state"] = {}
     cfg["session_applied"] = False
+    cfg.pop("fonts_backup", None)   # WowAbak 已删，原 Fonts 备份引用一并作废
     save_config(cfg)
-    return True, "已清理还原，客户端恢复初始状态（已装组件彻底移除，重新「配置组件」即可装回）"
+    return True, "已清理还原：已装组件已移除、客户端原有内容已还原、WowAbak 已清空"
 
 
 # 控制台事件回调必须全程持有引用：ctypes 不会自动保活，回调对象一旦被回收，
