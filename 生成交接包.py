@@ -17,11 +17,17 @@ add = lambda s, d=None: items.append((s, d or s))
 # 1) 主工程源码与工具
 for f in ["addon_helper.py", "ui.html", "lanzou_core.py",
           "capy.ico", "capy_favicon.ico", "web_logo.png",
-          "打包exe.bat", "上传蓝奏云.py", "验证分发链接.py",
-          "启动插件助手.bat", "启动插件助手-无窗口.vbs", "打开插件助手界面.url"]:
+          "打包exe.bat", "上传蓝奏云.py", "上传资源包.py", "验证分发链接.py"]:
     p = os.path.join("wow-assist", f)
     if os.path.isfile(os.path.join(ROOT, p)):
         add(p)
+
+# 1b) 作者工具（manifest 增量更新工具链 + 源码调试启动器）
+adir = os.path.join(ROOT, "wow-assist", "作者工具")
+if os.path.isdir(adir):
+    for f in sorted(os.listdir(adir)):
+        if os.path.isfile(os.path.join(adir, f)):
+            add(os.path.join("wow-assist", "作者工具", f))
 
 # 2) 单元测试与资源包制作脚本
 for f in ["test_persist.py", "build_lanzou_packs.py"]:
