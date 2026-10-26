@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""魔兽助手 · 制作更新包（作者侧工具）
+"""WowAssist · 制作更新包（作者侧工具）
 用法：双击 制作更新包.bat，按提示输入：
   1) 旧版插件目录（首次可随便填个不存在的路径 = 全量）
   2) 新版插件目录（放着最新插件内容的目录，如 吉米插件包v8.8/Interface/AddOns）
@@ -49,7 +49,7 @@ def zip_plugin(src, dst):
 
 def main():
     print("=" * 56)
-    print("魔兽助手 · 制作更新包")
+    print("WowAssist · 制作更新包")
     print("=" * 56)
     new_dir = NEW or input("新版插件目录（如 D:\\...\\Interface\\AddOns）: ").strip().strip('"')
     if not os.path.isdir(new_dir):
@@ -131,9 +131,9 @@ def main():
               "2. 链接回填：运行 回填链接.bat，按提示粘贴每个文件的链接和提取码",
               "   （脚本会自动写进 manifest.json）",
               "3. 把回填后的 manifest.json 上传到蓝奏云，覆盖旧清单",
-              "4. 把新 manifest.json 的分享链接+提取码，配置到魔兽助手「下载」页",
+              "4. 把新 manifest.json 的分享链接+提取码，配置到WowAssist「下载」页",
               "",
-              "老用户重启魔兽助手即自动增量更新（只下变化的插件）。"]
+              "老用户重启WowAssist即自动增量更新（只下变化的插件）。"]
     with open(os.path.join(OUT, "上传清单.txt"), "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
 

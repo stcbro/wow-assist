@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""魔兽助手 · 回填链接（作者侧工具）
+"""WowAssist · 回填链接（作者侧工具）
 上传完 zip 后运行：按提示把「链接 提取码」逐行粘贴（顺序与上传清单一致），
 自动写入 manifest.json 对应条目。也支持只贴链接（无提取码）。
 """
@@ -62,7 +62,7 @@ def main():
     print("\n已回填 %d 个链接。剩余缺链接: %d" % (
         ok, sum(1 for e in plugins.values() if not e.get("url"))))
     print("现在把 manifest.json 上传到蓝奏云（覆盖旧清单），并把它的分享链接")
-    print("配置到魔兽助手「下载」页的 manifest 栏，老用户重启即自动更新。")
+    print("配置到WowAssist「下载」页的 manifest 栏，老用户重启即自动更新。")
     input("\n回车退出…")
 
 
