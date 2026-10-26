@@ -4085,7 +4085,7 @@ def _run_window(url):
         except Exception:
             _wx = _wy = None
         window = webview.create_window(
-            "WowAssist · 香草旧世拓展助手", url,
+            "WowAssist · 香草旧世助手", url,
             width=980, height=680, x=_wx, y=_wy,
             resizable=False, confirm_close=False,
         )
