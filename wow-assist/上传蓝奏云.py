@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-魔兽助手 —— 蓝奏云一键上传（自动带版本号）
+WowAssist —— 蓝奏云一键上传（自动带版本号）
 ==================================================
 用法（推荐：环境变量传凭据，一条命令搞定）：
 
@@ -12,9 +12,9 @@
 注意：变量名请用 LZ_PW 而不是 LZ_PASS —— 部分执行环境会过滤含 PASS 的名字。
 
 常用参数：
-    --file "魔兽助手 v3.12.exe"   指定要上传的文件（默认自动取项目目录里最新的「魔兽助手 vX.YZ.exe」）
-    --folder 魔兽助手              目标文件夹名（默认「魔兽助手」）
-    --prune                        上传成功后，删除该文件夹里其它旧版「魔兽助手 v*.exe」（只保留最新）
+    --file "wowassist-v3.12.exe"   指定要上传的文件（默认自动取项目目录里最新的「wowassist-vX.YZ.exe」）
+    --folder wow-assist             目标文件夹名（默认「wow-assist」）
+    --prune                        上传成功后，删除该文件夹里其它旧版「wowassist-v*.exe」（只保留最新）
     --share                        上传后尝试读取该文件夹的分享链接与提取码
     --state 路径                   登录态缓存文件（默认 temp/lz_state.json，可重复使用免登录）
     --no-state                     不使用/不保存登录态
@@ -66,12 +66,12 @@ def read_app_version():
 
 
 def find_exe(explicit=None):
-    """定位要上传的 exe：显式指定 > 项目根最新「魔兽助手 v*.exe」> dist 里最新"""
+    """定位要上传的 exe：显式指定 > 项目根最新「wowassist-v*.exe」> dist 里最新"""
     if explicit:
         p = os.path.abspath(explicit)
         return p if os.path.isfile(p) else None
-    pats = [os.path.join(HERE, "魔兽助手 v*.exe"),
-            os.path.join(HERE, "dist", "魔兽助手 v*.exe")]
+    pats = [os.path.join(HERE, "wowassist-v*.exe"),
+            os.path.join(HERE, "dist", "wowassist-v*.exe")]
     cands = []
     for pat in pats:
         cands += glob.glob(pat)
@@ -215,22 +215,26 @@ def list_rows(fr):
     }""")
 
 
-def upload_file(page, fr, path):
-    """点『上传文件』-> 注入 file input -> 『开始上传』-> 等待出现"""
+def upload_file(page, fr, path, folder):
+    """点『上传文件』-> 注入 file input -> 『开始上传』-> 刷新列表确认真实存在。
+
+    重要：不能用「DOM 里出现文件名」判断成功——webuploader 的待上传队列本来
+    就含文件名，会立刻误判。必须等上传完成提示，再**刷新列表**核对。
+    """
     fname = os.path.basename(path)
     try:
         fr.get_by_text("上传文件", exact=True).first.click(timeout=10000)
     except Exception as e:
         print(f"    [上传] 未找到『上传文件』按钮: {str(e)[:100]}")
-    page.wait_for_timeout(2000)
+    page.wait_for_timeout(1800)
     try:
         fr.wait_for_selector("input[type=file]", timeout=12000, state="attached")
         fr.locator("input[type=file]").first.set_input_files(path)
         print(f"    [上传] 已注入文件: {fname}")
     except Exception as e:
         print(f"    [上传] 注入文件失败: {type(e).__name__}: {str(e)[:150]}")
-        return False
-    page.wait_for_timeout(2500)
+        return False, fr
+    page.wait_for_timeout(2000)
     try:
         btn = fr.get_by_text("开始上传", exact=True)
         if btn.count() > 0:
@@ -238,22 +242,28 @@ def upload_file(page, fr, path):
             print("    [上传] 已点击『开始上传』")
     except Exception:
         pass
-    # 轮询：文件出现在列表 / 出现成功提示
-    for t in range(90):
+    # 等上传进度/完成提示
+    for t in range(150):
         page.wait_for_timeout(2000)
         try:
             c = fr.content()
         except Exception:
             c = ""
-        if fname in c:
-            print(f"    [上传] 文件已出现在列表 (~{t*2}s)")
-            return True
-        if "上传成功" in c or "上传完成" in c:
-            page.wait_for_timeout(3000)
-            print(f"    [上传] 显示上传完成提示 (~{t*2}s)")
-            return True
-    print("    [上传] 等待超时，未确认上传成功")
-    return False
+        if re.search(r"100\s*%", c) or "上传成功" in c or "上传完成" in c:
+            print(f"    [上传] 上传完成提示出现 (~{t*2}s)")
+            break
+    page.wait_for_timeout(2500)
+    # 刷新列表确认真实存在
+    fr2 = refresh_folder(page, fr, folder)
+    if fr2 is None:
+        return False, fr
+    names = [r.get("txt", "") for r in list_rows(fr2)]
+    hit = [n for n in names if fname in n]
+    if hit:
+        print(f"    [上传] ✔ 已确认存在于列表: {hit[0][:60]}")
+        return True, fr2
+    print("    [上传] ✘ 刷新后未在列表中找到，上传可能未真正提交")
+    return False, fr2
 
 
 def delete_row(fr, page, row_id):
@@ -320,7 +330,7 @@ def prune_folder(page, fr, keep_name, folder):
     same, olds = [], []
     for r in rows:
         txt = r.get("txt", "")
-        for m in re.finditer(r"魔兽助手\s*v[0-9.]+\.exe", txt):
+        for m in re.finditer(r"wowassist-v[0-9.]+\.exe", txt):
             nm = m.group(0)
             if nm == keep_name:
                 if r["id"] not in [x[0] for x in same]:
@@ -344,7 +354,7 @@ def prune_folder(page, fr, keep_name, folder):
     if fr2 is None:
         return
     left = [r for r in list_rows(fr2)
-            if keep_name in r.get("txt", "") or re.search(r"魔兽助手\s*v[0-9.]+\.exe", r.get("txt", ""))]
+            if keep_name in r.get("txt", "") or re.search(r"wowassist-v[0-9.]+\.exe", r.get("txt", ""))]
     print(f"    [清理] 复核：当前该文件夹内相关文件 {len(left)} 份")
     for r in left:
         print(f"             - {r.get('txt','')[:70]}")
@@ -367,7 +377,7 @@ def try_get_share(page, fr, folder):
 def main():
     ap = argparse.ArgumentParser(description="蓝奏云一键上传（带版本号）")
     ap.add_argument("--file", default=None, help="要上传的 exe（默认取最新带版本号产物）")
-    ap.add_argument("--folder", default="魔兽助手", help="目标文件夹名")
+    ap.add_argument("--folder", default="wow-assist", help="目标文件夹名")
     ap.add_argument("--prune", action="store_true", help="删除同目录其它旧版本号文件")
     ap.add_argument("--share", action="store_true", help="尝试读取分享链接")
     ap.add_argument("--skip-upload", action="store_true", help="只做分享链接/清理，不重复上传")
@@ -377,7 +387,7 @@ def main():
     args = ap.parse_args()
 
     print("=" * 62)
-    print("  魔兽助手 —— 蓝奏云一键上传")
+    print("  WowAssist —— 蓝奏云一键上传")
     print("=" * 62)
 
     ver = read_app_version()
@@ -459,7 +469,7 @@ def main():
                 upload_ok = True
             else:
                 print("[4/5] 上传中 ...")
-                upload_ok = upload_file(page, fr, exe)
+                upload_ok, fr = upload_file(page, fr, exe, args.folder)
                 if not upload_ok:
                     print("      上传未确认成功，请到蓝奏云网页确认。")
                     return 5

@@ -1,9 +1,9 @@
 @echo off
 chcp 65001 >nul
 rem ============================================================
-rem  魔兽助手 exe 打包脚本（单文件 + 无窗口）
+rem  WowAssist exe 打包脚本（单文件 + 无窗口）
 rem  用法：改完 addon_helper.py / ui.html 后，双击本文件重新生成
-rem  产物名含版本号：魔兽助手 v<版本>.exe（版本取自 addon_helper.py 的 APP_VERSION）
+rem  产物名含版本号：wowassist-v<版本>.exe（版本取自 addon_helper.py 的 APP_VERSION）
 rem  发版只需改 addon_helper.py 的 APP_VERSION，本脚本会自动带版本号
 rem ============================================================
 cd /d "%~dp0"
@@ -24,7 +24,7 @@ if exist dist rmdir /s /q dist
 "%PY%" -m PyInstaller ^
   --onefile ^
   --windowed ^
-  --name "魔兽助手 v%APPVER%" ^
+  --name "wowassist-v%APPVER%" ^
   --icon capy.ico ^
   --add-data "ui.html;." ^
   --add-data "capy.ico;." ^
@@ -45,10 +45,10 @@ if errorlevel 1 (
 )
 
 echo.
-echo [打包成功] dist\魔兽助手 v%APPVER%.exe
+echo [打包成功] dist\wowassist-v%APPVER%.exe
 rem 顺手把带版本号的 exe 拷到本目录，和 config.json 作伴（这是唯一交付副本，文件名含版本号一目了然）
-copy /y "dist\魔兽助手 v%APPVER%.exe" "魔兽助手 v%APPVER%.exe" >nul
-echo [已复制] 魔兽助手 v%APPVER%.exe（本目录，双击即用）
+copy /y "dist\wowassist-v%APPVER%.exe" "wowassist-v%APPVER%.exe" >nul
+echo [已复制] wowassist-v%APPVER%.exe（本目录，双击即用）
 rem 清理可重生成的构建中间产物，避免和根目录 exe 重复（dist/build 下次打包会自动重建）
 rmdir /s /q build >nul 2>&1
 rmdir /s /q dist >nul 2>&1
@@ -66,10 +66,10 @@ if not defined LZ_PW goto NOUPLOAD
 echo.
 echo [上传] 正在上传到蓝奏云 ...
 set "PYTHONPATH="
-rem 1) 专用文件夹（干净，只有 exe）
-"%PY%" 上传蓝奏云.py --folder "魔兽助手" --prune
-rem 2) 分发文件夹（已有对外分享链接，新电脑可直接下载）
-"%PY%" 上传蓝奏云.py --folder "乌龟服资源包20261025" --prune
+rem exe 只上传到专用文件夹「wow-assist」（资源包另有其文件夹，不混放）
+"%PY%" 上传蓝奏云.py --folder "wow-assist" --prune
+rem 资源包有更新时，单独执行（产物在 D:\WorkBuddy\发布\蓝奏云资源包）：
+rem     "%PY%" 上传资源包.py --folder "乌龟服资源包20261025"
 echo [上传] 完成
 goto DONEUPLOAD
 

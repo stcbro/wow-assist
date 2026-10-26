@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-魔兽助手 — 乌龟服一站式插件/模组/字体管理器（纯 Python 标准库，零依赖）
+WowAssist — 乌龟服一站式插件/模组/字体管理器（纯 Python 标准库，零依赖）
 
 功能：贴蓝奏云链接 → 自动下载 → 自动解压 → 一键安装到游戏 Interface/AddOns
 用法：双击 启动插件助手.bat，浏览器自动打开 http://127.0.0.1:8766
@@ -30,7 +30,7 @@ from lanzou_core import LanzouClient, DOMAIN_RE  # noqa: E402
 PORT = 8766
 
 # 单一版本来源：发版时只改这一行（同步更新 ui.html 更新日志、以及打包后的文件名版本号）
-APP_VERSION = "3.11"
+APP_VERSION = "3.12"
 # 打包成 exe 后：APP_DIR 用 exe 所在目录；未打包（脚本运行）时用脚本所在目录。
 # ui.html 等资源从 PyInstaller 解压目录 _MEIPASS 读。
 if getattr(sys, "frozen", False):
@@ -45,12 +45,30 @@ else:
 # 持久化模型（2026-10-26 起）：关闭工具后模组/插件/字体与下载缓存都保留，下次直接复用；
 # 配置组件幂等（已装不重复装），安装前对冲突项先备份；缓存长期(默认30天)未用自动清理。
 _RUNTIME_DIR = os.path.join(os.environ.get("LOCALAPPDATA", os.path.expanduser("~")),
-                            "魔兽助手")
+                            "wowassist")
+# v3.12 起数据目录更名为 wowassist；旧目录保留在此用于一次性迁移
+_LEGACY_RUNTIME_DIR = os.path.join(os.environ.get("LOCALAPPDATA", os.path.expanduser("~")),
+                                   "魔兽助手")
 TEMP_DIR = os.path.join(_RUNTIME_DIR, "temp")
 DOWNLOAD_DIR = os.path.join(_RUNTIME_DIR, "downloads")
 CONFIG_PATH = os.path.join(_RUNTIME_DIR, "config.json")
 RUN_LOG = os.path.join(_RUNTIME_DIR, "run.log")
 RESTORE_LOG = os.path.join(_RUNTIME_DIR, "上次会话还原.log")
+
+
+def _migrate_legacy_runtime():
+    """一次性迁移：旧数据目录 AppData\\魔兽助手 -> AppData\\wowassist。
+
+    仅当新目录不存在且旧目录存在时执行；失败不阻断启动（最坏情况=重新下载一次缓存）。
+    """
+    try:
+        if os.path.isdir(_LEGACY_RUNTIME_DIR) and not os.path.isdir(_RUNTIME_DIR):
+            os.makedirs(os.path.dirname(_RUNTIME_DIR), exist_ok=True)
+            os.rename(_LEGACY_RUNTIME_DIR, _RUNTIME_DIR)
+            return True
+    except Exception:
+        pass
+    return False
 
 
 def load_config():
@@ -71,20 +89,20 @@ def save_config(cfg):
 
 
 # ================= 内置资源（打包进 exe 尾部的资源 zip，需求一，暂未启用）=================
-# 若启用：魔兽助手.exe = PyInstaller 程序 + resources.zip 追加在尾部。
-# 解压目标改为 AppData\魔兽助手\unpacked（不再放游戏根/ exe 同目录）。
+# 若启用：wowassist.exe = PyInstaller 程序 + resources.zip 追加在尾部。
+# 解压目标改为 AppData\wowassist\unpacked（不再放游戏根/ exe 同目录）。
 RES_DIR = None            # 解压后的资源根目录（含 模组包/插件包/Fonts）
 _RES_STATE = {"busy": False, "done": False, "pct": 0, "msg": ""}
 
 
 def _resources_base():
-    """资源缓存根目录：固定在 AppData\魔兽助手（不随 exe 走、不污染游戏根目录）。
+    """资源缓存根目录：固定在 AppData\\wowassist（不随 exe 走、不污染游戏根目录）。
     下载缓存（resources/）与内嵌解压（unpacked）都在此之下；绝不落在游戏根目录。"""
     try:
         os.makedirs(_RUNTIME_DIR, exist_ok=True)
         return _RUNTIME_DIR
     except Exception:
-        return os.path.join(os.path.expanduser("~"), "魔兽助手")
+        return os.path.join(os.path.expanduser("~"), "wowassist")
 
 
 def _ensure_resources():
@@ -182,9 +200,9 @@ _DL_STATE = {"busy": False, "kind": "", "file_idx": 0, "file_total": 0,
 # 手动分卷链接（config.lanzou.*）保留为兜底：未配置 folder 或 folder 解析失败时生效。
 _FOLDER_CACHE = {"ts": 0.0, "files": None, "err": ""}
 _KIND_PATTERNS = {
-    "mods": [r"^魔兽助手_模组包\.zip$"],
-    "addons": [r"^魔兽助手_插件包_part\d+\.zip$"],
-    "fonts": [r"^魔兽助手_字体\.zip$"],
+    "mods": [r"^wowassist_模组包\.zip$"],
+    "addons": [r"^wowassist_插件包_part\d+\.zip$"],
+    "fonts": [r"^wowassist_字体\.zip$"],
 }
 
 
@@ -308,7 +326,7 @@ def _match_kind_files(kind, files):
 
 
 def _resources_root():
-    """下载缓存根目录（AppData\魔兽助手\resources，与 exe/游戏根目录完全分离）。"""
+    """下载缓存根目录（AppData\\wowassist\\resources，与 exe/游戏根目录完全分离）。"""
     b = _resources_base()
     return os.path.join(b, "resources") if b else None
 
@@ -1805,7 +1823,7 @@ def download_gitee_zip(log, timeout=300, retries=2):
     """从 Gitee 下载最新插件包，带重试；成功返回本地路径。
     下载先写临时文件，校验通过（PK 头 + 大于 1MB）才转正，避免残缺包覆盖好包。"""
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-    dest = os.path.join(DOWNLOAD_DIR, "魔兽助手_插件包_Gitee最新.zip")
+    dest = os.path.join(DOWNLOAD_DIR, "wowassist_插件包_Gitee最新.zip")
     part = dest + ".part"
     if os.path.exists(dest) and not _is_valid_zip(dest):
         log("[清理] 发现上次残留的损坏包，已删除")
@@ -3876,7 +3894,7 @@ def _focus_existing_window():
                 buf = ctypes.create_unicode_buffer(256)
                 user32.GetWindowTextW(hwnd, buf, 256)
                 t = buf.value
-                if "魔兽助手" in t and "浏览器" not in t:
+                if ("WowAssist" in t or "魔兽助手" in t) and "浏览器" not in t:
                     hit.append(hwnd)
             return True
 
@@ -3980,7 +3998,7 @@ def _run_window(url):
         except Exception:
             _wx = _wy = None
         window = webview.create_window(
-            "魔兽助手 — 乌龟服插件管理器", url,
+            "WowAssist — 乌龟服插件管理器", url,
             width=980, height=680, x=_wx, y=_wy,
             resizable=False, confirm_close=False,
         )
@@ -4106,7 +4124,7 @@ def _run_window(url):
             form.ShowInTaskbar = False
             form.StartPosition = FormStartPosition.Manual
             form.WindowState = FormWindowState.Minimized
-            form.Text = "魔兽助手托盘宿主"
+            form.Text = "WowAssist 托盘宿主"
             force_handle = form.Handle   # 在本线程强制创建句柄（BeginInvoke 需要）
             ico_path = os.path.join(_RES_DIR, "capy.ico")
             ni = NotifyIcon()
@@ -4118,7 +4136,7 @@ def _run_window(url):
                 ni.Icon = capy_icon
             else:
                 _log_wv("托盘图标文件缺失：" + ico_path)
-            ni.Text = "魔兽助手"
+            ni.Text = "WowAssist"
             ni.Visible = False
             menu = ContextMenuStrip()
             # 右键菜单只留【退出】（用户指定）：显示主界面走左键单击/双击
@@ -4198,6 +4216,7 @@ def _run_window(url):
 def main():
     _init_dpi_awareness()   # 必须最先执行：任何弹窗/文件框之前声明 DPI 感知
     _ensure_hidden_console()
+    _migrate_legacy_runtime()   # 旧数据目录 AppData\魔兽助手 -> AppData\wowassist（一次性）
     for d in (TEMP_DIR, DOWNLOAD_DIR):
         os.makedirs(d, exist_ok=True)
     # 首次启动：写入默认 folder 分享配置（作者的蓝奏云资源文件夹），
@@ -4229,14 +4248,14 @@ def main():
         if getattr(sys, "frozen", False):
             _saved = _cfg.get("target", "")
             if _saved and os.path.isdir(_saved):
-                _msgbox("魔兽助手 - 提示",
-                        "检测到 魔兽助手.exe 不在游戏根目录。\n\n"
+                _msgbox("WowAssist - 提示",
+                        "检测到 wowassist.exe 不在游戏根目录。\n\n"
                         "推荐：把 exe 放到游戏根目录（与 WoW.exe 同级的文件夹），\n"
                         "即可自动识别游戏路径，随客户端自由移动。")
             else:
-                _msgbox("魔兽助手 - 未检测到游戏",
+                _msgbox("WowAssist - 未检测到游戏",
                         "未检测到魔兽客户端！\n\n"
-                        "请把 魔兽助手.exe 放到【游戏根目录】（与 WoW.exe 同级的文件夹）"
+                        "请把 wowassist.exe 放到【游戏根目录】（与 WoW.exe 同级的文件夹）"
                         "后重新打开，即可自动识别游戏路径；\n"
                         "也可以打开界面后在首页手动设置游戏路径。")
     url = f"http://127.0.0.1:{PORT}"
@@ -4249,7 +4268,7 @@ def main():
         # 不开浏览器标签页——那会让用户误以为这就是主界面、关掉就退出了。
         print(f"插件助手已在运行中，尝试把已有窗口调到前台")
         _focused = _focus_existing_window()
-        _msgbox("魔兽助手",
+        _msgbox("WowAssist",
                 "助手已经在运行中了" +
                 ("，已为你把它的窗口调到前台（任务栏也能找到）。" if _focused
                  else "（任务栏可找到它的窗口，可能被最小化或被其他窗口挡住了）。") +
@@ -4267,14 +4286,14 @@ def main():
     _install_console_handler()
     # 启动后台跑一次缓存 GC：清理长期(默认30天)未使用的下载缓存，不影响已装内容。
     threading.Thread(target=cache_gc, daemon=True).start()
-    print(f"魔兽助手已启动: {url}  (关闭窗口即退出；已安装的模组/插件/字体与缓存都会保留)")
+    print(f"WowAssist 已启动: {url}  (关闭窗口即退出；已安装的模组/插件/字体与缓存都会保留)")
     # HTTP 服务常驻后台线程；主线程尝试原生窗口模式（exe 默认），
     # 窗口创建失败则回退浏览器打开（脚本/bat 模式体验不变）
     threading.Thread(target=server.serve_forever, daemon=True).start()
     if _run_window(url):
         return
     # 原生窗口不可用（缺 WebView2 或创建失败）→ 浏览器模式兜底，并明确提示用户
-    _msgbox("魔兽助手",
+    _msgbox("WowAssist",
             "未能启动内置窗口（本机可能未安装 WebView2 运行时）。\n\n"
             "已自动用你的默认浏览器打开操作界面。\n\n"
             "注意：关闭浏览器不会退出程序；请点界面里的「退出工具」按钮安全退出"
@@ -4297,5 +4316,5 @@ if __name__ == "__main__":
                 _f.write(tb + "\n")
         except Exception:
             pass
-        _msgbox("魔兽助手 - 启动失败", "程序启动出错（已记录到 run.log）：\n\n" + tb[-1500:])
+        _msgbox("WowAssist - 启动失败", "程序启动出错（已记录到 run.log）：\n\n" + tb[-1500:])
         raise

@@ -7,8 +7,8 @@ try:
 except Exception:
     pass
 
-ROOT = r"D:/WorkBuddy/黑猫助手20261023"
-OUT = os.path.join(ROOT, "魔兽助手-交接包-20261026.zip")
+ROOT = r"D:/WorkBuddy/wow-assist"
+OUT = os.path.join(ROOT, "wowassist-交接包-20261026.zip")
 
 # (源相对路径, 包内路径)
 items = []
@@ -19,20 +19,20 @@ for f in ["addon_helper.py", "ui.html", "lanzou_core.py",
           "capy.ico", "capy_favicon.ico", "web_logo.png",
           "打包exe.bat", "上传蓝奏云.py", "验证分发链接.py",
           "启动插件助手.bat", "启动插件助手-无窗口.vbs", "打开插件助手界面.url"]:
-    p = os.path.join("插件助手", f)
+    p = os.path.join("wow-assist", f)
     if os.path.isfile(os.path.join(ROOT, p)):
         add(p)
 
 # 2) 单元测试与资源包制作脚本
 for f in ["test_persist.py", "build_lanzou_packs.py"]:
-    p = os.path.join("插件助手", "temp", f)
+    p = os.path.join("wow-assist", "temp", f)
     if os.path.isfile(os.path.join(ROOT, p)):
-        add(p, os.path.join("插件助手", "temp", f))
+        add(p, os.path.join("wow-assist", "temp", f))
 
 # 3) 交付 exe（带版本号）
-for f in os.listdir(os.path.join(ROOT, "插件助手")):
-    if f.startswith("魔兽助手 v") and f.endswith(".exe"):
-        add(os.path.join("插件助手", f))
+for f in os.listdir(os.path.join(ROOT, "wow-assist")):
+    if f.startswith("wowassist-v") and f.endswith(".exe"):
+        add(os.path.join("wow-assist", f))
 
 # 4) AI 记忆（接续上下文）
 mdir = os.path.join(ROOT, ".workbuddy", "memory")

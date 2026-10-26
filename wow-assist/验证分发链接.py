@@ -8,7 +8,10 @@
 
 检查项：
     · 链接能否打开、是否需要提取码
-    · 文件列表里有没有「魔兽助手 vX.YZ.exe」
+    · 按 --expect 检查内容：
+        packs = 资源包链接，应含 wowassist_*.zip
+        exe   = exe 链接，应含 wowassist-vX.YZ.exe
+        any   = 两者都看（默认）
     · 同一份 exe 是否出现重复（蓝奏云同名不覆盖、会并存）
     · 顺手截图存 temp/lz_link_final.png
 """
@@ -34,7 +37,8 @@ EDGE_CANDIDATES = [
 ]
 DEFAULT_URL = "https://sycc.lanzoum.com/b01i5y3r7c"
 DEFAULT_PWD = "9p81"
-EXE_RE = re.compile(r"魔兽助手\s*v[0-9.]+\.exe")
+EXE_RE = re.compile(r"wowassist-v[0-9.]+\.exe")
+PACK_RE = re.compile(r"wowassist_[^\s]*\.zip")
 
 
 def find_edge():
@@ -45,8 +49,13 @@ def find_edge():
 
 
 def main():
-    url = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_URL
-    pwd = sys.argv[2] if len(sys.argv) > 2 else DEFAULT_PWD
+    import argparse
+    ap = argparse.ArgumentParser(description="验证分发链接")
+    ap.add_argument("url", nargs="?", default=DEFAULT_URL)
+    ap.add_argument("pwd", nargs="?", default=DEFAULT_PWD)
+    ap.add_argument("--expect", choices=["any", "packs", "exe"], default="any")
+    a = ap.parse_args()
+    url, pwd = a.url, a.pwd
     edge = find_edge()
     if not edge:
         print("[错误] 找不到 Edge/Chrome")
@@ -86,18 +95,29 @@ def main():
             if s and (re.search(r"\.(exe|zip|txt)", s) or "M " in s or "B " in s):
                 print("   ", s)
         print("-" * 60)
-        if not exes:
-            print("✘ 列表里没有找到「魔兽助手 vX.YZ.exe」")
+        packs = PACK_RE.findall(body)
+        rc = 0
+        if a.expect in ("any", "packs"):
+            if packs:
+                print(f"✔ 找到资源包 {len(set(packs))} 个：{', '.join(sorted(set(packs))[:6])}")
+            elif a.expect == "packs":
+                print("✘ 列表里没有资源包 zip")
+                rc = 1
+        if a.expect in ("any", "exe"):
+            if exes:
+                print(f"✔ 找到 exe：{', '.join(sorted(set(exes)))}")
+                if len(exes) > 1:
+                    print(f"⚠ 出现 {len(exes)} 份同名 exe（蓝奏云不覆盖同名文件）")
+                    print("   → 执行：python 上传蓝奏云.py --folder <文件夹名> --prune")
+                    rc = 2
+                else:
+                    print("✔ 只有一份，无重复")
+            elif a.expect == "exe":
+                print("✘ 列表里没有找到「wowassist-vX.YZ.exe」")
+                rc = 1
+        if not exes and not packs:
+            print("✘ 列表里既没有 exe 也没有资源包")
             rc = 1
-        else:
-            print(f"✔ 找到 exe：{', '.join(sorted(set(exes)))}")
-            if len(exes) > 1:
-                print(f"⚠ 出现 {len(exes)} 份同名 exe（蓝奏云不覆盖同名文件）")
-                print("   → 执行：python 上传蓝奏云.py --folder <文件夹名> --prune")
-                rc = 2
-            else:
-                print("✔ 只有一份，无重复")
-                rc = 0
         pg.screenshot(path=os.path.join(TMP, "lz_link_final.png"), full_page=True)
         print(f"截图已存: {os.path.join(TMP, 'lz_link_final.png')}")
         br.close()

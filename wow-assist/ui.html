@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>魔兽助手</title>
+<title>WowAssist</title>
 <style>
 :root{
   --bg:#0e1014; --side:#15181f; --card:#1b1f29; --card2:#222735;
@@ -77,7 +77,7 @@ th{color:var(--sub);font-weight:600;font-size:12px}
 <body>
 <div class="app">
   <aside class="side">
-    <div class="brand"><span class="dot"></span>魔兽助手</div>
+    <div class="brand"><span class="dot"></span>WowAssist</div>
     <div class="nav" id="nav">
       <button data-p="home" class="active">首页</button>
       <button data-p="servers">服务器</button>
@@ -239,7 +239,7 @@ th{color:var(--sub);font-weight:600;font-size:12px}
       <div class="card" style="margin-top:12px;max-width:880px">
         <h3 style="margin-top:0">备用直链（可选 · 蓝奏云抽风时的保险）</h3>
         <textarea id="lz-dr-text" rows="4" spellcheck="false"
-          placeholder="每行填一个文件直链，程序按文件名自动识别类型。支持腾讯云 COS / 阿里云 OSS / GitHub / 任意可下载链接。&#10;例：&#10;https://xxx.cos.ap-guangzhou.myqcloud.com/魔兽助手_模组包.zip&#10;https://xxx.cos.ap-guangzhou.myqcloud.com/魔兽助手_插件包_part1.zip"
+          placeholder="每行填一个文件直链，程序按文件名自动识别类型。支持腾讯云 COS / 阿里云 OSS / GitHub / 任意可下载链接。&#10;例：&#10;https://xxx.cos.ap-guangzhou.myqcloud.com/wowassist_模组包.zip&#10;https://xxx.cos.ap-guangzhou.myqcloud.com/wowassist_插件包_part1.zip"
           style="width:100%;resize:vertical;font-family:inherit;font-size:13px;line-height:1.6;padding:8px 10px;background:var(--card2);color:var(--fg);border:1px solid var(--line);border-radius:6px;box-sizing:border-box"></textarea>
         <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <button class="btn primary sm" id="lz-dr-save">保存直链</button>
@@ -1013,7 +1013,7 @@ async function loadLanzou(){
       + '<span style="opacity:.6">配了直链就优先用直链；清空保存后自动回落到蓝奏云文件夹。</span>';
   }else{
     $('#lz-dr-status').innerHTML = '<span style="color:var(--warn)">● 已填但没识别出资源，请检查链接里的文件名</span>';
-    $('#lz-dr-info').innerHTML = '文件名需为 <b>魔兽助手_模组包.zip</b> / <b>魔兽助手_插件包_partN.zip</b> / <b>魔兽助手_字体.zip</b>（与蓝奏云里的同名即可）'
+    $('#lz-dr-info').innerHTML = '文件名需为 <b>wowassist_模组包.zip</b> / <b>wowassist_插件包_partN.zip</b> / <b>wowassist_字体.zip</b>（与蓝奏云里的同名即可）'
       + ((dr.unmatched||[]).length? '<br>当前识别到：'+(dr.unmatched||[]).map(x=>esc(x)).join('、') : '');
   }
   // manifest 配置
