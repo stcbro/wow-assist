@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-WowAssist — 水豚乐园（原乌龟服亚服）客户端一站式插件/模组/字体管理器（纯 Python 标准库，零依赖）
+WowAssist — 简单好用又省心的香草旧世魔兽游戏助手（纯 Python 标准库，零依赖）
 作者：Bro.Cui ｜ 定位：简单好用又省心的香草旧世魔兽游戏助手
 (C) 2026 Bro.Cui. All rights reserved. 原创自研作品，仅供玩家免费学习交流。
 
