@@ -2197,7 +2197,6 @@ class Handler(BaseHTTPRequestHandler):
                         t = load_config().get("target", "")
                     _cleanup_restore(_to_addons(t), _l)
                     _set_progress(100, "完成", "清理还原完成，客户端已恢复初始状态（已装组件已彻底移除，重新「配置组件」即可装回）", done=True)
-                    _hist("清理还原完成，客户端已恢复初始状态")
                 except Exception:
                     pass
             threading.Thread(target=_go, daemon=True).start()
@@ -2915,12 +2914,12 @@ def ensure_mods_loaded(target, log):
     if merged == existing:
         return True, "dlls.txt 已包含全部模组，无需改动"
     if os.path.isfile(path):
-        bb = os.path.join(backups_base(target), "模组备份_配置")
+        bb = os.path.join(backups_base(target), "模组备份")
         os.makedirs(bb, exist_ok=True)
         # 时间戳放扩展名【前】：dlls.20261024_230824.txt（放后面会变成无关联后缀，不能双击默认打开）
         bak = os.path.join(bb, "dlls." + time.strftime("%Y%m%d_%H%M%S") + ".txt")
         shutil.copy2(path, bak)
-        log("[备份] 原 dlls.txt → WowAbak\\模组备份_配置\\" + os.path.basename(bak))
+        log("[备份] 原 dlls.txt → WowAbak\\模组备份\\" + os.path.basename(bak))
     _write_dlls_txt(path, merged)
     log("[模组] 已写入 dlls.txt：" + ", ".join(present))
     return True, "ok"
@@ -3054,8 +3053,8 @@ _HIST = []
 def _hist(msg):
     with _HIST_LOCK:
         _HIST.append(time.strftime("[%H:%M:%S] ") + str(msg))
-        if len(_HIST) > 400:
-            del _HIST[:len(_HIST) - 400]
+        if len(_HIST) > 2000:
+            del _HIST[:len(_HIST) - 2000]
 
 
 def _reset_progress():
@@ -3318,7 +3317,7 @@ def apply_overlay(target, mod_src, addon_src, log, font_src=None):
                     nmod += 1
                 _set_progress(5 + 25 * (i + 1) // max(1, len(chosen)))
             if chosen:
-                log("[模组] 模组加载已内置于本程序，将自动注入 VfPatcher.dll")
+                log("[模组] 模组加载已内置于本程序，将自动注入 VfPatcher.dll、nampower.dll")
             skipped = len(info["mods"]) - len(chosen)
             log("[模组] 从「" + os.path.basename(mod_src.rstrip("\\/")) + "」装入 " + str(nmod)
                 + " 个文件（按勾选，跳过 " + str(skipped) + " 个未勾选）")

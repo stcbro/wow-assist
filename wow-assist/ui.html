@@ -216,8 +216,8 @@ th{color:var(--sub);font-weight:600;font-size:12px}
         <div style="font-size:12px;color:var(--sub);margin-bottom:8px">
           关闭工具后下载缓存<b>不再删除</b>，下次配置组件可直接复用、无需重新下载；资源长期未使用会自动清理。
         </div>
-        <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
-          <input type="checkbox" id="lz-cache-on"> 启用「长期未使用自动清理」
+        <label style="display:inline-flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
+          <input type="checkbox" id="lz-cache-on"><span style="white-space:nowrap">启用「长期未使用自动清理」</span>
         </label>
         <div style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px;flex-wrap:wrap">
           <span>超过</span>
@@ -593,6 +593,8 @@ function renderProgress(p){
 }
 // 配置组件是否完成：只有全部完成才解锁「启动游戏」
 let check_ok = false;
+// 本会话是否点过「配置组件」：没点过之前不显示「已装」，避免误导（2026-10-27 用户规则）
+let prechecked = false;
 function setLaunchEnabled(on){
   const b = $('#h-launch'); if(!b) return;
   b.disabled = !on;
@@ -602,6 +604,7 @@ function setLaunchEnabled(on){
 // 全部完成才算通过；通过后「启动游戏」才可点（启动游戏只负责启动，不再装东西）
 $('#h-check').onclick = async ()=>{
   if(!state.current){ alert('请先在「首页」点「设置」选择 WoW.exe'); return; }
+  prechecked = true;
   const btn = $('#h-check'); const old = btn.textContent;
   btn.disabled = true; btn.textContent = '配置中…';
   $('#h-progress').style.display = 'block';
@@ -634,7 +637,15 @@ $('#h-check').onclick = async ()=>{
     const labs = {mods:'模组', addons:'插件', fonts:'字体'};
     statusStr = Object.keys(labs).map(k=> labs[k]+'：'+(r.status[k]? r.status[k][1] : '—')).join('　');
   }
-  if((r.log||[]).length) showLog('#h-play-log', (r.log||[]).join('\n')+'\n'+(r.summary||'')+(statusStr?('\n'+statusStr):''));
+  // 结果行追加到日志区末尾（先状态后结论），不覆盖已滚动的历史记录；
+  // 各步骤日志已随轮询带时间戳逐行显示过，这里不重复 r.log
+  const logEl2 = $('#h-play-log');
+  if(logEl2 && (statusStr || r.summary)){
+    logEl2.style.display = 'block';
+    logEl2.textContent += (logEl2.textContent ? '\n' : '')
+      + (statusStr || '') + ((statusStr && r.summary) ? '\n' : '') + (r.summary || '');
+    logEl2.scrollTop = logEl2.scrollHeight;
+  }
   check_ok = !!r.ok;
   setLaunchEnabled(check_ok);
   toast((r.summary || (r.ok ? '配置组件完成' : '配置未通过')) + (statusStr? ('；'+statusStr) : ''));
@@ -660,6 +671,11 @@ $('#h-open').onclick = ()=>{
 async function refreshSession(p){
   const d = await api('/api/session_state');
   const el = $('#h-session'); if(!el) return;
+  // 没点过「配置组件」且当前没有安装在进行 → 一律显示「待检测」，不按磁盘判定已装
+  if(!prechecked && (!p || p.done)){
+    el.innerHTML = '<span style="color:var(--sub)">模组 待检测　插件 待检测　字体 待检测（点「配置组件」检测后显示结果）</span>';
+    return;
+  }
   // p = 环境检测/安装进行中的进度对象。安装期间磁盘上的文件是拷一半的状态，
   // 不能按磁盘判定"已装"——只有该阶段步骤标记✓（或无安装在进行）才算装好。
   const running = !!p && !p.done;
@@ -703,6 +719,7 @@ $('#h-exit').onclick = async ()=>{
   ov.remove();
   // 回到初始界面：解锁状态复位，进度区实时显示清理还原进度（与实际同步）
   check_ok = false;
+  prechecked = false;   // 状态行回到「待检测」，需重新「配置组件」
   setLaunchEnabled(false);
   $('#h-progress').style.display = 'block';
   let finished = false;
@@ -838,8 +855,7 @@ async function loadMods(){
     </tr>` + detail;
     }).join('');
   const l = d.loader;
-  if(tfoot) tfoot.innerHTML = l ? `<tr><td>—</td><td>${esc(l.name)} <span class="tag" style="color:var(--warn)">加载器</span></td><td><span class="tag">启动器</span></td><td>${l.installed?'<span style="color:var(--accent)">已安装</span>':'<span style="color:var(--sub)">未安装</span>'}</td></tr>`
-    + (l.desc ? `<tr><td colspan="4" style="color:var(--sub);font-size:12px">${esc(l.desc)}</td></tr>` : '') : '';
+  if(tfoot) tfoot.innerHTML = '';   // 模组页不再展示「内置注入器」条目（2026-10-27 用户要求去掉）
   syncSelectAll();
   // 点击模组行展开/收起用途说明（点复选框除外）
   document.querySelectorAll('#dll-table .m-row').forEach(r=> r.onclick=(e)=>{
