@@ -61,4 +61,4 @@
 - 水豚乐园 `apac.capycraft.io`；客户端 `D:/game/twmoa_1181`(乌龟服1.18；1920x1080 125%缩放)。
 - 最新 exe=**v3.12**（改名版：WowAssist / wow-assist 目录 / wowassist-v3.12.exe / AppData\wowassist / wowassist_*.zip），已部署两处（源码目录 + `D:/game/twmoa_1181/wowassist.exe`）；HTTP 冒烟通过（两接口 200、数据目录已迁移）。**分发已就绪：原分享链接 b01i5y3r7c/9p81 列表首项即 `wowassist-v3.12.exe`**。
 - ✅ **真实游戏端到端验证已由用户完成**（2026-10-26 19:00 确认）。
-- 待办：①**「wow-assist」蓝奏云文件夹的对外分享链接待作者在网页手动生成**（拿到链接+提取码后需更新 `addon_helper.py` 默认 folder 配置与文档）；②上传 manifest.json 启用增量更新；③可选迁腾讯云COS；④用户仍未改蓝奏云密码（`***REDACTED***` 在对话里明文过），提醒其修改。
+- 待办：①**「wow-assist」蓝奏云文件夹的对外分享链接待作者在网页手动生成**（拿到链接+提取码后需更新 `addon_helper.py` 默认 folder 配置与文档）；②上传 manifest.json 启用增量更新；③可选迁腾讯云COS；④蓝奏云密码曾明文出现在历史对话，凭据一律不写入 git 追踪文件。
