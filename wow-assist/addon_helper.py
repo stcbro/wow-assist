@@ -32,7 +32,7 @@ from lanzou_core import LanzouClient, DOMAIN_RE  # noqa: E402
 PORT = 8766
 
 # 单一版本来源：发版时只改这一行（同步更新 ui.html 更新日志、以及打包后的文件名版本号）
-APP_VERSION = "3.13"
+APP_VERSION = "3.14"
 # 打包成 exe 后：APP_DIR 用 exe 所在目录；未打包（脚本运行）时用脚本所在目录。
 # ui.html 等资源从 PyInstaller 解压目录 _MEIPASS 读。
 if getattr(sys, "frozen", False):
@@ -2916,12 +2916,11 @@ def ensure_mods_loaded(target, log):
     if merged == existing:
         return True, "dlls.txt 已包含全部模组，无需改动"
     if os.path.isfile(path):
-        bb = os.path.join(backups_base(target), "模组备份")
-        os.makedirs(bb, exist_ok=True)
+        bb = _backup_dir_for(target, "模组备份")   # 与模组 DLL 同一个带时间戳的备份夹
         # 时间戳放扩展名【前】：dlls.20261024_230824.txt（放后面会变成无关联后缀，不能双击默认打开）
         bak = os.path.join(bb, "dlls." + time.strftime("%Y%m%d_%H%M%S") + ".txt")
         shutil.copy2(path, bak)
-        log("[备份] 原 dlls.txt → WowAbak\\模组备份\\" + os.path.basename(bak))
+        log("[备份] 原 dlls.txt → WowAbak\\" + os.path.basename(bb) + "\\" + os.path.basename(bak))
     _write_dlls_txt(path, merged)
     log("[模组] 已写入 dlls.txt：" + ", ".join(present))
     return True, "ok"
@@ -3612,6 +3611,8 @@ def _cleanup_restore(target, log):
                 continue
             n = 0
             for e in os.listdir(src_dir):
+                if tag == "模组备份" and re.match(r"^dlls\.\d{8}_\d{6}\.txt$", e):
+                    continue   # dlls.txt 走基线恢复机制，不作为散文件回拷进游戏根
                 s, d2 = os.path.join(src_dir, e), os.path.join(dst, e)
                 try:
                     os.makedirs(os.path.dirname(d2) or dst, exist_ok=True)
