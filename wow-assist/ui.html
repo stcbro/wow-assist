@@ -40,6 +40,7 @@ h3{margin:18px 0 10px;font-size:15px;color:var(--sub);font-weight:600}
 .kv.home-kv span:last-child{flex:1;text-align:center}
 .btn{background:var(--card2);color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:10px 16px;cursor:pointer;font-size:14px;transition:.15s}
 .btn:hover{border-color:var(--accent2)}
+.btn:active{transform:translateY(1px) scale(.98);filter:brightness(1.12)}
 .btn.primary{background:var(--accent);color:#06210f;font-weight:700;border:0}
 .btn.primary:hover{filter:brightness(1.08)}
 .btn.blue{background:var(--accent2);color:#fff;border:0}
@@ -109,7 +110,7 @@ th{color:var(--sub);font-weight:600;font-size:12px}
         </div>
         <div id="s-msg" style="margin-top:10px;font-size:13px;color:var(--sub)"></div>
         <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center">
-          <button class="btn primary" id="h-check" title="自动下载资源并装入模组/插件/字体，全部就绪后才能启动游戏">🔎 配置组件</button>
+          <button class="btn primary" id="h-check" title="自动下载资源并装入模组/插件/字体，全部就绪后才能启动游戏">🔧 配置组件</button>
           <button class="btn primary" id="h-launch" disabled title="请先点「配置组件」，全部完成后才能启动">▶ 启动游戏</button>
           <button class="btn danger" id="h-exit">⏻ 清理还原</button>
         </div>
@@ -123,7 +124,7 @@ th{color:var(--sub);font-weight:600;font-size:12px}
           </div>
           <div id="h-prog-steps" style="margin-top:10px;font-size:13px;color:var(--sub)"></div>
         </div>
-        <div id="h-play-log" class="log" style="margin-top:12px;display:none"></div>
+        <div id="h-play-log" class="log" style="margin-top:12px;display:none;max-height:420px"></div>
       </div>
     </section>
 
@@ -264,6 +265,18 @@ th{color:var(--sub);font-weight:600;font-size:12px}
     <section class="page" id="changelog">
       <h2>更新日志</h2>
       <div class="card grow" style="max-width:720px">
+        <div class="kv"><span class="k">v3.13 备份体系 WowAbak + 清理还原直删 + 日志带时间</span><span class="tag">开发中</span></div>
+        <div class="cl-detail">
+          · <b>备份体系升级</b>：总备份文件夹更名为 <b>WowAbak</b>（游戏根目录下），模组、插件、字体
+            各有一个备份子文件夹，按时间戳归档；旧的「插件备份」文件夹不受影响<br>
+          · <b>备份规则放宽</b>：安装前不再只备份同名冲突——游戏目录里<b>原有的一律先备份</b>
+            （模组含全部 DLL 与 dlls.txt、插件整目录、字体整个 Fonts），再装入新版<br>
+          · <b>清理还原更干脆</b>：移除已装的模组/插件/字体时<b>不再备份、直接清除</b>
+            （都是资源包装的，重新「配置组件」即可装回）；客户端原有 Fonts 仍会恢复原样<br>
+          · <b>进度日志</b>：每行带<b>时间戳</b>；日志区加高，历史记录全部保留可滚动回看<br>
+          · <b>细节</b>：「配置组件」图标换为扳手；「启动游戏」点击立即反馈；
+            模组说明文案更直观（模组加载已内置，自动注入 VfPatcher.dll）
+        </div>
         <div class="kv"><span class="k">v3.12 更名 WowAssist：数据自动迁移 + 分发渠道整理</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
           · <b>产品更名</b>：「魔兽助手」正式更名为 <b>WowAssist</b>——窗口标题、托盘提示、
@@ -464,8 +477,8 @@ function askConfirm(msg){
       + 'display:flex;align-items:center;justify-content:center';
     mask.innerHTML = '<div style="background:#171a21;border:1px solid #3a3f4b;border-radius:12px;'
       + 'padding:24px 28px 20px;max-width:430px;width:86%;box-shadow:0 14px 44px rgba(0,0,0,.55);text-align:center">'
-      + '<div style="font-size:22px;font-weight:800;color:#ff5d5d;letter-spacing:10px;margin-bottom:14px">警告</div>'
-      + '<div class="wb-msg" style="font-size:15px;font-weight:600;color:#f2f4f8;line-height:1.9;'
+      + '<div style="font-size:26px;font-weight:800;color:#ff5d5d;letter-spacing:12px;margin-bottom:16px">警告</div>'
+      + '<div class="wb-msg" style="font-size:18px;font-weight:600;color:#f2f4f8;line-height:2;'
       + 'font-family:\'Microsoft YaHei\',\'微软雅黑\',\'PingFang SC\',sans-serif;text-align:justify"></div>'
       + '<div style="margin-top:20px;display:flex;gap:14px;justify-content:center">'
       + '<button class="btn primary wb-ok" style="min-width:96px">确 定</button>'
@@ -630,10 +643,11 @@ $('#h-check').onclick = async ()=>{
 $('#h-launch').onclick = async ()=>{
   if(!state.current){ alert('请先在「首页」点「设置」选择 WoW.exe'); return; }
   if(!check_ok){ toast('请先点「配置组件」，全部完成后才能启动游戏'); return; }
-  const btn = $('#h-launch'); const old = btn.textContent;
+  const btn = $('#h-launch');
   btn.disabled = true; btn.textContent = '启动中…';
+  toast('正在启动游戏…');               // 立即反馈，不等接口返回
   const r = await api('/api/launch', {target:state.current});
-  btn.disabled = false; btn.textContent = old;
+  btn.disabled = false; btn.textContent = '▶ 启动游戏';
   toast(r.ok ? '游戏已启动' : '启动失败');
   refreshSession();
 };
@@ -672,13 +686,13 @@ async function refreshSession(p){
 // 客户端恢复初始状态；倒计时结束后回到初始界面，程序继续可用（不退出）。
 // 注意：缓存【不删】，下次配置组件可直接复用。
 $('#h-exit').onclick = async ()=>{
-  if(!(await askConfirm('确定要移除本次装入的游戏组件、恢复客户端初始状态吗？\n（被移除的模组/插件/字体会先备份到「插件备份」，不会丢失）'))) return;
+  if(!(await askConfirm('确定要移除全部已装入的模组、插件、字体，恢复客户端初始状态吗？'))) return;
   const ov = document.createElement('div');
   ov.style.cssText = 'position:fixed;inset:0;background:#0e1014;z-index:999;'
     + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px';
   ov.innerHTML = '<div style="font-size:64px;font-weight:800;color:#5ad17a" class="cd">5</div>'
     + '<div style="font-size:17px;color:#e6e9ef">正在清理还原客户端…</div>'
-    + '<div style="font-size:13px;color:#9aa3b2" class="cd-sub">游戏即将结束，本次安装的模组+插件+字体将被移除并备份到「插件备份」，恢复干净</div>';
+    + '<div style="font-size:13px;color:#9aa3b2" class="cd-sub">游戏即将结束，已安装的模组+插件+字体将被彻底移除，恢复干净客户端</div>';
   document.body.appendChild(ov);
   const cd = ov.querySelector('.cd');
   api('/api/cleanup', {target: state.current});   // 后台开始清理（不阻塞界面）
