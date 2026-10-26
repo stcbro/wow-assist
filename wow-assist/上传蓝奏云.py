@@ -420,11 +420,11 @@ def main():
     if not edge:
         print("[错误] 找不到 Edge/Chrome 浏览器")
         return 2
-    user, pwd = get_creds()
+    state = None if args.no_state else args.state
+    user, pwd = get_creds(state)
 
     from playwright.sync_api import sync_playwright
 
-    state = None if args.no_state else args.state
     ok = False
     with sync_playwright() as p:
         br = p.chromium.launch(executable_path=edge, headless=True,
