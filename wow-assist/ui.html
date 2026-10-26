@@ -264,6 +264,19 @@ th{color:var(--sub);font-weight:600;font-size:12px}
     <section class="page" id="changelog">
       <h2>更新日志</h2>
       <div class="card grow" style="max-width:720px">
+        <div class="kv"><span class="k">v3.12 更名 WowAssist：数据自动迁移 + 分发渠道整理</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          · <b>产品更名</b>：「魔兽助手」正式更名为 <b>WowAssist</b>——窗口标题、托盘提示、
+            界面标题全部换新；程序文件与资源包同步改用 wowassist 命名
+            （wowassist-v3.12.exe / wowassist_插件包.zip 等）<br>
+          · <b>数据自动迁移</b>：首次启动自动把旧数据目录 AppData\魔兽助手 整体迁移为
+            AppData\wowassist，<b>配置、下载缓存、日志全部保留</b>，已安装的模组/插件/字体无需重新配置<br>
+          · <b>兼容旧版</b>：旧版本窗口仍可被正常找回并置前；旧命名资源包在下载源中会被自动识别清理<br>
+          · <b>分发渠道整理</b>：资源包（模组/插件/字体 zip）与程序本体分开存放、各走各的下载渠道，
+            下载来源更清晰稳定<br>
+          · <b>实机验证通过</b>：真实游戏环境下完整走通「配置组件 → 启动游戏 → 模组生效」全流程，
+            重开工具正确显示「已安装(跳过)」，缓存复用正常
+        </div>
         <div class="kv"><span class="k">v3.11 持久化安装：配置幂等 + 冲突备份 + 缓存留盘</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
           · <b>模型切换</b>：从「会话覆盖层（退出即还原删缓存）」改为<b>持久化安装</b>——关闭工具后
