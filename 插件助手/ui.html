@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>魔兽助手</title>
+<style>
+:root{
+  --bg:#0e1014; --side:#15181f; --card:#1b1f29; --card2:#222735;
+  --line:#2b3140; --txt:#e6e9ef; --sub:#9aa3b2; --accent:#5ad17a;
+  --accent2:#3b82f6; --warn:#ffb84d; --danger:#ff6b6b; --radius:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--txt);font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;font-size:14px}
+.app{display:flex;height:100vh}
+.side{width:200px;background:var(--side);border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:4px}
+.brand{font-size:17px;font-weight:700;padding:6px 10px 14px;display:flex;align-items:center;gap:8px}
+.brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button{background:transparent;border:0;color:var(--sub);text-align:left;padding:11px 14px;border-radius:10px;cursor:pointer;font-size:14px;transition:.15s}
+.nav button:hover{background:var(--card);color:var(--txt)}
+.nav button.active{background:var(--card2);color:#fff;font-weight:600}
+.foot{margin-top:auto;font-size:11px;color:var(--sub);padding:8px 10px;line-height:1.5}
+.main{flex:1;overflow:auto;padding:26px 30px}
+.page{display:none;animation:fade .2s ease}
+.page.show{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+h2{margin:0 0 16px;font-size:20px}
+h3{margin:18px 0 10px;font-size:15px;color:var(--sub);font-weight:600}
+.row{display:flex;gap:14px;flex-wrap:wrap}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.grow{flex:1;min-width:260px}
+.kv{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed var(--line);font-size:13px}
+.kv:last-child{border-bottom:0}
+.kv .k{color:var(--sub)}
+/* 首页信息行：字体加大、标签不折行、显示值在本列内居中 */
+.kv.home-kv{font-size:15px}
+.kv.home-kv .k{font-size:15px;white-space:nowrap}
+.kv.home-kv span:last-child{flex:1;text-align:center}
+.btn{background:var(--card2);color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:10px 16px;cursor:pointer;font-size:14px;transition:.15s}
+.btn:hover{border-color:var(--accent2)}
+.btn.primary{background:var(--accent);color:#06210f;font-weight:700;border:0}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.blue{background:var(--accent2);color:#fff;border:0}
+.btn.ghost{background:transparent}
+.btn.sm{padding:6px 12px;font-size:12px}
+.btn.danger{border-color:var(--danger);color:var(--danger)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+input,textarea,select{background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:10px 12px;font-size:13px;font-family:inherit;width:100%}
+textarea{min-height:84px;resize:vertical}
+label{display:block;color:var(--sub);margin:10px 0 5px;font-size:12px}
+.server{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;cursor:pointer;width:170px;transition:.15s;position:relative}
+.server:hover{border-color:var(--accent2)}
+.server.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.server .nm{font-weight:600;font-size:14px}
+.server .ver{display:inline-block;margin-top:8px;font-size:11px;background:var(--card2);color:var(--sub);padding:2px 8px;border-radius:20px}
+.server .badge{position:absolute;top:10px;right:10px;font-size:10px;color:var(--accent)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+th{color:var(--sub);font-weight:600;font-size:12px}
+.tag{font-size:11px;background:var(--card2);padding:2px 8px;border-radius:20px;color:var(--sub)}
+/* 更新日志明细：全站统一一套样式（字体/颜色/行高），避免各版本条目漂移 */
+.cl-detail{padding:8px 0;color:var(--sub);font-size:13px;line-height:1.7}
+.banner{background:rgba(255,184,77,.12);border:1px solid var(--warn);color:#ffd591;border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.6;margin-bottom:16px}
+.banner b{color:var(--warn)}
+.log{background:#0a0c10;border:1px solid var(--line);border-radius:10px;padding:12px;font-family:ui-monospace,Consolas,monospace;font-size:12px;color:#bce3c4;white-space:pre-wrap;max-height:240px;overflow:auto}
+.empty{color:var(--sub);padding:14px 0}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--sub)}
+/* 插件列表：单元格不自动换行；过长的插件名/中文名省略号截断（悬停可见完整） */
+#a-list table{width:100%}
+#a-list .a-row td,#a-list thead th{white-space:nowrap}
+#a-list .a-row td.clip{max-width:215px;overflow:hidden;text-overflow:ellipsis}
+#a-list .a-group td{white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><span class="dot"></span>魔兽助手</div>
+    <div class="nav" id="nav">
+      <button data-p="home" class="active">首页</button>
+      <button data-p="servers">服务器</button>
+      <button data-p="dll">模组</button>
+      <button data-p="addons">插件</button>
+      <button data-p="fonts">字体</button>
+      <button data-p="download">下载</button>
+      <button data-p="changelog">更新日志</button>
+    </div>
+    <div class="foot">本地辅助工具 · 自研<br>不依赖任何官方服务</div>
+  </aside>
+
+  <main class="main">
+    <!-- 首页 -->
+    <section class="page show" id="home">
+      <h2>首页</h2>
+      <div class="card grow" style="max-width:760px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 22px">
+          <div class="kv home-kv"><span class="k">当前客户端</span><span id="h-path">—</span></div>
+          <div class="kv home-kv"><span class="k">当前服务器</span><span id="h-realm-name">水豚乐园</span></div>
+          <div class="kv home-kv"><span class="k">已装插件</span><span id="h-addons">—</span></div>
+          <div class="kv home-kv"><span class="k" style="white-space:nowrap">服务器地址</span><span id="h-realm">—</span></div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:12px">
+          <span style="white-space:nowrap;color:var(--sub);font-size:13px">游戏路径</span>
+          <input id="s-path" placeholder="点「设置」选择游戏根目录里的 WoW.exe" style="flex:1">
+          <button class="btn" id="s-choose" title="弹出文件选择框，找到游戏根目录里的 WoW.exe">设置</button>
+          <button class="btn" id="h-open" title="打开游戏所在文件夹，并定位到主程序">打开</button>
+        </div>
+        <div id="s-msg" style="margin-top:10px;font-size:13px;color:var(--sub)"></div>
+        <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center">
+          <button class="btn primary" id="h-check" title="自动下载资源并装入模组/插件/字体，全部就绪后才能启动游戏">🔎 配置组件</button>
+          <button class="btn primary" id="h-launch" disabled title="请先点「配置组件」，全部完成后才能启动">▶ 启动游戏</button>
+          <button class="btn danger" id="h-exit">⏻ 清理还原</button>
+        </div>
+        <div id="h-session" style="margin-top:12px;font-size:15px;font-weight:700;color:var(--sub)"></div>
+        <div id="h-progress" style="margin-top:14px;display:none">
+          <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--sub);margin-bottom:6px">
+            <span id="h-prog-msg">准备中…</span><span id="h-prog-pct">0%</span>
+          </div>
+          <div style="height:10px;border-radius:6px;background:rgba(128,128,128,.25);overflow:hidden">
+            <div id="h-prog-bar" style="height:100%;width:0%;background:var(--accent);transition:width .25s"></div>
+          </div>
+          <div id="h-prog-steps" style="margin-top:10px;font-size:13px;color:var(--sub)"></div>
+        </div>
+        <div id="h-play-log" class="log" style="margin-top:12px;display:none"></div>
+      </div>
+    </section>
+
+    <!-- 服务器 -->
+    <section class="page" id="servers">
+      <h2>服务器</h2>
+      <div class="card grow" style="max-width:460px">
+        <h3 style="margin-top:0">水豚乐园</h3>
+        <div class="kv"><span class="k">版本</span><span>客户端 1.18</span></div>
+        <div class="kv" style="align-items:flex-start"><span class="k" style="white-space:nowrap">连线地址</span><span id="s-realm" style="white-space:pre-line;line-height:1.9">—</span></div>
+        <p class="pill" style="margin-top:8px">realmlist 实时读取客户端里的 realmlist.wtf；切换服务器需手动改该文件。</p>
+      </div>
+    </section>
+
+    <!-- 插件 -->
+    <section class="page" id="addons">
+      <h2>插件</h2>
+      <div style="margin:0 0 4px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn primary sm" id="a-install">装入插件</button>
+        <button class="btn danger sm" id="a-removeall">全部移除</button>
+        <button class="btn sm" id="a-refresh">刷新</button>
+        <span id="a-apply-msg" style="font-size:12px;color:var(--sub)"></span>
+      </div>
+      <div class="row">
+        <div class="card grow">
+          <h3 style="margin-top:0">插件列表（当前客户端）</h3>
+          <div id="a-list"><span class="empty">加载中…</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 模组 -->
+    <section class="page" id="dll">
+      <h2>模组</h2>
+      <div style="margin:0 0 4px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn primary sm" id="dll-apply">装入模组</button>
+        <button class="btn sm" id="dll-refresh">刷新</button>
+        <span id="dll-apply-msg" style="font-size:12px;color:var(--sub)"></span>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <table id="dll-table">
+          <thead><tr><th style="width:42px"><input type="checkbox" id="dll-all" title="全选 / 全不选"></th><th>模组</th><th>类型</th><th>状态</th></tr></thead>
+          <tbody><tr><td colspan="4" class="empty">加载中…</td></tr></tbody>
+          <tfoot></tfoot>
+        </table>
+      </div>
+      <div id="dll-log" class="log" style="margin-top:12px;display:none"></div>
+    </section>
+
+    <!-- 字体 -->
+    <section class="page" id="fonts">
+      <h2>字体</h2>
+      <div style="margin:0 0 10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn primary sm" id="f-install">装入字体</button>
+        <button class="btn danger sm" id="f-remove">移除字体</button>
+        <button class="btn sm" id="f-open">打开目录</button>
+        <button class="btn sm" id="f-refresh">刷新</button>
+        <span id="f-apply-msg" style="font-size:12px;color:var(--sub)"></span>
+      </div>
+      <div class="card">
+        <table id="f-table">
+          <thead><tr><th style="width:34%">字体文件</th><th>用途</th><th style="width:90px">状态</th></tr></thead>
+          <tbody><tr><td colspan="3" class="empty">加载中…</td></tr></tbody>
+        </table>
+        <div id="f-log" class="log" style="margin-top:12px;display:none"></div>
+      </div>
+    </section>
+
+    <!-- 下载 -->
+    <section class="page" id="download">
+      <h2>下载</h2>
+      <div class="card" style="max-width:880px">
+        <h3 style="margin-top:0">资源管理（模组 / 插件 / 字体）</h3>
+        <div id="lz-cards"></div>
+        <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <button class="btn primary" id="lz-download-all">⬇ 一键下载全部资源</button>
+          <button class="btn blue" id="lz-sync">🔄 检查插件更新</button>
+          <span id="lz-hint" style="font-size:12px;color:var(--sub)"></span>
+        </div>
+        <div id="lz-progress" style="margin-top:14px;display:none">
+          <div style="height:8px;background:var(--card2);border-radius:4px;overflow:hidden">
+            <div id="lz-bar" style="height:100%;width:0;background:var(--accent);transition:.2s"></div>
+          </div>
+          <div id="lz-dl-msg" style="margin-top:6px;font-size:12px;color:var(--sub)"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:12px;max-width:880px">
+        <h3 style="margin-top:0">缓存管理（下载资源留盘复用）</h3>
+        <div style="font-size:12px;color:var(--sub);margin-bottom:8px">
+          关闭工具后下载缓存<b>不再删除</b>，下次配置组件可直接复用、无需重新下载；资源长期未使用会自动清理。
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
+          <input type="checkbox" id="lz-cache-on"> 启用「长期未使用自动清理」
+        </label>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px;flex-wrap:wrap">
+          <span>超过</span>
+          <input type="number" id="lz-cache-days" min="1" max="365" style="width:70px">
+          <span>天未使用则自动删除该资源缓存（默认 30 天）。</span>
+        </div>
+        <div id="lz-cache-lastused" style="margin-top:8px;font-size:12px;color:var(--sub)"></div>
+        <button class="btn primary sm" id="lz-cache-save" style="margin-top:8px">保存设置</button>
+      </div>
+      <div class="card" style="margin-top:12px;max-width:880px">
+        <h3 style="margin-top:0">资源地址</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input id="lz-fd-url" placeholder="https://xxx.lanzoum.com/b01xxxxx" style="flex:1;min-width:260px">
+          <input id="lz-fd-pwd" placeholder="提取码" style="width:110px">
+          <button class="btn primary sm" id="lz-fd-save">保存并刷新</button>
+        </div>
+        <div id="lz-fd-status" style="margin-top:8px;font-size:12px;color:var(--sub)"></div>
+        <div id="lz-fd-files" style="margin-top:8px;font-size:12px;color:var(--sub);line-height:1.8"></div>
+      </div>
+      <div class="card" style="margin-top:12px;max-width:880px">
+        <h3 style="margin-top:0">备用直链（可选 · 蓝奏云抽风时的保险）</h3>
+        <textarea id="lz-dr-text" rows="4" spellcheck="false"
+          placeholder="每行填一个文件直链，程序按文件名自动识别类型。支持腾讯云 COS / 阿里云 OSS / GitHub / 任意可下载链接。&#10;例：&#10;https://xxx.cos.ap-guangzhou.myqcloud.com/魔兽助手_模组包.zip&#10;https://xxx.cos.ap-guangzhou.myqcloud.com/魔兽助手_插件包_part1.zip"
+          style="width:100%;resize:vertical;font-family:inherit;font-size:13px;line-height:1.6;padding:8px 10px;background:var(--card2);color:var(--fg);border:1px solid var(--line);border-radius:6px;box-sizing:border-box"></textarea>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <button class="btn primary sm" id="lz-dr-save">保存直链</button>
+          <button class="btn sm" id="lz-dr-clear">清空</button>
+          <span id="lz-dr-status" style="font-size:12px;color:var(--sub)"></span>
+        </div>
+        <div id="lz-dr-info" style="margin-top:8px;font-size:12px;color:var(--sub);line-height:1.8"></div>
+      </div>
+      <div class="card" style="margin-top:12px;max-width:880px">
+        <h3 style="margin-top:0">更新清单 manifest（增量更新用）</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input id="lz-mf-url" placeholder="https://xxx.lanzoux.com/xxx" style="flex:1;min-width:260px">
+          <input id="lz-mf-pwd" placeholder="提取码" style="width:110px">
+          <button class="btn sm" id="lz-mf-save">保存</button>
+        </div>
+        <div id="lz-mf-status" style="margin-top:8px;font-size:12px;color:var(--sub)"></div>
+      </div>
+    </section>
+
+
+    <!-- 更新日志 -->
+    <section class="page" id="changelog">
+      <h2>更新日志</h2>
+      <div class="card grow" style="max-width:720px">
+        <div class="kv"><span class="k">v3.11 持久化安装：配置幂等 + 冲突备份 + 缓存留盘</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          · <b>模型切换</b>：从「会话覆盖层（退出即还原删缓存）」改为<b>持久化安装</b>——关闭工具后
+            模组/插件/字体与下载缓存都保留，下次打开显示「已安装」直接复用<br>
+          · <b>配置组件幂等</b>：点「配置组件」前先检测每类资源——已下载则不重复下载、
+            已安装则跳过并显示「已安装(跳过)」，只有缺的才下载+安装<br>
+          · <b>安装前冲突备份</b>：安装模组/插件/字体时，若游戏目录已有同名文件，先备份到
+            「插件备份」再覆盖，<b>不再直接删除你原有的文件</b>；「清理还原」也会先备份再移除<br>
+          · <b>缓存留盘 + 自动清理</b>：下载到缓存的资源关闭工具后不再删除；下载页新增
+            「缓存管理」可设置启用、保留天数（默认 30 天），超过设定天数未使用的资源缓存自动删除<br>
+          · 「清理还原」改为<b>手动</b>恢复干净客户端（不再是退出自动还原），被移除项先备份可捞回
+        </div>
+        <div class="kv"><span class="k">v3.10 内置注入器：游戏目录不再出现 VanillaFixes.exe</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          · 逆向确认：VanillaFixes.exe 唯一不可替代的作用，是在游戏初始化极早期把
+            <b>VfPatcher.dll / nampower.dll</b> 载入游戏进程；其余 7 个模组 DLL 其实是客户端
+            自带的 twloader.dll 按 dlls.txt 加载的（游戏目录 Logs\twloader.log 可查证）<br>
+          · 本程序已<b>内置注入器</b>取而代之：点「启动游戏」时直接把这两个 DLL 注入游戏进程，
+            <b>游戏根目录自始至终都不会再出现 VanillaFixes.exe</b><br>
+          · 启动游戏后界面立即响应（注入在后台完成，不卡顿）；即便注入失败也不影响游玩
+            ——客户端会按 dlls.txt 自行加载全部模组<br>
+          · 老版本残留在游戏目录里的 VanillaFixes.exe 会被自动清理
+        </div>
+        <div class="kv"><span class="k">v3.9 备用直链源（蓝奏云抽风的保险）</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          · 下载页新增<b>「备用直链」</b>：可直接粘贴任意文件直链（腾讯云 COS / 阿里云 OSS / GitHub / 自建站点都行）<br>
+          · 按<b>文件名自动识别</b>属于模组包 / 插件包分卷 / 字体包，无需手工分类；part 分卷自动按序号排列<br>
+          · 配了直链就<b>优先用直链</b>（下载更快更稳），清空后自动回落到蓝奏云文件夹<br>
+          · 资源卡片实时显示<b>当前使用的来源</b>（直链 / 蓝奏云 / 手动），识别不到的链接会列出文件名提示<br>
+          · 修复中文文件名直链无法下载的问题（链接内含中文会导致底层网络库报错，现已自动转码）
+        </div>
+        <div class="kv"><span class="k">v3.8 启动与托盘稳定性修复</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          · 修复双击 exe 时<b>黑窗口一闪而过</b>（不再创建控制台，所有子进程走无窗口模式）<br>
+          · 修复启动提示框、选择文件框<b>文字发虚</b>（启动即声明高 DPI 感知，按真实缩放渲染）<br>
+          · 修复最小化后<b>托盘图标鼠标一悬停就消失</b>（改为托盘专用线程内调度，不再跨线程操作）<br>
+          · 托盘交互修正：<b>左键</b>恢复主界面，<b>右键</b>只弹「退出」菜单<br>
+          · 修复窗口<b>不在屏幕正中</b>（按缩放比例换算居中坐标，实测偏差 0 像素；换分辨率/缩放的电脑同样居中）<br>
+          · 蓝奏云文件夹解析加<b>自动重试</b>，失败原因写入运行日志，不再一失败就直接报错
+        </div>
+        <div class="kv"><span class="k">v3.7 托盘最小化 + 插件说明修正</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          · <b>当前客户端</b>直接显示<b>客户端版本</b>（乌龟服系显示 1.18，读主程序 exe 版本自动识别）<br>
+          · 点「—」最小化 → <b>自动收进桌面右下角托盘</b>（任务栏不占位）；<b>左键点托盘图标</b>恢复主界面<br>
+          · 托盘右键菜单：<b>显示主界面 / 退出（还原客户端）</b><br>
+          · 插件用途说明<b>按最新整理的 150 条修正版</b>全面更新（名称/分类/介绍）<br>
+          · 下载页删掉「资源地址」「manifest」两张卡片里的灰色说明文字
+        </div>
+        <div class="kv"><span class="k">v3.6 首页信息重排 + 配置组件</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          · 首页两栏各自独立：<b>当前客户端 / 已装插件</b>在左，<b>当前服务器（水豚乐园）/ 服务器地址</b>在右<br>
+          · 删「设为当前」；「打开目录」改为<b>「打开」</b>并移到「设置」右侧，点击打开游戏文件夹并<b>定位 WoW.exe</b><br>
+          · 「环境检测」更名<b>「配置组件」</b>，三个按钮恢复正常大小<br>
+          · 「游戏路径」与按钮同行显示，路径框始终显示<b>完整主程序路径</b>（选完 WoW.exe 不再变回根目录）<br>
+          · 修复选完 WoW.exe 提示<b>「目录不存在」</b>的问题（程序内自动把主程序路径归一到游戏根目录）<br>
+          · 选完路径后<b>立即显示日志区</b>（含选择路径的历史记录）；资源就绪显示<b>「等待安装」</b>而非「继续安装」<br>
+          · 首页信息行<b>字体加大</b>、显示值<b>在本列居中</b>；服务器地址只显示<b>一个网址</b>（apac.capycraft.io）<br>
+          · 「设置」「打开」顺序调正（打开在设置右侧）；三个按钮<b>均匀分布</b>整行<br>
+          · 服务器页连线地址按 <b>realmlist 原格式两行显示</b>；下载页「资源文件夹（蓝奏云分享）」改为<b>「资源地址」</b>
+        </div>
+        <div class="kv"><span class="k">v3.5 设置按钮 + 操作记录</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          · 首页新增<b>「设置」</b>按钮：弹文件选择框选 WoW.exe，自动设为当前客户端<br>
+          · 删「游戏路径」行，<b>当前客户端 / 当前服务器</b>并列显示<br>
+          · 状态栏文字<b>加大加粗</b>；三个操作按钮<b>均匀分布</b><br>
+          · 日志区<b>记录启动游戏/清理还原等操作历史</b>（带时间戳）；清理还原时进度文字与实际同步
+        </div>
+        <div class="kv"><span class="k">v3.4 日志流式 + 字体页明细</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          · 环境检测日志<b>随进度逐行显示</b>，不再结束时一次性出现<br>
+          · 插件页底部提示文字已删除<br>
+          · 字体页：删「来源」行，改为<b>字体明细表（名称+用途+状态）</b>，新增<b>「打开目录」</b>按钮
+        </div>
+        <div class="kv"><span class="k">v3.3 状态与弹窗修正</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          · 环境检测进行中，状态栏不再误报"✓已装"——正在装的项显示<b>「◉安装中…」</b><br>
+          · 检测步骤列表<b>合并为一行</b>显示，更紧凑<br>
+          · 软件窗口<b>在屏幕正中</b>打开<br>
+          · 确认弹窗改为<b>居中「警告」框</b>，不再显示网址字样
+        </div>
+        <div class="kv"><span class="k">v3.2 细节打磨</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          · 插件/模组用途说明<b>只显示介绍文字</b>，不再重复插件名称<br>
+          · 侧栏顺序调整：<b>模组移到插件上面</b>（服务器之下）<br>
+          · 环境检测分步显示<b>「✓ 资源下载：完毕」</b>；安装过程中首页状态栏<b>实时同步 ✓已装</b><br>
+          · 模组页删掉「▸说明」角标和顶部说明文字；点击模组名即显示介绍
+        </div>
+        <div class="kv"><span class="k">v3.1 环境检测 + 清理还原</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          · 首页新增<b>「🔎 环境检测」</b>：自动完成资源下载+模组/插件/字体安装并逐项检查，<b>全部通过才能启动游戏</b>（启动游戏只负责启动）<br>
+          · 「退出工具」改为<b>「⏻ 清理还原」</b>：倒计时 5 秒后回到初始界面，程序继续可用；还原时模组/插件/字体<b>彻底删除</b>（不再挪回收区）<br>
+          · 插件/字体的装入、移除按钮统一移到<b>页面顶部</b>；插件删除仍挪到备份文件夹可捞回<br>
+          · 点窗口 X：界面立即消失，还原在后台完成后自动退出
+        </div>
+        <div class="kv"><span class="k">v3.0 关窗后台还原 + 永久删除</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          · 点窗口 <b>X 关闭</b>：界面立即消失，还原/清理在后台自动完成，不再卡在退出画面<br>
+          · 插件删除改为<b>永久删除</b>（不再进回收站），移除前有确认提示<br>
+          · 插件列表<b>不再自动换行</b>：过长名称省略号截断，悬停可见完整内容；删掉列表下方说明文字
+        </div>
+        <div class="kv"><span class="k">v2.9 装入插件/字体一键直装</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          · 插件页新增<b>「装入插件」</b>：插件包没下载会自动先下载再装入客户端，按钮旁实时显示下载/安装进度<br>
+          · 插件列表按<b>「本地插件（已装入）／网络插件（已下载未装入）」</b>分组展示<br>
+          · 字体页「装入字体」同样支持<b>自动下载</b>（退出工具清缓存后再次装入无需去下载页）<br>
+          · 模组/插件/字体三个「装入」按钮统一：缓存为空 → 自动下载 → 安装，全程进度可见
+        </div>
+        <div class="kv"><span class="k">v2.8 插件页状态修正</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          · 插件页改为<b>完整插件列表</b>：已安装/未安装分别标注（下载了还没装入的显示"未安装"），不再笼统标"已安装插件"<br>
+          · 【标题】列改为<b>【名称】</b>：显示插件用途说明里的中文名<br>
+          · 「装入模组」增强：缓存被清过会<b>自动先下载模组包</b>再安装，按钮旁实时显示下载进度
+        </div>
+        <div class="kv"><span class="k">v2.7 启动自检 + 退出清缓存</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          · 首页状态自检升级：模组/插件/字体<b>分别显示 ✓/✗</b>，三项全部装好才显示"已安装"；点「启动游戏」前也会自检，<b>缺任何一项都不会启动游戏</b><br>
+          · 退出工具还原后，自动删除游戏目录的「插件备份」文件夹与下载缓存（下次使用重新下载，硬盘不留残留）<br>
+          · 窗口固定 980×680（不可缩放）；首页路径显示到 WoW.exe；修复点开说明后<b>关不掉</b>的问题（再点一次即收起）
+        </div>
+        <div class="kv"><span class="k">v2.6 说明补全 + 退出直达</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          · 修复插件页<b>用途说明不显示</b>（字段名不匹配导致 150 条说明全部失配）；点插件行展开分类+用途<br>
+          · 模组页新增<b>「装入模组（按勾选）」</b>按钮：不用回首页点启动游戏，勾完立即生效；模组名旁可点开<b>用途说明</b><br>
+          · 点「⏻ 退出工具」倒计时结束后<b>自动关闭程序</b>，不再弹"是否离开网站"确认框<br>
+          · 程序窗口默认尺寸调小（980×680）
+        </div>
+        <div class="kv"><span class="k">v2.5 蓝奏云文件夹分发</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          · 下载页新增<b>资源文件夹</b>：填一个蓝奏云文件夹分享链接+提取码，程序自动列出里面全部文件，按文件名匹配模组/插件/字体分卷并下载解压；作者以后只需在文件夹里增删文件，<b>用户零配置、零更新程序</b><br>
+          · 修复蓝奏云新版下载页（反爬 CDN + apifile 域名 AJAX）直链解析；下载走阿里云盾 acw_sc__v2 自动绕过<br>
+          · 「检查插件更新」支持文件夹里的 manifest.json（增量只下载变化的插件）；原手动分卷链接保留为兜底
+        </div>
+        <div class="kv"><span class="k">v2.4 启动即玩 + 全选模组</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          · 首页去掉「一键安装」，合并进「▶ 启动游戏」：点一下自动 装模组→装插件→装字体→启动游戏，带<b>进度条和分步提示</b>（模组/插件/字体 安装中→完毕→启动游戏）；已装过则直接启动<br>
+          · 模组页「应用模组选择」改为表头<b>全选复选框</b>：点一下全选/全不选（半选状态可见），勾选自动保存，启动游戏时按勾选安装<br>
+          · 模组备份文件名改为时间戳在扩展名前（dlls.20261024_230824.txt），双击仍是文本文档
+        </div>
+        <div class="kv"><span class="k">v2.3 无窗口启动</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          · 新增「启动插件助手-无窗口.vbs」：双击后<b>不再弹黑窗口</b>，隐藏后台启动，只出浏览器界面；运行日志写在 run.log（原来的 .bat 保留，想用黑窗口照旧）<br>
+          · 新增「打开插件助手界面.url」：误关浏览器页面后双击它即可回到界面（地址 http://127.0.0.1:8766）<br>
+          · 关页面前弹确认提醒：<b>会话进行中会强烈拦截</b>；退出统一走界面「⏻ 退出工具(并还原)」按钮，防止误关导致不还原
+        </div>
+        <div class="kv"><span class="k">v2.2 字体 + 模组加载修复</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          · 新增「字体」页：整个 Fonts 文件夹随「一键安装」装入游戏根目录，退出工具时随模组+插件一起自动移除、恢复干净；也可在字体页单独装入/移除<br>
+          · 修复模组全部报 "no module handle" 无法加载：dlls.txt 改为 LF 换行（原文本写入会被转成 CRLF，导致 VanillaFixes 加载不到 DLL）；启动游戏的工作目录改为客户端根目录（等同资源管理器双击）；模组加载顺序对齐模组包原版
+        </div>
+        <div class="kv"><span class="k">v2.1 会话模式</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          · <b>会话模式</b>：首页「⚡ 一键安装」按模组页勾选装上模组+插件即可玩；退出工具（按钮/关窗/Ctrl+C）自动结束游戏并删除本次安装，客户端恢复干净；下次开工具自动重装<br>
+          · 模组页改为「勾选安装」：只列模组包内可选模组（<b>游戏自带核心引擎文件不再显示</b>），勾选即保存，一键安装/应用模组选择时生效；VanillaFixes 加载器自动带上；SUNI 四件套（SuperWoWhook/UnitXP_SP3/nampower/Interact）有标注<br>
+          · dlls.txt 自动管理：装模组自动写入、卸模组自动清理，不用手动维护<br>
+          · 首页精简：去掉 realmlist、服务器选择、正在使用、游戏配置；<b>游戏路径设置移到首页</b>；服务器页只留水豚乐园信息<br>
+          · 插件页：本地 Interface 文件夹「整体替换安装」（按插件包作者方式：先备份清空、再整包装入，不混装）
+        </div>
+        <div class="kv"><span class="k">v1.x 初版</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          · 插件安装/更新/删除/备份、自定义游戏路径、启动游戏、realmlist 显示
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const state = { targets:[], current:"", addons:[], applied:false, exe:"", ver:"" };
+// 不做 beforeunload 拦截：exe 模式点 X 会由后端自动还原并退出；
+// 点「退出工具」后端还原完自动关闭 exe，都不该再弹"是否离开网站"。
+
+async function api(path, body){
+  const opt = { method: body ? "POST" : "GET", headers:{"Content-Type":"application/json"} };  if(body) opt.body = JSON.stringify(body);
+  const r = await fetch(path, opt);
+  try { return await r.json(); } catch(e){ return {}; }
+}
+function esc(s){ const d=document.createElement('div'); d.textContent=s==null?"":s; return d.innerHTML; }
+
+// 自定义确认弹窗（替代原生 confirm）：屏幕正中、醒目"警告"标题，不带网址字样
+function askConfirm(msg){
+  return new Promise(res=>{
+    const mask = document.createElement('div');
+    mask.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;'
+      + 'display:flex;align-items:center;justify-content:center';
+    mask.innerHTML = '<div style="background:#171a21;border:1px solid #3a3f4b;border-radius:12px;'
+      + 'padding:24px 28px 20px;max-width:430px;width:86%;box-shadow:0 14px 44px rgba(0,0,0,.55);text-align:center">'
+      + '<div style="font-size:22px;font-weight:800;color:#ff5d5d;letter-spacing:10px;margin-bottom:14px">警告</div>'
+      + '<div class="wb-msg" style="font-size:15px;font-weight:600;color:#f2f4f8;line-height:1.9;'
+      + 'font-family:\'Microsoft YaHei\',\'微软雅黑\',\'PingFang SC\',sans-serif;text-align:justify"></div>'
+      + '<div style="margin-top:20px;display:flex;gap:14px;justify-content:center">'
+      + '<button class="btn primary wb-ok" style="min-width:96px">确 定</button>'
+      + '<button class="btn wb-no" style="min-width:96px">取 消</button></div></div>';
+    mask.querySelector('.wb-msg').textContent = msg;
+    const done = v => { mask.remove(); res(v); };
+    mask.querySelector('.wb-ok').onclick = ()=>done(true);
+    mask.querySelector('.wb-no').onclick = ()=>done(false);
+    document.body.appendChild(mask);
+  });
+}
+
+function nav(p){
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('show'));
+  $('#'+p).classList.add('show');
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active', b.dataset.p===p));
+  if(p==='home') loadHome();
+  if(p==='servers') loadTargets();
+  if(p==='addons') loadAddons();
+  if(p==='dll') loadMods();
+  if(p==='download') loadLanzou();
+  if(p==='fonts') loadFonts();
+}
+document.querySelectorAll('#nav button').forEach(b=> b.onclick = ()=>nav(b.dataset.p));
+
+// 从 realmlist.wtf 内容中提取 realmlist 行的服务器地址（去引号），如 apac.capycraft.io
+function realmHost(raw){
+  const m = (raw||'').match(/^set\s+realmlist\s+"?([^"\r\n]+?)"?\s*$/im);
+  return m ? m[1].trim() : '';
+}
+
+async function loadTargets(){
+  const d = await api('/api/targets');
+  state.targets = d.targets||[];
+  state.current = d.current||"";
+  state.exe = d.exe||"";
+  state.ver = d.ver||"";
+  // 路径框始终显示完整主程序路径（如 D:\game\twmoa_1181\WoW.exe），不会变回根目录
+  $('#s-path').value = state.exe || (state.current ? state.current.replace(/[\\/]+$/,'') + '\\WoW.exe' : '');
+  const rl = await api('/api/realmlist?target='+encodeURIComponent(state.current));
+  // 服务器页：按 realmlist.wtf 原格式显示（set realmlist / set patchList 两行）
+  $('#s-realm').textContent = rl.realm||'—';
+}
+
+async function loadHome(){
+  if(!state.current) await loadTargets();
+  // 当前客户端：显示客户端版本（乌龟服系显示 1.18，其余按 exe 文件版本）
+  $('#h-path').textContent = state.ver || (state.current ? '已配置' : '未设置');
+  $('#h-path').style.color = state.ver || state.current ? 'var(--accent)' : 'var(--danger)';
+  // 当前服务器：名字固定显示水豚乐园；地址只显示一个网址（realmlist 行的主机地址）
+  if(state.current){
+    const rl = await api('/api/realmlist?target='+encodeURIComponent(state.current));
+    $('#h-realm').textContent = realmHost(rl.realm) || '—';
+  } else {
+    $('#h-realm').textContent = '—';
+  }
+  if(!state.current){
+    $('#s-msg').style.color = 'var(--accent)';
+    $('#s-msg').textContent = '未检测到游戏路径：点「设置」选择 WoW.exe，或把本程序放到客户端根目录自动识别。';
+  }
+  const ad = await api('/api/addons?target='+encodeURIComponent(state.current||''));
+  state.addons = ad.addons||[];
+  $('#h-addons').textContent = (ad.addons? ad.addons.length : 0) + ' 个';
+  refreshSession();
+}
+// 显示操作历史（选路径/启动/清理还原等记录），选完路径立即展示，不用等点「配置组件」
+async function showHist(){
+  const p = await api('/api/progress');
+  const el = $('#h-play-log');
+  const lines = p.hist || [];
+  if(el && lines.length){
+    el.style.display = 'block';
+    el.textContent = lines.join('\n');
+    el.scrollTop = el.scrollHeight;
+  }
+}
+// 【设置】弹出文件选择框选 WoW.exe：选中即确定游戏根目录（程序内自动归一），并记录历史
+$('#s-choose').onclick = async ()=>{
+  const r = await api('/api/choose_exe', {});
+  if(!r || !r.ok || !r.path){
+    if(r && r.msg) toast(r.msg);
+    return;
+  }
+  const s = await api('/api/set_target', {path: r.path});
+  $('#s-msg').style.color = s.ok ? 'var(--accent)' : 'var(--danger)';
+  $('#s-msg').textContent = s.msg || (s.ok ? '已设为当前客户端' : '设置失败');
+  if(s.ok){
+    // 换了客户端 → 之前的配置结果作废，需重新「配置组件」
+    check_ok = false; setLaunchEnabled(false);
+    await loadTargets(); await loadHome(); refreshSession();
+    // 选择路径的操作已记入历史 → 直接显示日志区
+    showHist();
+  }
+};
+// 首页「启动游戏」= 安装(模组→插件→字体) + 启动游戏，带进度条和分步提示
+function renderProgress(p){
+  if(!p || p.pct===undefined) return;
+  const bar=$('#h-prog-bar'), msg=$('#h-prog-msg'), pct=$('#h-prog-pct'), steps=$('#h-prog-steps');
+  if(!bar) return;
+  pct.textContent = p.pct + '%';
+  bar.style.width = p.pct + '%';
+  msg.textContent = p.msg || p.stage || '';
+  const order = [['下载','资源下载'],['模组','模组安装'],['插件','插件安装'],['字体','字体安装']];
+  const done = p.steps || [], cur = p.stage || '';
+  steps.innerHTML = order.map(([k,label])=>{
+    let icon, txt;
+    if(done.includes(k)){ icon='<span style="color:var(--accent)">✓</span>'; txt='完毕'; }
+    else if(cur===k){ icon='<span style="color:var(--warn)">◉</span>'; txt='进行中…'; }
+    else { icon='<span style="color:var(--sub)">○</span>'; txt='等待中'; }
+    return '<span style="margin-right:22px;white-space:nowrap">'+icon+' '+label+'：'+txt+'</span>';
+  }).join('');
+}
+// 配置组件是否完成：只有全部完成才解锁「启动游戏」
+let check_ok = false;
+function setLaunchEnabled(on){
+  const b = $('#h-launch'); if(!b) return;
+  b.disabled = !on;
+  b.title = on ? '' : '请先点「配置组件」，全部完成后才能启动';
+}
+// 【配置组件】= 启动游戏的前置工作：资源下载(缺则自动下载)→模组→插件→字体，
+// 全部完成才算通过；通过后「启动游戏」才可点（启动游戏只负责启动，不再装东西）
+$('#h-check').onclick = async ()=>{
+  if(!state.current){ alert('请先在「首页」点「设置」选择 WoW.exe'); return; }
+  const btn = $('#h-check'); const old = btn.textContent;
+  btn.disabled = true; btn.textContent = '配置中…';
+  $('#h-progress').style.display = 'block';
+  renderProgress({pct:0, stage:'准备', msg:'开始配置组件…', steps:[]});
+  // 某个阶段完成时同步刷新首页状态栏（模组装完立即显示 ✓已装）
+  let prevSteps = -1, prevLogN = -1;
+  const logEl = $('#h-play-log');
+  const timer = setInterval(async ()=>{
+    const p = await api('/api/progress');
+    renderProgress(p);
+    // 日志区 = 操作历史（配置组件/启动游戏/清理还原等记录）+ 当次日志，随进度逐行显示
+    if(logEl){
+      const lines = (p.hist||[]).concat(p.log||[]);
+      if(lines.length && lines.length !== prevLogN){
+        prevLogN = lines.length;
+        logEl.style.display = 'block';
+        logEl.textContent = lines.join('\n');
+        logEl.scrollTop = logEl.scrollHeight;
+      }
+    }
+    const n = (p.steps||[]).length;
+    if(n !== prevSteps){ prevSteps = n; refreshSession(p); }   // 传进度：安装中的项显示"安装中"，不误报"已装"
+  }, 250);
+  const r = await api('/api/precheck', {target:state.current});
+  clearInterval(timer);
+  renderProgress(await api('/api/progress'));
+  btn.disabled = false; btn.textContent = old;
+  let statusStr = '';
+  if(r.status){
+    const labs = {mods:'模组', addons:'插件', fonts:'字体'};
+    statusStr = Object.keys(labs).map(k=> labs[k]+'：'+(r.status[k]? r.status[k][1] : '—')).join('　');
+  }
+  if((r.log||[]).length) showLog('#h-play-log', (r.log||[]).join('\n')+'\n'+(r.summary||'')+(statusStr?('\n'+statusStr):''));
+  check_ok = !!r.ok;
+  setLaunchEnabled(check_ok);
+  toast((r.summary || (r.ok ? '配置组件完成' : '配置未通过')) + (statusStr? ('；'+statusStr) : ''));
+  refreshSession();
+};
+$('#h-launch').onclick = async ()=>{
+  if(!state.current){ alert('请先在「首页」点「设置」选择 WoW.exe'); return; }
+  if(!check_ok){ toast('请先点「配置组件」，全部完成后才能启动游戏'); return; }
+  const btn = $('#h-launch'); const old = btn.textContent;
+  btn.disabled = true; btn.textContent = '启动中…';
+  const r = await api('/api/launch', {target:state.current});
+  btn.disabled = false; btn.textContent = old;
+  toast(r.ok ? '游戏已启动' : '启动失败');
+  refreshSession();
+};
+// 【打开】在资源管理器中打开游戏文件夹并选中主程序（WoW.exe）
+$('#h-open').onclick = ()=>{
+  const exe = (state.exe || ($('#s-path').value||'').trim());
+  api('/api/open', {select: exe, path: state.current});
+};
+
+async function refreshSession(p){
+  const d = await api('/api/session_state');
+  const el = $('#h-session'); if(!el) return;
+  // p = 环境检测/安装进行中的进度对象。安装期间磁盘上的文件是拷一半的状态，
+  // 不能按磁盘判定"已装"——只有该阶段步骤标记✓（或无安装在进行）才算装好。
+  const running = !!p && !p.done;
+  const doneSteps = (p && p.steps) || [], cur = (p && p.stage) || '';
+  const stOf = (flag, stepKey)=>{
+    if(!running) return flag ? 'ok' : 'no';
+    if(doneSteps.includes(stepKey)) return 'ok';
+    if(cur === stepKey) return 'busy';
+    return 'no';
+  };
+  const st = {
+    mods:   stOf(d.mods,   '模组'),
+    addons: stOf(d.addons, '插件'),
+    fonts:  stOf(d.fonts,  '字体'),
+  };
+  const mk = s => s==='ok'   ? '<b style="color:var(--accent)">✓已装</b>'
+              : s==='busy' ? '<b style="color:var(--warn)">◉安装中…</b>'
+              :              '<b style="color:var(--danger)">✗未装</b>';
+  const allOk = st.mods==='ok' && st.addons==='ok' && st.fonts==='ok';
+  el.innerHTML = '模组 ' + mk(st.mods) + '　插件 ' + mk(st.addons) + '　字体 ' + mk(st.fonts)
+    + (allOk ? '　<b style="color:var(--accent)">已就绪</b>' : '');
+}
+// 【清理还原】：结束游戏 + 移除本次装入的模组/插件/字体(先备份到插件备份) + 恢复 dlls.txt，
+// 客户端恢复初始状态；倒计时结束后回到初始界面，程序继续可用（不退出）。
+// 注意：缓存【不删】，下次配置组件可直接复用。
+$('#h-exit').onclick = async ()=>{
+  if(!(await askConfirm('确定要移除本次装入的游戏组件、恢复客户端初始状态吗？\n（被移除的模组/插件/字体会先备份到「插件备份」，不会丢失）'))) return;
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:#0e1014;z-index:999;'
+    + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px';
+  ov.innerHTML = '<div style="font-size:64px;font-weight:800;color:#5ad17a" class="cd">5</div>'
+    + '<div style="font-size:17px;color:#e6e9ef">正在清理还原客户端…</div>'
+    + '<div style="font-size:13px;color:#9aa3b2" class="cd-sub">游戏即将结束，本次安装的模组+插件+字体将被移除并备份到「插件备份」，恢复干净</div>';
+  document.body.appendChild(ov);
+  const cd = ov.querySelector('.cd');
+  api('/api/cleanup', {target: state.current});   // 后台开始清理（不阻塞界面）
+  for(let i=5; i>=1; i--){
+    cd.textContent = i;
+    await new Promise(r=>setTimeout(r, 1000));
+  }
+  ov.remove();
+  // 回到初始界面：解锁状态复位，进度区实时显示清理还原进度（与实际同步）
+  check_ok = false;
+  setLaunchEnabled(false);
+  $('#h-progress').style.display = 'block';
+  let finished = false;
+  const progTimer = setInterval(async ()=>{
+    const p = await api('/api/progress');
+    renderProgress(p);
+    const logEl = $('#h-play-log');
+    if(logEl){
+      const lines = (p.hist||[]).concat(p.log||[]);
+      if(lines.length){ logEl.style.display='block'; logEl.textContent = lines.join('\n'); logEl.scrollTop = logEl.scrollHeight; }
+    }
+    if(p.done && !finished){
+      finished = true; clearInterval(progTimer);
+      refreshSession();
+      toast('清理还原完成，客户端已恢复初始状态（原有文件在 插件备份 里）');
+    }
+  }, 300);
+  refreshSession();
+};
+
+// 插件用途说明（来自吉米插件包 v8.7 的 .toc Title/Notes 整理）
+const PLUGIN_INFO = {"!!!impulsebooster":{"n":"IB UI 性能提升","c":"增强","d":"优化游戏界面加载速度与整体运行性能，兼容 1.9.0 及更高版本。通过精简界面元素的绘制与事件响应，降低界面卡顿和内存占用，适合插件较多、配置较高的玩家使用。"},"!libs":{"n":"Libs 公共函数库","c":"必需依赖","d":"绝大多数插件依赖的底层公共函数库，向开发者提供大量通用接口与工具方法。属于不可禁用的基础模块，一旦禁用会导致大量插件报错或功能失效。"},"accountant":{"n":"账本","c":"商业","d":"记录玩家的每一笔收支明细，包括打怪掉落、任务奖励、拾取、购买、出售与拍卖等流水。命令 /accountant 打开账本界面，可按来源与时间段查询收支统计。"},"actionbarprofiles":{"n":"动作条保存","c":"辅助","d":"保存与加载动作条配置方案。可把当前所有动作条、物品栏与法术条布局存入多个档案，一键在不同方案间切换，适合多职业、多天赋或副本与野外场景快速换装。"},"advancedtradeskillwindow2":{"n":"扩展商业制作框体v2.1.16","c":"界面","d":"改进整合的乌龟服专业技能制作窗口。在原有专业界面基础上优化布局，合并材料清单与制作队列，可同时追踪多个订单的进度与剩余材料，减少来回翻页的次数。"},"architotem":{"n":"图腾大师","c":"职业","d":"萨满图腾管理插件。把各类图腾集中放入 4 个快捷栏位并可一键施放，支持 Ctrl+右键拖动自定义排序，命令 /at 或 /architotem 打开设置。战斗中可按目标距离自动切换对应图腾。"},"atlas":{"n":"副本地图浏览器","c":"辅助","d":"地下城副本地图浏览器。集中展示各副本的入口位置、内部布局与房间分布，便于规划跑图路线与刷本路线，减少在副本内迷路和跑冤枉路的次数。"},"atlasloot":{"n":"副本掉落查询","c":"辅助","d":"副本掉落查询工具。显示地下城、团队首领以及其他来源可能掉落的物品清单，命令 /atlasloot 打开界面，可在刷本前预先确认目标装备的获取途径。"},"atlasquest":{"n":"副本任务","c":"辅助","d":"副本任务查询与进度追踪。汇总各副本相关的任务列表与完成状态，方便安排刷本路线时同步推进任务，避免遗漏可顺带完成的任务目标。"},"attackbar":{"n":"攻击间隔计时条","c":"职业增强","d":"全职业通用攻击间隔计时条。显示自动攻击的摆动与下一次攻击倒计时，支持招架、猛击提示以及战斗中的武器交换提醒，命令 /abar 打开设置。"},"auldlangsyne":{"n":"好友备忘录","c":"辅助","d":"好友备忘工具。可为每个好友添加自定义备注，如公会职务、队伍职责或注意事项，鼠标悬停对方头像时即可查看，便于团长和指挥管理成员。"},"autobar":{"n":"消耗品动作条","c":"增强","d":"消耗品自动动作条。创建一组可自由配置的按钮，每个按钮自动从背包中寻找指定物品并使用，省去手动拖拽药水、食物到动作条的操作，适合战斗中快速补给。"},"automarker":{"n":"自动标记","c":"辅助","d":"自动标记插件。选中目标后自动为其添加标记，带有图形化配置界面，可按需调整标记规则与范围。缺德版本经过改造，游侠版本持续更新中。"},"autorepwatcher":{"n":"自动切换阵营经验条","c":"辅助","d":"自动切换阵营经验条。角色获得声望奖励时，自动把主界面的经验条切换为对应阵营的声望条，省去手动点击声望条查看的麻烦。"},"automatonex":{"n":"Automaton工具箱强化版","c":"增强","d":"Automaton 工具箱的增强版本。可自动完成磨刀石或赞扎石更换、自动下马、自动站立等重复性操作，命令 /auto 打开设置面板进行自定义。"},"aux-addon":{"n":"Aux 拍卖行","c":"界面","d":"拍卖行界面增强插件。提供更清晰的物品筛选与列表排版体验，命令 /aux theme blizzard 可将界面切换回暴雪默认的经典金色风格。"},"bauderrorframe":{"n":"BEF插件错误收集","c":"工具","d":"插件错误收集器。集中捕获并归类插件或宏在运行中抛出的报错信息，便于排查是哪一环出了问题，命令 /error 打开错误列表与设置。"},"bettercharacterstats":{"n":"角色面板属性统计","c":"界面","d":"角色面板属性统计插件。以简洁的表格形式汇总角色各项三维属性，便于在调整装备时快速对比变化幅度，判断这次改动是否值得。"},"bigwigs":{"n":"BOSS技能预警 v2.0.0","c":"团队工具","d":"团队副本核心预警插件。为各首领技能提供计时条、语音与屏幕提示，并可自定义增益、减益的图标与文字提醒。大量龟服团本模块以其为框架扩展。"},"blizzard_auctionui":{"n":"暴雪 拍卖行界面","c":"暴雪内置","d":"暴雪内置拍卖行界面模块"},"blizzard_battlefieldminimap":{"n":"暴雪 战场小地图","c":"暴雪内置","d":"暴雪内置战场小地图界面模块"},"blizzard_bindingui":{"n":"暴雪 按键设置","c":"暴雪内置","d":"暴雪内置按键绑定设置界面模块"},"blizzard_combattext":{"n":"暴雪 战斗文字","c":"暴雪内置","d":"暴雪内置战斗文字飘字界面模块"},"blizzard_craftui":{"n":"暴雪 制造界面","c":"暴雪内置","d":"暴雪内置制造订单界面模块"},"blizzard_gmsurveyui":{"n":"暴雪 问卷调查","c":"暴雪内置","d":"暴雪内置游戏内问卷界面模块"},"blizzard_inspectui":{"n":"暴雪 角色查看","c":"暴雪内置","d":"暴雪内置查看他人装备界面模块"},"blizzard_macroui":{"n":"暴雪 宏界面","c":"暴雪内置","d":"暴雪内置宏管理界面模块"},"blizzard_raidui":{"n":"暴雪 团队界面","c":"暴雪内置","d":"暴雪内置团队管理界面模块"},"blizzard_talentui":{"n":"暴雪 天赋界面","c":"暴雪内置","d":"暴雪内置天赋配置界面模块"},"blizzard_tradeskillui":{"n":"暴雪 专业技能界面","c":"暴雪内置","d":"暴雪内置专业技能界面模块"},"blizzard_trainerui":{"n":"暴雪 训练师界面","c":"暴雪内置","d":"暴雪内置训练师界面模块"},"bonusscanner":{"n":"装备属性权重计算","c":"界面增强","d":"装备属性权重扫描工具。遍历全身装备，汇总各项属性的累计数值与占比，生成装备属性权重报告。是评估配装收益与换装决策的参考依据。"},"bufftool":{"n":"BuffTool 战斗特效触发","c":"战斗","d":"战斗增益特效监控插件。监听指定增益类 Buff 的获得、叠加与结束，在屏幕给出特效提示，方便确认触发类增益是否正常生效。"},"buffalo":{"n":"Buffalo 增益减益增强","c":"界面增强","d":"增益与减益的增强显示插件。支持自由拖动所有增益、减益图标的位置与排列顺序，并可调整显示尺寸，命令 /Buffalo 打开设置。适合自定义界面布局的玩家。"},"buyemall":{"n":"批量购买","c":"商业","d":"商人处批量购买插件。打开商人界面后按住 Shift+右键物品即可一次购买 20 个以上，会依据当前金钱与背包空位自动计算最大可购数量，避免来回点击。"},"c":{"n":"C 公共函数库","c":"必需依赖","d":"一键治疗类插件的底层支持库，提供公共函数与隐藏提示框。属于依赖模块，不可独立发挥作用，需由具体的治疗插件调用其接口。"},"cat":{"n":"Cat 喵！一键宏","c":"辅助","d":"全职业一键宏整合。把各职业常用技能、物品与切换效果打包为易用的一键按钮，战斗中无需翻找动作条即可快速切换配置，适合开荒与日常刷本。"},"cat2":{"n":"Cat2 喵！一键宏","c":"辅助","d":"卡式全职业一键宏。相比基础版提供更自由的技能搭配与按钮排布方式，可按个人习惯自定义每张卡片的内容与位置。"},"catmeleeprompt":{"n":"Cat 近战指示器","c":"辅助","d":"独立的近战指示器。显示与目标的精确距离、朝向是否正确、攻击间隔计时以及当前仇恨比例，远程职业也能直观判断是否处于近战距离内。"},"catpotion":{"n":"Cat 药剂管理","c":"辅助","d":"独立的药剂管理窗口。以可点击的图标形式集中管理各类药剂与烹饪食物，支持快速切换生效中的补给品，避免在背包中翻找。"},"chatmod":{"n":"聊天增强","c":"界面增强","d":"聊天窗口与部分功能增强插件。提供更丰富的消息显示样式、聊天过滤与快捷操作，命令 /chatmod 打开设置窗口调整各项参数。"},"chatmats":{"n":"发送配方材料","c":"辅助","d":"配方材料快速分享插件。按住 Alt+左键点击任意配方，即可把该配方所需的全部材料列表一键发布到当前聊天框，方便组队时快速核对分工。"},"chronometer":{"n":"Chronometer 法术计时器","c":"辅助","d":"基于 AceTimer 的 Ace2 计时条插件。跟踪法术冷却、增益持续时间与可叠加层数，支持自定义图标、时间格式与触发条件提示。"},"craftcdreminder":{"n":"生活技能CD提醒","c":"辅助","d":"多角色生活技能冷却追踪。监控月布、奥金锭、精炼石中盐等稀有材料的制作冷却，到期自动提醒，命令 /cd 可查看所有角色的冷却状态。"},"cursive":{"n":"光环与诅咒监视","c":"模组扩展","d":"光环与诅咒监视增强插件。利用 GUID 机制在战斗中稳定显示各单位的增益、减益与诅咒状态，解决同名单位显示错乱的问题，需配合 Nampower 模组使用。"},"dpsmatex":{"n":"DPSMateX 伤害治疗统计","c":"统计","d":"核心战斗分析插件。统计每次战斗中的伤害、治疗与各技能的贡献占比，生成详细的战斗报告，是评估输出手法与配装是否合理的基础工具。"},"dpsmatexextend":{"n":"DPSMateX 扩展模块","c":"统计","d":"DPSMateX 的扩展模块。补充输出与治疗之外的统计数据，例如驱散次数、死亡记录与死亡原因分析，帮助定位团本中的意外状况。"},"dpsmatexextendmore":{"n":"DPSMateX 更多扩展","c":"统计","d":"DPSMateX 的第二个扩展模块。在基础扩展之上提供更多统计项目与更细化的数据维度，进一步丰富战斗复盘时的可用信息。"},"damageex":{"n":"增强伤害显示器(Dex)","c":"战斗","d":"伤害与治疗数值显示器。在屏幕指定位置单独显示你对当前目标造成的伤害与治疗量，与滚动战斗文字互不干扰，命令 /dex 打开设置调整位置与样式。"},"debufftimers":{"n":"减益时间监视","c":"战斗","d":"目标减益时间监视。在目标头像的减益图标上直接叠加显示剩余持续时间，便于把握斩杀时机与监控驱散窗口，命令 /DebuffTimers 打开设置。"},"decursive":{"n":"一键驱散","c":"辅助","d":"一键驱散插件。自动识别并解除全队身上的不良效果，支持按类型与优先级筛选，命令 /DCRSHOW 打开配置界面。团本合击中可显著减少驱散失误。"},"en_autoequip":{"n":"一键换装","c":"辅助","d":"一键换装插件。快速装备、更换或直接脱下身上已有的装备，适合在换装外观、临时换装战斗装或处理物品占用时快速操作。"},"eqcompare":{"n":"装备比较","c":"界面","d":"装备比较插件。当鼠标悬停于物品、聊天链接或背包中的装备时，自动与当前身上已装备的同类装备进行属性对比，无需手动切换装备查看。"},"easyunlock":{"n":"交易开锁","c":"职业增强","d":"交易与开锁辅助。在交易界面上直接显示开锁技能快捷键，一键完成专业锁箱开锁，省去切换技能栏寻找开锁法术的步骤。"},"ekbomb":{"n":"炸弹类技能警报","c":"战斗","d":"炸弹类减益的醒目警告。针对需要躲避或需要队友分散的炸弹型减益，弹出大型警告窗口提示，命令 /ekbomb 打开设置。"},"ezcombatdamagemerge":{"n":"战斗伤害合并","c":"宏与动作条","d":"战斗伤害合并统计。把短时间内同一技能的多次伤害记录合并为一条，避免刷屏式数字影响阅读，帮你快速看清每个技能的实际总伤害。"},"ezpoison":{"n":"毒药磨刀石助手","c":"辅助","d":"毒药与磨刀石助手。乌龟服专用版本，增加毒药数量显示与毒药助手面板，支持锁定与移动位置、修复缩放异常，并提供法力油等额外选项。"},"flightmap":{"n":"飞行地图","c":"地图","d":"飞行路线地图增强。在世界地图上显示各区域的推荐等级范围、飞行航线与各处飞机点的具体坐标，命令 /fmap 打开设置，便于规划跨区域赶路。"},"focusframe":{"n":"焦点头像","c":"界面","d":"焦点头像功能。Ctrl+Alt+左键点击任意单位即可快速设为焦点，点击空白处清除焦点。焦点常用于监控首领施法、Boss 换位与特殊机制。"},"focusframe_targetcastbar":{"n":"焦点施法监视","c":"界面","d":"焦点与目标施法条监视。同时显示当前目标与焦点目标的施法进度条，配合焦点头像使用可提前预判首领的技能顺序，按住 Shift+左键可移动条体位置。"},"gfw_adspace":{"n":"声望物品提示","c":"商业技能","d":"声望物品信息提示。识别银色黎明、暗月马戏团、瑟银兄弟会、木喉熊怪、赞达拉部族、塞纳里奥议会与诺兹多姆的子嗣等势力的声望物品并给出提示。"},"gfw_huntershelper":{"n":"猎人野兽技能显示","c":"职业","d":"猎人野兽技能辅助。显示可驯服野兽所拥有的全部技能列表与等级，帮助判断哪只宠物值得驯服。吊儿啷当修复版修正了原版部分显示异常。"},"goblinbrainwashinghelper":{"n":"天赋备注助手","c":"界面","d":"地精洗脑器天赋备注。可为洗脑器界面上的各个天赋添加自定义备注，例如推荐加点顺序或特殊效果说明，帮助其他玩家理解该天赋的用途。"},"hcquest":{"n":"HC任务警告","c":"辅助","d":"硬核模式任务警告。在任务描述中为 PvP 战斗任务与困难任务添加硬核死亡警告提示，提醒玩家接取前评估风险，避免一次失误导致角色永久死亡。"},"hcrank":{"n":"HC危险提示","c":"辅助","d":"硬核模式危险提示。在危险生物与敌对玩家的信息提示中显示其硬核死亡记录与危险程度评估，数据来自 hswowturtle.com 社区统计。"},"hdlraidtools":{"n":"团队BUFF监控助手","c":"团长工具","d":"团长团队的增益监控助手。支持增益自动或手动分配、分配结果全团通报、增益缺失检查与私聊通报，密语自动检查，并在最后一名死亡成员被复活后自动复查通报。"},"heart":{"n":"红心一键治疗","c":"职业增强","d":"红心一键治疗插件。提供快捷的治疗指令入口，一键为队友恢复生命，适合需要频繁快速治疗而不想翻找技能栏的场景。"},"hunterbar_feedbutton":{"n":"一键喂食按钮","c":"职业","d":"猎人宠物一键喂食按钮。点击即可给选中的宠物喂食，并支持在宠物心情低于设定值时自动喂食，省去反复检查宠物饥饿度的操作。"},"instancejournal":{"n":"副本手册 (TurtleWoW)","c":"辅助","d":"副本手册插件。重制原版《魔兽世界》的副本手册，专为乌龟服打造，收录各首领的技能机制、战术要点与掉落信息，开荒前查阅非常方便。"},"instancetimers":{"n":"追踪爆本","c":"辅助","d":"爆本时间追踪。记录每个副本的最近爆本时间与累计次数，命令 /its 查看。便于统计副本的运气与刷新周期。"},"interact":{"n":"Interact 交互增强","c":"模组扩展","d":"交互动作增强。为拾取、开门、与 NPC 对话等交互动作设置专门的快捷键，实现一键交互，需配合 Interact 模组使用。"},"lockport":{"n":"召唤助手","c":"职业","d":"术士召唤助手。可在队伍频道、团队频道或直接密语中快速召唤队友，命令 /lockport 打开界面，还可用 /lockport key 设置召唤关键字。"},"mcp":{"n":"MCP 插件管理","c":"必需依赖","d":"插件管理工具。在系统主菜单中新增“插件管理”选项，可随时加载或禁用插件并立即生效，只需点一次重新加载界面，无需退出游戏。"},"maptarget":{"n":"目标追踪（猎人）","c":"职业增强","d":"猎人小地图追踪增强。优化小地图上目标标记的显示与追踪逻辑，让猎人更稳定地掌握被追踪目标的方位与状态。"},"masterlootbyclass":{"n":"MasterLootByClass 队长分配","c":"团长工具","d":"团长分配菜单增强。替换默认的队长分配下拉菜单，支持按职业排序以便快速对应需求，分配后自动向团队通报并留存分配记录，命令 /mlbc 或点击小地图按钮。"},"meeting":{"n":"集合石","c":"辅助","d":"集合石组队工具。帮助你找到合适的队伍，可查看并加入当前的集合石招募信息，找队友时省去手动翻找的麻烦。"},"mikscrollingbattletext":{"n":"MSBT 滚动战斗文字","c":"战斗","d":"滚动战斗文字。战斗数值在人物模型周围滚动显示，便于观察的同时不遮挡界面中心，与 DamageEx 等固定位置显示方式可二选一，命令 /msbt 打开设置。"},"mikscrollingbattletextoptions":{"n":"MSBT 滚动战斗文字设置","c":"战斗","d":"MSBT 滚动战斗文字的设置模块。采用按需加载方式提供字体、颜色、位置、过滤与触发条件等详细选项。"},"minimapbuttoncollector":{"n":"小地图按钮收藏器","c":"辅助","d":"小地图按钮收藏器。自动收集各插件散落在小地图上的按钮并集中整理到统一的按钮栏中，命令 /mbc 打开设置面板调整收纳方式。"},"missingtradeskillslist":{"n":"缺失技能清单","c":"商业技能","d":"缺失技能清单。列出当前还没有学会的商业配方，并提示可以到哪里获取（对应商人、可否从拍卖行购买等），方便规划补齐技能路线。"},"modernmapmarkers":{"n":"乌龟服地图标记","c":"地图","d":"乌龟服地图标记。在地图上标出所有副本、团本、世界 BOSS、飞艇、船只与地铁的位置及相关信息，命令 /mmm 打开设置，点击副本图标可直接跳转掉落查询。"},"movableframes":{"n":"界面元素自由拖动","c":"辅助","d":"界面元素自由拖动。让暴雪默认界面中的血条、快捷栏、状态框等元素都可通过拖拽移动位置，按住某键可锁定防误触。"},"nampowersettings":{"n":"Nampower设置","c":"模组扩展","d":"Nampower 模组的配套设置工具。可按自身网络状况与使用习惯调整模组内部的各种参数，如同步频率与显示方式，需配合 Nampower 模组使用。"},"niubimacro":{"n":"牛逼宏","c":"宏与动作条","d":"超级宏扩展插件。突破暴雪 256 字符的宏长度限制，支持更长的宏文本与图标文字混排，可自由组合多个宏的条件判断逻辑。"},"notgrid":{"n":"NotGrid 团队血条","c":"团队","d":"团队血条框架美化。重新设计团队血条的外观与信息布局，显示更清晰的状态，命令 /ng 或 /notgrid 打开设置。"},"onebag":{"n":"背包整合","c":"界面增强","d":"背包整合显示。把身上携带的所有背包合并到一个界面中统一查看与管理，避免逐个打开背包翻找物品。"},"onebank":{"n":"银行整合","c":"界面增强","d":"银行整合显示。将银行内的所有背包合并到一个界面统一管理，减少在银行与背包之间来回切换的操作。"},"onering":{"n":"钥匙链整合","c":"界面增强","d":"钥匙链整合插件。把身上的所有钥匙、钱袋与容器集中到一个界面查看，一眼看清还缺哪些钥匙与袋子。"},"oneview":{"n":"离线仓库查看","c":"界面增强","d":"离线仓库查看。用于查看离线状态下其他角色的背包与银行内容，方便整理跨角色共用物品与核对收藏进度。"},"outfitter":{"n":"自动一键换装","c":"辅助","d":"场景化自动换装。可为特定场景预设换装方案，例如坐骑、银色黎明活动与各类变身形态，进入对应场景后自动完成整套换装。"},"pallypower":{"n":"祝福助手","c":"职业","d":"圣骑祝福辅助插件。自动判断应给哪些目标施加祝福、并在合适时机施放，减少手动点击带来的祝福覆盖问题。"},"partybuffs":{"n":"队友BUFF显示","c":"辅助","d":"队友增益显示。显示队友与宠物的全部增益与减益图标，并在其血条上直接显示血量百分比，命令 /pb 打开设置。"},"pizzaworldbuffs":{"n":"世界buff跟踪计时","c":"辅助","d":"世界增益追踪计时。在世界地图上标出各营地帐篷、龙头与暗影马戏团等世界 Buff 的位置，并显示剩余刷新时间，方便安排跑图路线。"},"playerlinkenhance":{"n":"头像右键菜单增强","c":"界面","d":"头像右键菜单增强。允许直接右击敌对阵营玩家的头像进行私聊或公会邀请，省去先加好友再操作的繁琐步骤。"},"powerauras":{"n":"PowerAuras 光环提示","c":"战斗","d":"增益与减益特效提示。以动画图标的形式可视化显示 Buff 与 Debuff 的获得、叠加和消失，命令 /powa 打开设置自定义触发效果。"},"qingtongji":{"n":"QingTongJi 轻统计","c":"辅助","d":"轻量统计插件。记录击杀数、经验、金币、掉落与声望等日常数据，命令 /qtj 查看，资源占用低，适合长期挂机收集数据。"},"questrepeat":{"n":"重复任务助手","c":"辅助","d":"重复任务助手。自动重复提交并接取同类任务，同时自动领取完成奖励，适合需要反复刷某一类重复任务时使用。"},"quickheal":{"n":"快速治疗","c":"治疗","d":"快速治疗插件。面向队伍与团队成员提供快捷的治疗指令入口，一键下达治疗，省去在技能栏中翻找治疗技能的过程。"},"quickpocket":{"n":"便捷口袋（传送&小工具）","c":"宏与动作条","d":"便捷口袋菜单。整合了各种常用工具、传送点与职业制造物品的快捷入口，命令 /QP 打开菜单后可快速调用，减少记忆各类传送与工具命令的成本。"},"rdbitems":{"n":"物品出售价格显示","c":"界面","d":"物品出售价格显示。在物品信息下方直接标出该物品出售给 NPC 能得到多少金币，方便对比拍卖行价格与直接出售的收益。"},"raidcheck":{"n":"BUFF药剂检查","c":"团队工具","d":"团队增益与药剂检查。统计全团成员的增益、药剂与各类状态是否到位，命令 /rc 呼出检查结果，开荒前点名与收尾前核查非常实用。"},"raidprogress":{"n":"副本进度检查 v2.1","c":"团队工具","d":"副本进度检查。查看所有角色的副本进度与完成情况，命令 /rp 或点击小地图按钮。表格化界面便于横向对比各角色进度。"},"rangecontroller":{"n":"信息范围调节","c":"辅助","d":"战斗记录范围调节。调整 DPS 统计等插件的数据采集范围，范围越小资源占用越低，适合低配电脑；命令 /FW 打开设置。"},"rollplus":{"n":"Roll点框架增强","c":"界面","d":"拾取点框架增强。Roll 点框架中直接显示需要、贪婪与放弃的玩家数量和角色名，让需求分配一目了然，减少口头确认的失误，命令 /RollPlus 打开设置。"},"stsmmayor":{"n":"斯坦索姆镇长·自动换盾","c":"职业增强","d":"盾牌耐久自动更换。把备用盾牌放在背包前 8 个格子中，插件会检测当前盾牌耐久并在耗尽前自动更换，命令 /STSM 开启或关闭。"},"s_actioncount":{"n":"技能上显示材料数量","c":"界面增强","d":"技能材料数量提示。在技能图标上直接叠加显示制作该物品所需材料的当前持有数量，一眼看出材料是否充足。"},"s_alreadyknown":{"n":"已学配方变色","c":"界面增强","d":"已学配方变色。在拍卖行与商人处，把你已经学会的配方高亮显示为绿色，避免重复购买已掌握的配方浪费金币。"},"s_cdrange":{"n":"冷却计时与距离染色","c":"界面增强","d":"冷却计时与距离染色。动作条技能上显示冷却倒计时，并按目标与你的实际距离对技能图标染色提示，方便判断技能是否够得着。"},"s_castbar":{"n":"简易施法条","c":"界面增强","d":"简易施法条。提供可拖动位置的施法条显示，支持同时显示多条施法条，弥补暴雪默认施法条位置固定的不足。"},"s_chatbar":{"n":"聊天快捷按钮-简洁","c":"界面增强","d":"聊天快捷按钮。以简洁风格提供聊天栏常用功能按钮，可快速切换频道与调用常用命令；按住 Shift 点击骰子位置可移动窗口，按 Tab 键循环切换频道。"},"s_fish":{"n":"钓鱼助手","c":"界面增强","d":"钓鱼助手。装备鱼竿后右键快速抛竿，已抛竿时双击右键快速收竿，并自动关闭游戏音乐，避免钓鱼时背景音乐干扰。"},"s_itemtip":{"n":"物品信息增强","c":"界面增强","d":"物品信息增强插件。在物品提示中额外显示背包与银行内的持有数量、装备评分（装等）、副职业需求、参考售价、物品类型、最大堆叠数量与物品 ID 等信息，方便换装决策与核对材料。"},"s_worldmap":{"n":"世界地图增强","c":"界面增强","d":"世界地图增强。按住 Shift+滚轮可调整世界地图的透明度，按住 Ctrl+滚轮可缩放地图大小，方便在查看大地图时看清细节。"},"shaguplatesx":{"n":"ShaguPlatesX 姓名板","c":"界面","d":"姓名板插件。提供功能丰富的目标姓名板，支持在姓名板上显示施法条、职业颜色、增益状态与威胁值等信息，命令 /sp 或 /spx 打开设置。"},"silverdragonradar":{"n":"银龙稀有雷达","c":"辅助","d":"稀有怪雷达。内置预设的稀有生物扫描清单，并支持自定义监控名单，在接近时于小地图给出提示，命令 /sdr 或小地图菜单调整设置。"},"simpledps":{"n":"简易输出统计","c":"统计","d":"简易 DPS 统计。以轻量方式显示各技能的伤害占比与总输出，适合只想快速看一眼伤害构成、不需要复杂图表的玩家，命令 /sdps 或 /simpledps。"},"simplewhisper":{"n":"简单密语","c":"辅助","d":"简单密语插件。提供简洁易用的密语面板，切换对话对象方便，适合需要频繁私聊沟通但不想面对复杂界面的玩家。"},"skiperror":{"n":"错误屏蔽","c":"工具","d":"插件错误屏蔽。自动跳过插件抛出的报错弹窗，适配 Mini Timer、XY 等插件，排查问题时可临时禁用以确认报错来源。"},"smartloot":{"n":"SmartLoot 拾取增强","c":"拾取","d":"拾取增强。拾取物品后自动向说、队、团或公会频道通报物品名称与品质，通报窗口始终跟随鼠标位置，命令 /sl 或 /smartLoot 打开设置。"},"specialtalent":{"n":"天赋模拟器","c":"界面","d":"天赋模拟器。经由 Sunelegy 大幅改进优化的天赋框架，可切换并对比不同天赋配装下的属性与收益，装备更换前先在框架里试算一遍。"},"spiritsenserec":{"n":"灵应录","c":"辅助","d":"灵应录。把可疑玩家记录到名单后，队伍或团队中一旦侦测到该玩家就会给出屏幕提醒并向团队通报，命令 /radd 管理记录名单。"},"statcompare":{"n":"属性统计","c":"界面","d":"装备属性统计与对比。显示当前装备提供的各项属性数值，并可与其他玩家的属性做对比，左键小地图图标打开配置窗口，右键打开装备集窗口，命令 /statc。"},"supermacro":{"n":"超级宏","c":"辅助","d":"超级宏。突破暴雪 256 字符长度限制，可在一个宏中写入更长内容，并支持条件判断与图标文字混排。"},"twthreat":{"n":"仇恨统计","c":"团队工具","d":"仇恨统计插件。乌龟服专用版本，记录团队中各成员的仇恨数值与仇恨比例，命令 /TWT 打开界面，用于核对坦克是否拉住仇恨。"},"tankbuddyenh":{"n":"坦克助手","c":"职业增强","d":"坦克助手。嘲讽被抵抗时向队伍发送消息提示，破斧、盾墙、生命宝石与群嘲等技能开启后同样向队伍通报，命令 /tb 或 /tankbuddy 打开设置。"},"targetassassin":{"n":"目标刺客","c":"战斗","d":"目标刺客。完整呈现当前选中目标的距离、朝向是否正确以及当前仇恨比例，命令 /TA 打开设置，适合远程职业监控站位与仇恨。"},"targetdistance":{"n":"精确距离显示","c":"辅助","d":"精确距离显示。基于 TurtleWoW 显示与目标的精确距离数值，需先打开 unitXp 模组，命令 /tdis option 打开设置。"},"tmog":{"n":"Tmog 幻化试衣间","c":"界面","d":"幻化试衣间。添加幻化物品浏览器，并在游戏物品提示框中显示你的幻化收藏信息，方便查看收集进度与搭配外观。"},"tradeskillsdata":{"n":"商业技能数据库","c":"商业技能","d":"商业技能数据库。收录各职业配方的完整信息、对应商人与材料来源，查询配方时可直接看到去哪里学习、能否从拍卖行购买。"},"tradeskillsdata-turtle":{"n":"商业技能数据库（乌龟服版）","c":"商业技能","d":"TradeSkillsData 的乌龟服扩展数据。在原版数据库基础上补全新职业、新配方与乌龟服特有的材料信息，与主库配合使用。"},"trainer":{"n":"乌龟服地图标记-训练师","c":"地图","d":"训练师地图标记。在地图上标出所有职业训练师的位置与相关信息，命令 /Trainer 打开设置，方便规划升级路线时顺路学技能。"},"trinketmenu":{"n":"饰品管理","c":"可选","d":"饰品管理。在独立窗口中显示当前已装备的两个饰品，可右键进行快捷操作与切换，命令 /trinket 打开设置。"},"turtlemail":{"n":"乌龟服邮箱增强","c":"界面","d":"乌龟服邮箱增强。为邮箱增加更清晰的邮件列表显示与便捷操作，日志记录功能默认关闭，需要时用 /tm log 命令开启。"},"turtle_general":{"n":"乌龟服通用模块","c":"乌龟服专用","d":"乌龟服客户端的通用功能模块，为插件包内其他模块提供底层支持。属于乌龟服定制组件，没有独立的公开说明文档。"},"turtle_groupui":{"n":"乌龟服团队界面","c":"乌龟服专用","d":"乌龟服客户端的队伍与团队界面增强模块，优化了组队面板与团队框架的显示。属于乌龟服定制组件，没有独立的公开说明文档。"},"undressbutton":{"n":"试衣间","c":"界面","d":"试衣间增强。试穿装备时显示更加直观，并能预览其他种族的试穿效果，按住 Ctrl+左键点击装备即可快速试穿。"},"unitxp_sp3_addon":{"n":"UnitXP SP3 设置","c":"模组扩展","d":"UnitXP SP3 模组的配套设置工具。可按个人喜好调整该模组带来的各项功能与参数，需配合 UnitXP 模组使用。"},"warmup":{"n":"启动信息监视","c":"界面增强","d":"启动信息监视。显示所有插件的内存占用情况，并可查询角色相关信息，命令 /WU 查看，用来定位内存大户与排查加载缓慢问题。"},"webdkp":{"n":"WebDKP DKP 统计","c":"团长工具","d":"DKP 记录与统计工具。记录团队每次副本的收益与花销并生成报表，建议团长使用，是核算分配的主要依据。"},"wowtranslate":{"n":"聊天翻译","c":"聊天","d":"实时聊天翻译。为 1.12 客户端提供聊天内容的实时互译，跨服或国际服交流时可直接读懂对方语言。"},"wowradio":{"n":"内置电台","c":"娱乐","d":"内置电台与本地音乐播放。内置 FM 音乐电台并支持播放本地音乐文件，边玩魔兽边听歌，命令 /WRSHOW 打开设置。"},"wushuangloot":{"n":"无双交互","c":"模组扩展","d":"无双交互增强。为无双（Wushuang）交互插件提供快捷键设置入口，也可通过小地图自定义按钮，命令 /无双交互 打开。"},"xrs":{"n":"团队增益状态检查","c":"团长工具","d":"团队增益状态检查。检查团队成员的增益等关键数据状态，缺失时给出提示，建议团长在开荒前与收尾时使用。"},"xytracker":{"n":"XyTracker 许愿与拍卖","c":"团队工具","d":"许愿监视与拍卖模块。记录团队成员的许愿内容与最终出分情况，在团队频道输入 xy 加空格加许愿内容即可登记。"},"crazytarget":{"n":"疯狂目标","c":"辅助","d":"疯狂目标。用于刷怪与跑酷场景的目标监视插件，追踪指定的挑战目标，帮助判断当前进度与是否达成条件。"},"diminfo":{"n":"diminfo 信息条","c":"界面","d":"玩家信息条。在屏幕上常驻显示当前角色的部分关键信息，方便随时查看而不必切换界面。"},"pfquest":{"n":"pfQuest 任务助手","c":"任务","d":"任务助手与数据库。轻量化的任务辅助工具，可查询任务目标、需求物品、经验奖励与相关掉落，并按等级与区域筛选任务。"},"pfquest-turtle":{"n":"pfQuestDB 任务数据库（乌龟服版）","c":"任务","d":"pfQuest 的乌龟服任务数据库。由 Wind、呲不鸟与 Sunelegy 共同汉化，并由旧德二世补全新版任务数据，完全免费，请勿在第三方渠道购买。"},"stopmoving":{"n":"增益状态判断函数","c":"辅助","d":"增益状态判断函数。按名称检查指定的 Buff 或 Debuff 是否处于活动状态，并返回其在图标列表中的索引，供其他插件调用以实现条件触发。"},"zui":{"n":"zUI 现代化界面","c":"界面增强","d":"现代化界面插件。在保留暴雪原有设计风格的前提下融入现代元素，并加入多项实用功能，可作为整套界面的基础框架使用。"}};
+
+async function loadAddons(){
+  if(!state.current){ await loadTargets(); }
+  if(!state.current){ $('#a-list').innerHTML='<span class="empty">请先在「首页」设置游戏路径</span>'; return; }
+  const d = await api('/api/addons?target='+encodeURIComponent(state.current));
+  state.addons = d.addons||[];
+  // 合并缓存包目录：下载了但未装入的插件也列出来（状态"未安装"），不再只看客户端
+  let catalog = [];
+  try{ const c = await api('/api/addons_catalog'); if(c.ready) catalog = c.plugins||[]; }catch(e){}
+  const instMap = {};
+  state.addons.forEach(a=>{ instMap[(a.dir||'').toLowerCase()] = a; });
+  const allNames = [...new Set([
+    ...state.addons.map(a=>a.dir||''),
+    ...catalog
+  ])];
+  // 分组：本地插件（已装进客户端）排前，网络插件（已下载未装入）排后
+  const localNames = allNames.filter(n=>instMap[n.toLowerCase()])
+    .sort((x,y)=>x.toLowerCase().localeCompare(y.toLowerCase()));
+  const remoteNames = allNames.filter(n=>!instMap[n.toLowerCase()])
+    .sort((x,y)=>x.toLowerCase().localeCompare(y.toLowerCase()));
+  if(!allNames.length){ $('#a-list').innerHTML='<span class="empty">客户端暂无插件；缓存包也未下载（点「装入插件」会自动下载并装入）</span>'; return; }
+  const groupRow = (label, n)=>`<tr class="a-group"><td colspan="5" style="background:var(--card2);font-weight:700;font-size:12px;letter-spacing:1px;color:var(--sub);padding:6px 10px">${esc(label)}（${n} 个）</td></tr>`;
+  const pluginRow = (nm)=>{
+    const a = instMap[nm.toLowerCase()];
+    const installed = !!a;
+    // 名称：优先插件用途说明里的中文名，其次 .toc 标题
+    const info = PLUGIN_INFO[nm.toLowerCase()];
+    const disp = (info && info.n) || (a && a.title) || '';
+    const cat = info && info.c ? `<span class="tag" style="color:var(--accent)">${esc(info.c)}</span>` : '';
+    const st = installed
+      ? '<span style="color:var(--accent)">已安装</span>'
+      : '<span style="color:var(--sub)">未安装</span>';
+    const detail = info
+      ? `<tr class="a-detail" data-for="${esc(nm)}" style="display:none"><td colspan="5" style="background:var(--card2);border-radius:8px;line-height:1.7;text-indent:2em">${esc(info.d||'')}</td></tr>`
+      : '';
+    return `<tr class="a-row" data-n="${esc(nm)}" ${info?'title="点击查看用途说明" style="cursor:pointer"':''}><td class="clip" title="${esc(nm)}">${esc(nm)}</td><td class="clip" title="${esc(disp)}">${esc(disp)}</td><td>${cat}</td><td>${st}</td>`
+      + `<td>${installed?`<button class="btn sm danger" data-n="${esc(nm)}">移除</button>`:''}</td></tr>` + detail;
+  };
+  $('#a-list').innerHTML = `<table><thead><tr><th>插件</th><th>名称</th><th>分类</th><th>状态</th><th></th></tr></thead><tbody>`
+    + (localNames.length ? groupRow('本地插件 · 已装入客户端', localNames.length)
+        + localNames.map(pluginRow).join('') : '')
+    + (remoteNames.length ? groupRow('网络插件 · 已下载未装入（点「装入插件」安装）', remoteNames.length)
+        + remoteNames.map(pluginRow).join('') : '')
+    + `</tbody></table>`;
+  document.querySelectorAll('#a-list .danger').forEach(b=> b.onclick=async()=>{
+    if(!(await askConfirm('移除 '+b.dataset.n+'？\n会挪到备份文件夹，可手动捞回'))) return;
+    await api('/api/uninstall_one', {target:state.current, name:b.dataset.n});
+    loadAddons();
+  });
+  document.querySelectorAll('#a-list .a-row').forEach(r=> r.onclick=(e)=>{
+    if(e.target.closest('button')) return;
+    const d = document.querySelector('#a-list .a-detail[data-for="'+(window.CSS&&CSS.escape?CSS.escape(r.dataset.n):r.dataset.n)+'"]');
+    if(d) d.style.display = (d.style.display === 'none') ? '' : 'none';
+  });
+}
+$('#a-removeall').onclick = async ()=>{
+  if(!(await askConfirm('全部移除？\n客户端里的插件会挪到备份文件夹（可捞回），客户端自带的除外'))) return;
+  const r = await api('/api/uninstall_all', {target:state.current});
+  showLog('#a-log', (r.log||[]).join('\n')+'\n'+(r.summary||''));
+  loadAddons();
+};
+// 装入插件：缓存未下载会自动先下载，再把插件包整体装入客户端（同首页「启动游戏」的插件步骤）
+$('#a-install').onclick = async ()=>{
+  if(!state.current){ alert('请先在「首页」设置游戏路径'); return; }
+  const btn=$('#a-install'); btn.disabled=true; const old=btn.textContent; btn.textContent='装入中…';
+  $('#a-apply-msg').textContent = '';
+  const timer = setInterval(async ()=>{
+    try{
+      const p = await api('/api/progress');
+      if(p && p.stage==='下载') $('#a-apply-msg').textContent = p.msg || '下载中…';
+      else if(p && p.stage==='插件') $('#a-apply-msg').textContent = p.msg || '安装中…';
+    }catch(e){}
+  }, 500);
+  const r = await api('/api/addons_install', {target:state.current});
+  clearInterval(timer);
+  btn.disabled=false; btn.textContent=old;
+  $('#a-apply-msg').textContent = r.summary || (r.ok?'完成':'失败');
+  toast(r.summary || (r.ok?'插件已装入':'操作失败'));
+  loadAddons(); loadHome();
+};
+$('#a-refresh').onclick = loadAddons;
+// 模组用途说明（key = 模组包里的 dll 文件名小写）
+const MOD_INFO = {
+  "superwowhook.dll":   {n:"超级魔兽核心（SUNI）", d:"乌龟服增强模组的基础库，为 1.12 客户端扩展单位信息接口（目标血/蓝量数值等），大量增强功能依赖它，建议保持勾选。"},
+  "unitxp_sp3.dll":     {n:"超视距增强（SUNI）", d:"解除单位名字与血条的默认显示距离限制，远处目标也能看到名字条；另提供 /distance 命令测量与目标的距离。"},
+  "nampower.dll":       {n:"施法信息增强（SUNI）", d:"显示敌方施法条与施法进度、被打断提示等战斗信息，打副本/PK 时能提前判断对方在读什么法术。"},
+  "interact.dll":       {n:"远程交互（SUNI）", d:"配合宏实现与较远目标交互（远处拾取、对话、交易等），减少跑位操作。"},
+  "no1600x1200.dll":    {n:"分辨率解锁", d:"解除客户端 1600x1200 的最大分辨率限制，可在视频选项里选择更高的分辨率。"},
+  "vfpatcher.dll":      {n:"客户端补丁模块", d:"给客户端打补丁（内存、渲染与计时器修复），由本程序内置注入器在游戏启动时自动载入，无需单独操作。"},
+  "transmogfix.dll":    {n:"幻化修复", d:"支持乌龟服幻化功能的客户端修复模块，幻化装备外观异常时需要它。"},
+  "wowtranslate.dll":   {n:"汉化模块", d:"客户端文本翻译支持模块，游戏内中文化所需。"},
+  "wsloot.dll":         {n:"掉落增强", d:"怪物掉落信息相关增强与修复。"}
+};
+async function loadMods(){
+  if(!state.current) await loadTargets();
+  const tfoot = $('#dll-table tfoot');
+  if(!state.current){ $('#dll-table tbody').innerHTML='<tr><td colspan="4" class="empty">请先在「首页」设置游戏路径</td></tr>'; if(tfoot) tfoot.innerHTML=''; return; }
+  const d = await api('/api/mods?target='+encodeURIComponent(state.current));
+  if(!d.ok){ $('#dll-table tbody').innerHTML='<tr><td colspan="4" class="empty">'+esc(d.msg||'模组包无效')+'</td></tr>'; if(tfoot) tfoot.innerHTML=''; return; }
+  if(!d.mods.length){ $('#dll-table tbody').innerHTML='<tr><td colspan="4" class="empty">模组包里没有可选模组</td></tr>'; if(tfoot) tfoot.innerHTML=''; return; }
+  $('#dll-table tbody').innerHTML = d.mods.map(m=>{
+      const info = MOD_INFO[(m.name||'').toLowerCase()];
+      const detail = info
+        ? `<tr class="m-detail" data-for="${esc(m.name)}" style="display:none"><td colspan="4" style="background:var(--card2);border-radius:8px;line-height:1.7;text-indent:2em">${esc(info.d)}</td></tr>`
+        : '';
+      return `<tr class="m-row" data-n="${esc(m.name)}" ${info?'title="点击查看用途说明" style="cursor:pointer"':''}>
+      <td><input type="checkbox" data-n="${esc(m.name)}" ${m.selected?'checked':''}></td>
+      <td>${esc(m.name)} ${m.group?`<span class="tag" style="color:var(--accent);border:1px solid var(--accent)">${esc(m.group)}</span>`:''}${m.missing?' <span class="tag" style="color:var(--warn)">缺失</span>':''}</td>
+      <td>${m.group==='SUNI'?'<span class="tag">SUNI 增强</span>':'<span class="tag">增强模组</span>'}</td>
+      <td>${m.installed?'<span style="color:var(--accent)">已安装</span>':'<span style="color:var(--sub)">未安装</span>'}</td>
+    </tr>` + detail;
+    }).join('');
+  const l = d.loader;
+  if(tfoot) tfoot.innerHTML = l ? `<tr><td>—</td><td>${esc(l.name)} <span class="tag" style="color:var(--warn)">加载器</span></td><td><span class="tag">启动器</span></td><td>${l.installed?'<span style="color:var(--accent)">已安装</span>':'<span style="color:var(--sub)">未安装</span>'}</td></tr>`
+    + (l.desc ? `<tr><td colspan="4" style="color:var(--sub);font-size:12px">${esc(l.desc)}</td></tr>` : '') : '';
+  syncSelectAll();
+  // 点击模组行展开/收起用途说明（点复选框除外）
+  document.querySelectorAll('#dll-table .m-row').forEach(r=> r.onclick=(e)=>{
+    if(e.target.closest('input')) return;
+    const dt = document.querySelector('#dll-table .m-detail[data-for="'+(window.CSS&&CSS.escape?CSS.escape(r.dataset.n):r.dataset.n)+'"]');
+    if(dt) dt.style.display = (dt.style.display === 'none') ? '' : 'none';
+  });
+}
+// 装入模组：按当前勾选立即把模组装进/移出客户端（不用回首页点启动游戏）。
+// 缓存被清过会自动先下载模组包，按钮旁实时显示下载进度。
+$('#dll-apply').onclick = async ()=>{
+  if(!state.current){ alert('请先在「首页」设置游戏路径'); return; }
+  const btn=$('#dll-apply'); btn.disabled=true; const old=btn.textContent; btn.textContent='装入中…';
+  $('#dll-apply-msg').textContent = '准备中…';
+  const timer = setInterval(async ()=>{
+    try{
+      const p = await api('/api/progress');
+      if(p && p.stage==='下载') $('#dll-apply-msg').textContent = p.msg || '下载中…';
+    }catch(e){}
+  }, 500);
+  const r = await api('/api/mods_apply', {target:state.current});
+  clearInterval(timer);
+  btn.disabled=false; btn.textContent=old;
+  showLog('#dll-log', (r.log||[]).join('\n')+'\n'+(r.summary||''));
+  $('#dll-apply-msg').textContent = r.summary || (r.ok?'完成':'失败');
+  toast(r.summary || (r.ok?'模组已更新':'操作失败'));
+  loadMods(); loadHome();
+};
+// 同步表头「全选」方框状态：全勾=打钩 / 部分勾=半选 / 没勾=空
+function syncSelectAll(){
+  const all = $('#dll-all'); if(!all) return;
+  const boxes = [...document.querySelectorAll('#dll-table tbody input[type=checkbox]')];
+  const n = boxes.filter(b=>b.checked).length;
+  all.checked = boxes.length>0 && n===boxes.length;
+  all.indeterminate = n>0 && n<boxes.length;
+}
+// 勾选即保存：下次首页「启动游戏」时按勾选安装
+$('#dll-table').addEventListener('change', async (e)=>{
+  const cb = e.target;
+  if(!cb || cb.type!=='checkbox') return;
+  if(cb.id === 'dll-all') return; // 全选方框走下面的专门处理
+  await api('/api/mod_select', {name: cb.dataset.n, selected: cb.checked});
+  syncSelectAll();
+});
+// 全选 / 全不选：一键切下面所有模组勾选并保存
+$('#dll-all').addEventListener('change', async (e)=>{
+  const on = e.target.checked;
+  const boxes = [...document.querySelectorAll('#dll-table tbody input[type=checkbox]')];
+  for(const cb of boxes){
+    if(cb.checked === on) continue;
+    cb.checked = on;
+    await api('/api/mod_select', {name: cb.dataset.n, selected: on});
+  }
+  syncSelectAll();
+  $('#dll-apply-msg').textContent = on ? '已全选 ' + boxes.length + ' 个模组' : '已取消全部模组';
+});
+$('#dll-refresh').onclick = ()=> loadMods();
+
+// ================= 字体页 =================
+let _fonts_dst = '', _fonts_src = '';
+async function loadFonts(){
+  if(!state.current) await loadTargets();
+  const d = await api('/api/fonts?target='+encodeURIComponent(state.current));
+  _fonts_dst = d.dst || '';
+  _fonts_src = (d.installed || !d.src_exists) ? _fonts_dst : (d.src || '');
+  const rows = d.files || [];
+  if(!rows.length){
+    $('#f-table tbody').innerHTML = '<tr><td colspan="3" class="empty">还没有字体明细（点「装入字体」会自动下载字体包并装入）</td></tr>';
+    return;
+  }
+  $('#f-table tbody').innerHTML = rows.map(f=>{
+    const st = f.installed
+      ? '<span style="color:var(--accent)">已装入</span>'
+      : '<span style="color:var(--sub)">未装入</span>';
+    return `<tr><td style="white-space:nowrap">${esc(f.name)}</td><td style="line-height:1.7">${esc(f.desc)}</td><td>${st}</td></tr>`;
+  }).join('');
+}
+$('#f-open').onclick = async ()=>{
+  // 已装入 → 打开游戏 Fonts 目录；未装入 → 打开字体包缓存目录
+  const p = _fonts_dst || _fonts_src;
+  if(!p){ toast('还没有可打开的字体目录'); return; }
+  const r = await api('/api/open', {path: p});
+  if(r && r.ok === false) toast(r.error || r.msg || '目录不存在');
+};
+$('#f-install').onclick = async ()=>{
+  if(!state.current){ alert('请先在「首页」设置游戏路径'); return; }
+  const btn=$('#f-install'); const old=btn.textContent; btn.disabled=true; btn.textContent='装入中…';
+  const msgEl = $('#f-apply-msg');
+  if(msgEl) msgEl.textContent = '';
+  // 自动下载时轮询进度显示（字体缓存会随退出清空，再次装入需重新下载）
+  const timer = setInterval(async ()=>{
+    try{
+      const p = await api('/api/progress');
+      if(p && p.stage==='下载' && msgEl) msgEl.textContent = p.msg || '下载中…';
+    }catch(e){}
+  }, 500);
+  const r = await api('/api/fonts_install', {target:state.current});
+  clearInterval(timer);
+  btn.disabled=false; btn.textContent=old;
+  showLog('#f-log', (r.log||[]).join('\n')+'\n'+(r.summary||''));
+  if(msgEl) msgEl.textContent = r.summary || '';
+  toast(r.summary || '完成');
+  loadFonts(); loadHome();
+};
+$('#f-remove').onclick = async ()=>{
+  if(!state.current){ alert('请先在「首页」设置游戏路径'); return; }
+  if(!(await askConfirm('移除游戏目录里的 Fonts 字体文件夹？\n（客户端原有字体会恢复）'))) return;
+  const r = await api('/api/fonts_remove', {target:state.current});
+  showLog('#f-log', (r.log||[]).join('\n')+'\n'+(r.summary||''));
+  toast(r.summary || '已移除');
+  loadFonts(); loadHome();
+};
+$('#f-refresh').onclick = ()=> loadFonts();
+
+function showLog(sel, txt){
+  const el = $(sel); if(!el) return; el.style.display='block'; el.textContent = txt;
+}
+function toast(msg){ const t=document.createElement('div'); t.textContent=msg;
+  t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#222735;border:1px solid #2b3140;color:#fff;padding:10px 18px;border-radius:10px;z-index:99';
+  document.body.appendChild(t); setTimeout(()=>t.remove(),2200);
+}
+
+// ================= 下载页：蓝奏云资源管理 =================
+const LZ_KINDS = {mods:{name:'模组', desc:'9 个增强模组 DLL（加载已内置，无需 VanillaFixes.exe）'},
+                  addons:{name:'插件', desc:'150 个插件（整包含 Atlas/pfQuest 等大件）'},
+                  fonts:{name:'字体', desc:'9 个 WoW 字体文件'}};
+const LZ_STATE_TEXT = {ready:'已就绪', downloading:'下载中', need_download:'待下载', no_links:'未配置链接'};
+
+async function loadLanzou(){
+  let d; try{ d = await api('/api/lanzou_state'); }catch(e){ return; }
+  // 资源卡
+  const cards = Object.keys(LZ_KINDS).map(k=>{
+    const info = LZ_KINDS[k], st = (d.kinds&&d.kinds[k])||{state:'no_links',volumes:0};
+    const stColor = st.state==='ready' ? 'var(--accent)' : (st.state==='need_download'?'var(--warn)':'var(--sub)');
+    let extra = '';
+    if(k==='addons' && d.diff){
+      extra = ` · 清单对比：<b>${d.diff.total}</b> 个插件，待更新 <b style="color:var(--warn)">${d.diff.todo.length}</b> 个（新增${d.diff.missing.length}/变化${d.diff.update.length}）`;
+    }
+    return `<div class="card" style="margin:10px 0;padding:12px 14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <div><b>${info.name}</b> <span style="color:var(--sub);font-size:12px">${info.desc}</span><br>
+          <span style="font-size:12px;color:${stColor}">● ${LZ_STATE_TEXT[st.state]||st.state}</span>
+          <span style="font-size:12px;color:var(--sub)"> · ${st.volumes} 个分卷${st.src?` · 来源 <b style="color:var(--accent)">${esc(st.src)}</b>`:''}</span>${extra}</div>
+        <button class="btn sm" id="lz-dl-${k}" ${st.state==='ready'||st.state==='downloading'?'disabled':''}>${st.state==='ready'?'✓ 已缓存':'⬇ 下载'}</button>
+      </div></div>`;
+  }).join('');
+  $('#lz-cards').innerHTML = cards +
+    `<div style="font-size:12px;color:var(--sub);margin-top:6px">缓存目录：${esc(d.cache_dir||'—')}（已用 ${d.cache_mb} MB，关闭工具后保留，换电脑需重新下载）</div>`;
+  // 缓存管理设置 + 各资源最近使用时间
+  const cc = d.cache_cfg||{auto_clean:true, keep_days:30};
+  const cOn = $('#lz-cache-on'), cDays = $('#lz-cache-days');
+  if(cOn){ cOn.checked = !!cc.auto_clean; }
+  if(cDays){ cDays.value = cc.keep_days||30; }
+  const lu = d.cache_lastused||{};
+  const labs = {mods:'模组', addons:'插件', fonts:'字体'};
+  const luHtml = Object.keys(labs).map(k=>{
+    const t = lu[k];
+    const txt = t? ('最后使用 ' + new Date(t*1000).toLocaleString()) : '从未使用';
+    return labs[k]+'：'+txt;
+  }).join('　');
+  const luEl = $('#lz-cache-lastused');
+  if(luEl) luEl.textContent = luHtml;
+  Object.keys(LZ_KINDS).forEach(k=>{
+    const b = $('#lz-dl-'+k); if(b) b.onclick = ()=> startLzDownload(k);
+  });
+  // folder 分享配置
+  const fd = d.folder||{};
+  $('#lz-fd-url').value = fd.url||'';
+  $('#lz-fd-pwd').value = fd.pwd||'';
+  if(fd.url){
+    if(fd.err){
+      $('#lz-fd-status').innerHTML = `<span style="color:var(--warn)">● ${esc(fd.err)}</span>`;
+      $('#lz-fd-files').textContent = '';
+    }else if(fd.files && fd.files.length){
+      $('#lz-fd-status').innerHTML = `<span style="color:var(--accent)">● 已连接，共 ${fd.files.length} 个文件</span>`;
+      $('#lz-fd-files').innerHTML = fd.files.map(f=>`· ${esc(f.name)} <span style="opacity:.6">${esc(f.size||'')}</span>`).join('<br>');
+    }else{
+      $('#lz-fd-status').innerHTML = '<span style="color:var(--warn)">● 文件夹为空或解析中</span>';
+      $('#lz-fd-files').textContent = '';
+    }
+  }else{
+    $('#lz-fd-status').textContent = '未配置文件夹（请填写上方蓝奏云文件夹分享链接）';
+    $('#lz-fd-files').textContent = '';
+  }
+  // 自定义直链源
+  const dr = d.direct||{urls:[],matched:{},unmatched:[]};
+  const ta = $('#lz-dr-text');
+  if(ta && document.activeElement!==ta) ta.value = (dr.urls||[]).join('\n');
+  const mM = dr.matched||{};
+  const hitK = ['mods','addons','fonts'].filter(k=>(mM[k]||0)>0);
+  if(!(dr.urls||[]).length){
+    $('#lz-dr-status').textContent = '未配置（留空则只用上方蓝奏云文件夹）';
+    $('#lz-dr-info').textContent = '';
+  }else if(hitK.length){
+    $('#lz-dr-status').innerHTML = `<span style="color:var(--accent)">● 已启用：${hitK.map(k=>LZ_KINDS[k].name+' '+mM[k]+' 卷').join(' / ')}</span>`;
+    const un = dr.unmatched||[];
+    $('#lz-dr-info').innerHTML = (un.length?`另有 ${un.length} 个未识别：${un.map(x=>esc(x)).join('、')}<br>`:'')
+      + '<span style="opacity:.6">配了直链就优先用直链；清空保存后自动回落到蓝奏云文件夹。</span>';
+  }else{
+    $('#lz-dr-status').innerHTML = '<span style="color:var(--warn)">● 已填但没识别出资源，请检查链接里的文件名</span>';
+    $('#lz-dr-info').innerHTML = '文件名需为 <b>魔兽助手_模组包.zip</b> / <b>魔兽助手_插件包_partN.zip</b> / <b>魔兽助手_字体.zip</b>（与蓝奏云里的同名即可）'
+      + ((dr.unmatched||[]).length? '<br>当前识别到：'+(dr.unmatched||[]).map(x=>esc(x)).join('、') : '');
+  }
+  // manifest 配置
+  $('#lz-mf-url').value = (d.manifest&&d.manifest.url)||'';
+  $('#lz-mf-pwd').value = (d.manifest&&d.manifest.pwd)||'';
+  $('#lz-mf-status').textContent = d.diff
+    ? `清单版本 ${d.diff.version||'?'}：共 ${d.diff.total} 个插件，待更新 ${d.diff.todo.length} 个${(d.manifest&&d.manifest.url)?'':'（来自文件夹 manifest.json）'}`
+    : '未配置 manifest（文件夹里有 manifest.json 时自动启用增量更新）';
+  // 下载进度
+  const dl = d.dl||{};
+  if(dl.busy){
+    $('#lz-progress').style.display='block';
+    $('#lz-bar').style.width = (dl.pct||0)+'%';
+    $('#lz-dl-msg').textContent = (dl.msg||'下载中…') + (dl.speed?' · '+dl.speed:'') + (dl.error?' · '+dl.error:'');
+  }else{
+    $('#lz-progress').style.display='none';
+    if(dl.error) toast('下载失败：'+dl.error);
+  }
+}
+
+let _lzTimer = null;
+function startLzDownload(kind){
+  api('/api/lanzou_download', {kind}).then(r=>{
+    if(!r.ok){ toast(r.msg||'无法开始下载'); return; }
+    toast('下载已开始（分卷较多时请耐心等待）');
+    if(_lzTimer) clearInterval(_lzTimer);
+    _lzTimer = setInterval(async ()=>{
+      const d = await api('/api/lanzou_state');
+      loadLanzou();
+      if(!(d.dl&&d.dl.busy)){ clearInterval(_lzTimer); _lzTimer=null; toast('下载流程结束'); }
+    }, 800);
+  });
+}
+
+$('#lz-download-all').onclick = ()=> startLzDownload('all');
+$('#lz-sync').onclick = ()=> startLzDownload('sync');
+$('#lz-cache-save').onclick = async ()=>{
+  const on = !!($('#lz-cache-on') && $('#lz-cache-on').checked);
+  let days = parseInt(($('#lz-cache-days') && $('#lz-cache-days').value)||'30', 10);
+  if(isNaN(days) || days < 1) days = 1;
+  const r = await api('/api/cache_config', {auto_clean: on, keep_days: days});
+  if(r.ok){ toast('缓存设置已保存（'+(on?('启用，'+days+'天未用自动清理'):'已关闭自动清理')+'）'); loadLanzou(); }
+  else { toast('保存失败'); }
+};
+$('#lz-fd-save').onclick = async ()=>{
+  const url = ($('#lz-fd-url').value||'').trim();
+  if(!url){ toast('请填写文件夹分享链接'); return; }
+  const r = await api('/api/lanzou_config', {kind:'folder',
+    url, pwd:($('#lz-fd-pwd').value||'').trim()});
+  if(r.ok && r.err){ toast('解析失败：'+r.err); }
+  else if(r.ok && r.files && r.files.length){ toast(`已连接文件夹，共 ${r.files.length} 个文件`); }
+  else { toast('已保存'); }
+  loadLanzou();
+};
+$('#lz-mf-save').onclick = async ()=>{
+  await api('/api/lanzou_config', {kind:'manifest',
+    url:($('#lz-mf-url').value||'').trim(), pwd:($('#lz-mf-pwd').value||'').trim()});
+  toast('manifest 链接已保存'); loadLanzou();
+};
+$('#lz-dr-save').onclick = async ()=>{
+  const r = await api('/api/lanzou_config', {kind:'direct', text:($('#lz-dr-text').value||'')});
+  toast(r.ok ? '直链已保存' : ('保存失败：'+(r.msg||'未知错误')));
+  loadLanzou();
+};
+$('#lz-dr-clear').onclick = async ()=>{
+  $('#lz-dr-text').value = '';
+  await api('/api/lanzou_config', {kind:'direct', text:''});
+  toast('已清空直链，改用蓝奏云文件夹'); loadLanzou();
+};
+
+loadTargets();
+</script>
+</body>
+</html>

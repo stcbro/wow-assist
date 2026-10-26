@@ -1,0 +1,36 @@
+# ===== 魔兽助手 · 版本控制忽略规则 =====
+# 说明：exe 由「打包exe.bat」一键生成，资源包在蓝奏云，本地不入库；
+#      源码、脚本、UI、文档、AI 记忆全部入库（这才是接续开发的本体）。
+
+# 本地资源镜像（528MB，字体/插件包/模组包，可从蓝奏云下载重建）
+.wbdata/
+资源包/
+发布/
+
+# 运行时与临时目录
+temp/
+downloads/
+*.log
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# 打包产物（可由 打包exe.bat 重建）
+build/
+dist/
+*.spec
+*.exe
+*.exe.bak
+*.zip
+
+# 本机配置与凭据
+config.json
+lz_state.json
+*.env
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+desktop.ini
