@@ -8,7 +8,7 @@
 - **v3.12 全面改名**：产品名 WowAssist / 源码目录 `wow-assist/` / 产物 `wowassist-v<版本>.exe` / 数据目录 `AppData\wowassist\` / 资源包 `wowassist_*.zip`；旧数据目录由 `_migrate_legacy_runtime()` 启动时自动 rename 迁移。
 - 退出/X关窗/清理还原**不再自动删缓存**；已装的模组/插件/字体与下载缓存都**保留**在客户端与 AppData，下次打开显示「已安装」直接复用。
 - **幂等配置**：点「配置组件」先检测每类资源——未下载先下载、已下载不重复下载、未安装才安装、已安装显示「已安装(跳过)」。判定基于 `install_state` 签名(.ok 内容+模组勾选/插件版本) + 磁盘 `_kind_on_disk` 硬校验。
-- **冲突备份**：安装模组/插件/字体前，把游戏目录里**同名/冲突文件先 `_move_to_backup` 到「插件备份/<tag>_时间戳」**再覆盖；不再直接删除用户原文件。函数：`_safe_install_file/_safe_install_tree/_move_to_backup/_backup_dir_for`。
+- **WowAbak 全量备份（v3.13）**：总备份夹=游戏根 **WowAbak/**（模组/插件/字体各一子夹，时间戳归档）；安装前目标区域**原有内容一律先备份**（不再只同名冲突）；**清理还原=直删已装组件不备份**（revert_overlay backup=False；客户端原 Fonts 仍恢复）。旧「插件备份」夹不再写入但保留不动。
 - **缓存留盘 + 30 天 GC**：下载缓存存 `AppData\wowassist\resources\`，关闭 exe 不删、可复用；`cache_gc()` 按 `cache_lastused` + `keep_days`(默认30) 删超期缓存（启动后台跑一次）。设置走 `/api/cache_config`→config.cache{auto_clean,keep_days}。
 - **手动清理还原**：`清理还原`=结束游戏→`revert_overlay`(备份式移除)→清 install_state；不删缓存，原文件进「插件备份」。
 - 启动不再自愈还原（移除 `_restore_all_overlays` 调用）；`_teardown` 为 no-op（只写退出日志）。
