@@ -94,11 +94,14 @@ def human(n):
     return f"{n:.1f} T"
 
 
-def get_creds():
+def get_creds(state_path=None):
     """取凭据。
 
     注意坑：部分执行环境会过滤形如 *PASS* 的环境变量名（传进去会变成 None），
     所以这里同时接受 LZ_PASS / LZ_PW / LZ_KEY / LZ_SECRET 多个名字。
+
+    若未提供凭据但存在登录态缓存文件（state_path），允许免凭据继续——
+    登录环节会先尝试复用登录态，失效时再明确报错。
     """
     user = ""
     pwd = ""
@@ -115,6 +118,9 @@ def get_creds():
     if user and pwd:
         return user, pwd
     if not sys.stdin.isatty():
+        if state_path and os.path.isfile(state_path):
+            print("[提示] 未设置凭据，但存在登录态缓存，将尝试复用登录态 ...")
+            return user, pwd
         print("[错误] 未提供凭据：请设置环境变量 LZ_USER=账号 与 LZ_PW=密码")
         print("       （注意：用 LZ_PW，别用 LZ_PASS，部分环境会过滤含 PASS 的变量名）")
         sys.exit(2)
@@ -389,6 +395,13 @@ def main():
     print("=" * 62)
     print("  WowAssist —— 蓝奏云一键上传")
     print("=" * 62)
+
+    # 铁律（2026-10-26 用户定）：wow-resources 永远只放资源包 zip，绝不传生成物（exe 等）
+    FORBIDDEN_GEN_FOLDERS = {"wow-resources"}
+    if args.folder.strip().lower() in FORBIDDEN_GEN_FOLDERS:
+        print(f"[禁止] 「{args.folder}」是资源包专用文件夹，永远不传生成物（exe 等）。")
+        print("       exe 请上传到「wow-assist」文件夹：--folder wow-assist")
+        return 3
 
     ver = read_app_version()
     exe = find_exe(args.file)

@@ -69,7 +69,7 @@ set "PYTHONPATH="
 rem exe 只上传到专用文件夹「wow-assist」（资源包另有其文件夹，不混放）
 "%PY%" 上传蓝奏云.py --folder "wow-assist" --prune
 rem 资源包有更新时，单独执行（产物在 D:\WorkBuddy\发布\蓝奏云资源包）：
-rem     "%PY%" 上传资源包.py --folder "乌龟服资源包20261025"
+rem     "%PY%" 上传资源包.py --folder "wow-resources"
 echo [上传] 完成
 goto DONEUPLOAD
 

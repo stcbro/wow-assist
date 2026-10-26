@@ -22,11 +22,12 @@
 - 装模组/本地导入不再拷贝该 exe；老残留自动清理；打包已移除对应 `--add-data`。
 
 ## 分发
-- **分发链接真相（2026-10-26 核实）**：`https://sycc.lanzoum.com/b01i5y3r7c` + 提取码 `9p81` 指向的分享是文件夹 **「乌龟服资源包20261025」**（`fol14138872`），内含 exe + `wowassist_插件包_part1~4.zip` / `wowassist_字体.zip` / `wowassist_模组包.zip` / 上传清单.txt。**「wow-assist」文件夹（`fol14145295`）是另一个目录**（只放 exe，**待作者在网页手动分享**）——两者不是同一个，别再混。
-- **exe 放在两个位置**：「乌龟服资源包20261025」（=有对外链接，新电脑直接用原链接下）与「wow-assist」（干净专区）。旧文件夹「魔兽助手」`fol14144103` 已删除。
+- **⭐ 铁律（2026-10-26 用户定，永远生效）：「wow-resources」文件夹永远不传生成物**（exe 等构建产物一律禁止，只放资源包 zip + 上传清单）。exe 只传「wow-assist」文件夹。`上传蓝奏云.py` 已内置硬拦截（对 wow-resources 目标直接退出码 3）。
+- **分发链接真相（2026-10-26 22:20 用户纠正后更新）**：`https://sycc.lanzoum.com/b01i5y3r7c` + 提取码 `9p81` 指向的分享文件夹原名「乌龟服资源包20261025」（`fol14138872`），**已被用户在网页改名为「wow-resources」**；内含 `wowassist_插件包_part1~4.zip` / `wowassist_字体.zip` / `wowassist_模组包.zip` / 上传清单.txt，**不含 exe**。**「wow-assist」文件夹（`fol14145295`）是另一个目录**（只放 exe，**待作者在网页手动分享**）——两者不是同一个，别再混。
+- **exe 放在两个位置**：「wow-resources」（=对外分享链接指向的**资源包**文件夹，**用户明确决定不放 exe**）与「wow-assist」（exe 专区，待作者在网页生成分享链接后对外）。旧文件夹「魔兽助手」`fol14144103` 已删除。
 - `get_direct_link` 返 `(state,link)` 勿按 (url,err) 解包；反爬(iframe CDN/websign=2/acw_sc__v2)已处理；抓取 3 次重试，失败原因落 run.log `[蓝奏云]` 行。**manifest.json 未上传**。
 - **一键上传脚本（已固化）**：`wow-assist/上传蓝奏云.py` —— 读 `APP_VERSION`→定位最新 `wowassist-v*.exe`→网页登录→进文件夹→上传→校验→`--prune` 清理同名副本与旧版本。参数：`--file/--folder/--prune/--skip-upload/--state/--dry-run`。凭据走环境变量 **`LZ_USER` + `LZ_PW`**（⚠️ **变量名含 PASS 会被环境过滤成 None**，务必用 `LZ_PW`；脚本也兼容 `LZ_KEY/LZ_SECRET`）。登录态缓存 `temp/lz_state.json`（可删=强制重新登录）。
-- **`打包exe.bat` 已串联上传**：打包清理 dist/build 后，若存在 `LZ_USER`+`LZ_PW` 则自动上传到「wow-assist」和「乌龟服资源包20261025」两个文件夹（各带 `--prune`）；未设置则打印提示并跳过。
+- **`打包exe.bat` 已串联上传**：打包清理 dist/build 后，若存在 `LZ_USER`+`LZ_PW` 则自动上传到「wow-assist」和「wow-resources」两个文件夹（各带 `--prune`）；未设置则打印提示并跳过。
 - **`验证分发链接.py`**：无登录打开分享链接+提取码，列出文件并检查 exe 是否存在/是否重复并存。
 - **`上传资源包.py`（v3.12 新增）**：批量上传资源包 zip + 上传清单到分发文件夹，并删除旧命名（`魔兽助手_*.zip`）文件。参数 `--src/--folder/--keep-old/--only-clean`。
 - ⚠️ **上传成功判定铁律**：不能用「DOM 里出现文件名」（webuploader 待上传队列本来就有文件名，会误判）——必须等 `100%`/上传完成提示后**刷新列表**核对文件真的在。此坑曾导致漏传 3 个文件。

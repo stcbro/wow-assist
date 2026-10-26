@@ -8,8 +8,8 @@ WowAssist —— 资源包批量上传到蓝奏云
 用法：
     set LZ_USER=你的账号
     set LZ_PW=你的密码
-    python 上传资源包.py --folder "乌龟服资源包20261025"
-    python 上传资源包.py --folder "乌龟服资源包20261025" --src "D:/WorkBuddy/发布/蓝奏云资源包"
+    python 上传资源包.py --folder "wow-resources"
+    python 上传资源包.py --folder "wow-resources" --src "D:/WorkBuddy/发布/蓝奏云资源包"
 
 依赖：pip install playwright（复用系统 Edge）
 """
@@ -203,7 +203,7 @@ def delete_row(fr, page, row_id):
 def main():
     ap = argparse.ArgumentParser(description="资源包批量上传")
     ap.add_argument("--src", default=DEFAULT_SRC, help="资源包本地目录")
-    ap.add_argument("--folder", default="乌龟服资源包20261025", help="蓝奏云目标文件夹")
+    ap.add_argument("--folder", default="wow-resources", help="蓝奏云目标文件夹")
     ap.add_argument("--keep-old", action="store_true", help="保留旧命名文件（不删）")
     ap.add_argument("--only-clean", action="store_true", help="只清理旧命名文件，不重复上传")
     args = ap.parse_args()
