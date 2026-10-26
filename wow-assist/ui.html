@@ -709,7 +709,7 @@ async function refreshSession(p){
 // 客户端恢复初始状态；倒计时结束后回到初始界面，程序继续可用（不退出）。
 // 注意：缓存【不删】，下次配置组件可直接复用。
 $('#h-exit').onclick = async ()=>{
-  if(!(await askConfirm('确定要清理还原吗？\n将移除已装入的模组、插件、字体，从 WowAbak 备份还原客户端原有内容（如有），最后清空 WowAbak 备份夹。'))) return;
+  if(!(await askConfirm('确定要移除全部已装入的模组、插件、字体，恢复客户端初始状态吗？'))) return;
   const ov = document.createElement('div');
   ov.style.cssText = 'position:fixed;inset:0;background:#0e1014;z-index:999;'
     + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px';
