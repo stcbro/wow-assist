@@ -224,10 +224,10 @@ th{color:var(--sub);font-weight:600;font-size:12px}
         <div style="font-size:12px;color:var(--sub);margin-bottom:8px">
           关闭工具后下载缓存<b>不再删除</b>，下次配置组件可直接复用、无需重新下载；资源长期未使用会自动清理。
         </div>
-        <label style="display:inline-flex;align-items:center;gap:8px;font-size:14px;cursor:pointer">
-          <input type="checkbox" id="lz-cache-on"><span style="white-space:nowrap">启用「长期未使用自动清理」</span>
-        </label>
-        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:8px;margin-top:4px;font-size:14px;flex-wrap:wrap">
+          <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="lz-cache-on"><span style="white-space:nowrap">启用「长期未使用自动清理」</span>
+          </label>
           <span>超过</span>
           <input type="number" id="lz-cache-days" min="1" max="365" style="width:70px">
           <span>天未使用则自动删除该资源缓存（默认 30 天）。</span>
@@ -1004,8 +1004,8 @@ function toast(msg){ const t=document.createElement('div'); t.textContent=msg;
 }
 
 // ================= 下载页：蓝奏云资源管理 =================
-const LZ_KINDS = {mods:{name:'模组', desc:'9 个增强模组 DLL（加载已内置，无需 VanillaFixes.exe）'},
-                  addons:{name:'插件', desc:'150 个插件（整包含 Atlas/pfQuest 等大件）'},
+const LZ_KINDS = {mods:{name:'模组', desc:'9 个增强模组 DLL'},
+                  addons:{name:'插件', desc:'150 个插件'},
                   fonts:{name:'字体', desc:'9 个 WoW 字体文件'}};
 const LZ_STATE_TEXT = {ready:'已就绪', downloading:'下载中', need_download:'待下载', no_links:'未配置链接'};
 
