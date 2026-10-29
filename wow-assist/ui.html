@@ -63,6 +63,14 @@ th{color:var(--sub);font-weight:600;font-size:12px}
 .tag{font-size:11px;background:var(--card2);padding:2px 8px;border-radius:20px;color:var(--sub)}
 /* 更新日志明细：全站统一一套样式（字体/颜色/行高），避免各版本条目漂移 */
 .cl-detail{padding:8px 0;color:var(--sub);font-size:13px;line-height:1.7}
+.cl-detail>div{margin:2px 0}
+.cl-detail .ct{display:inline-block;min-width:36px;text-align:center;font-size:11px;font-weight:600;border-radius:4px;padding:0 6px;margin-right:7px;line-height:18px;vertical-align:1px}
+.ct-add{background:rgba(63,185,80,.16);color:#5bd06a}
+.ct-imp{background:rgba(88,140,255,.16);color:#7aa7ff}
+.ct-chg{background:rgba(239,159,39,.16);color:#efb04a}
+.ct-fix{background:rgba(248,81,73,.16);color:#ff7b72}
+.ct-rem{background:rgba(154,163,170,.16);color:#9aa4b0}
+.ct-note{background:rgba(139,148,158,.14);color:#8b949e}
 .banner{background:rgba(255,184,77,.12);border:1px solid var(--warn);color:#ffd591;border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.6;margin-bottom:16px}
 .banner b{color:var(--warn)}
 .log{background:#0a0c10;border:1px solid var(--line);border-radius:10px;padding:12px;font-family:ui-monospace,Consolas,monospace;font-size:12px;color:#bce3c4;white-space:pre-wrap;max-height:240px;overflow:auto}
@@ -273,201 +281,189 @@ th{color:var(--sub);font-weight:600;font-size:12px}
         </div>
       </div>
       <div class="card grow" style="max-width:720px">
-        <div class="kv"><span class="k">v3.14 版权标识 + 关于卡片 + 备份细节优化</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v3.15 ｜ 2026-10-29 ｜ 更新日志规范重排版</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          · <b>版权标识</b>：新增「关于 WowAssist」卡片（更新日志页顶部：定位语+版本+作者+版权声明）；
-            侧栏页脚显示 © 2026 Bro.Cui；exe 文件属性写入产品名/版本/版权（右键 exe→属性→详细信息可见）<br>
-          · <b>备份细节</b>：原 dlls.txt 与模组 DLL 备份进同一个带时间戳的 WowAbak\模组备份 文件夹，
-            不再多出一个无时间戳文件夹<br>
-          · <b>界面打磨</b>：侧栏导航配图标并放大字号；未点「配置组件」前状态行显示琥珀色「待检测」；
-            已装插件数量配置完成后即时刷新；清理还原确认弹窗视觉优化<br>
-          · <b>窗口标题</b>：采用完整定位「WowAssist · 简单好用又省心的香草旧世魔兽游戏助手」
+          <div><span class="ct ct-imp">改进</span>更新日志全面重排版：统一为「版本 ｜ 日期 ｜ 主题」，条目按 新增 / 改进 / 变更 / 修复 / 移除 分类标注</div>
+          <div><span class="ct ct-imp">改进</span>补全 v2.0 与 v1.x 历史条目，补齐各版本发布日期</div>
         </div>
-        <div class="kv"><span class="k">v3.13 备份体系 WowAbak + 清理还原直删 + 日志带时间</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v3.14 ｜ 2026-10-27 ｜ 版权标识与备份细节优化</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          · <b>备份体系升级</b>：总备份文件夹更名为 <b>WowAbak</b>（游戏根目录下），模组、插件、字体
-            各有一个备份子文件夹，按时间戳归档；旧的「插件备份」文件夹不受影响<br>
-          · <b>备份规则放宽</b>：安装前不再只备份同名冲突——游戏目录里<b>原有的一律先备份</b>
-            （模组含全部 DLL 与 dlls.txt、插件整目录、字体整个 Fonts），再装入新版<br>
-          · <b>清理还原更干脆</b>：移除已装的模组/插件/字体时<b>不再备份、直接清除</b>
-            （都是资源包装的，重新「配置组件」即可装回）；客户端原有 Fonts 仍会恢复原样<br>
-          · <b>进度日志</b>：每行带<b>时间戳</b>；日志区加高，历史记录全部保留可滚动回看<br>
-          · <b>细节</b>：「配置组件」图标换为扳手；「启动游戏」点击立即反馈；
-            模组说明文案更直观（模组加载已内置，自动注入 VfPatcher.dll）
+          <div><span class="ct ct-add">新增</span>「关于 WowAssist」卡片：更新日志页顶部展示定位语、版本、作者与版权声明</div>
+          <div><span class="ct ct-add">新增</span>exe 文件属性写入产品名/版本/版权（右键 exe→属性→详细信息可见）；侧栏页脚新增 © 2026 Bro.Cui</div>
+          <div><span class="ct ct-imp">改进</span>dlls.txt 与模组 DLL 备份进同一个带时间戳的 WowAbak\模组备份 文件夹，不再多出一个无时间戳文件夹</div>
+          <div><span class="ct ct-imp">改进</span>侧栏导航配图标并放大字号；未点「配置组件」前状态行显示琥珀色「待检测」；已装插件数量配置完成后即时刷新；清理还原确认弹窗视觉优化</div>
+          <div><span class="ct ct-chg">变更</span>窗口标题采用完整定位「WowAssist · 简单好用又省心的香草旧世魔兽游戏助手」</div>
         </div>
-        <div class="kv"><span class="k">v3.12 更名 WowAssist：数据自动迁移 + 分发渠道整理</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v3.13 ｜ 2026-10-27 ｜ 备份体系 WowAbak + 清理还原直删</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          · <b>产品更名</b>：「魔兽助手」正式更名为 <b>WowAssist</b>——窗口标题、托盘提示、
-            界面标题全部换新；程序文件与资源包同步改用 wowassist 命名
-            （wowassist-v3.12.exe / wowassist_插件包.zip 等）<br>
-          · <b>数据自动迁移</b>：首次启动自动把旧数据目录 AppData\魔兽助手 整体迁移为
-            AppData\wowassist，<b>配置、下载缓存、日志全部保留</b>，已安装的模组/插件/字体无需重新配置<br>
-          · <b>兼容旧版</b>：旧版本窗口仍可被正常找回并置前；旧命名资源包在下载源中会被自动识别清理<br>
-          · <b>分发渠道整理</b>：资源包（模组/插件/字体 zip）与程序本体分开存放、各走各的下载渠道，
-            下载来源更清晰稳定<br>
-          · <b>实机验证通过</b>：真实游戏环境下完整走通「配置组件 → 启动游戏 → 模组生效」全流程，
-            重开工具正确显示「已安装(跳过)」，缓存复用正常
+          <div><span class="ct ct-add">新增</span>总备份文件夹升级为 WowAbak（游戏根目录下），模组/插件/字体各一个子文件夹、按时间戳归档；旧「插件备份」文件夹保留不受影响</div>
+          <div><span class="ct ct-add">新增</span>进度日志每行带时间戳；日志区加高，历史记录全部保留可滚动回看</div>
+          <div><span class="ct ct-imp">改进</span>安装前不再只备份同名冲突——游戏目录里原有的一律先备份（模组含全部 DLL 与 dlls.txt、插件整目录、字体整个 Fonts），再装入新版</div>
+          <div><span class="ct ct-imp">改进</span>「配置组件」图标换为扳手；「启动游戏」点击立即反馈；模组说明文案更直观（模组加载已内置，自动注入 VfPatcher.dll）</div>
+          <div><span class="ct ct-chg">变更</span>清理还原移除已装组件时不再备份、直接清除（都是资源包装的，重新「配置组件」即可装回）；客户端原有 Fonts 仍恢复原样</div>
         </div>
-        <div class="kv"><span class="k">v3.11 持久化安装：配置幂等 + 冲突备份 + 缓存留盘</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v3.12 ｜ 2026-10-26 ｜ 更名 WowAssist：数据自动迁移 + 分发渠道整理</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          · <b>模型切换</b>：从「会话覆盖层（退出即还原删缓存）」改为<b>持久化安装</b>——关闭工具后
-            模组/插件/字体与下载缓存都保留，下次打开显示「已安装」直接复用<br>
-          · <b>配置组件幂等</b>：点「配置组件」前先检测每类资源——已下载则不重复下载、
-            已安装则跳过并显示「已安装(跳过)」，只有缺的才下载+安装<br>
-          · <b>安装前冲突备份</b>：安装模组/插件/字体时，若游戏目录已有同名文件，先备份到
-            「插件备份」再覆盖，<b>不再直接删除你原有的文件</b>；「清理还原」也会先备份再移除<br>
-          · <b>缓存留盘 + 自动清理</b>：下载到缓存的资源关闭工具后不再删除；下载页新增
-            「缓存管理」可设置启用、保留天数（默认 30 天），超过设定天数未使用的资源缓存自动删除<br>
-          · 「清理还原」改为<b>手动</b>恢复干净客户端（不再是退出自动还原），被移除项先备份可捞回
+          <div><span class="ct ct-chg">变更</span>产品更名：「魔兽助手」正式更名「WowAssist」，窗口标题、托盘提示、界面标题全部换新；程序与资源包改用 wowassist 命名（wowassist-v3.12.exe / wowassist_插件包.zip 等）</div>
+          <div><span class="ct ct-add">新增</span>数据自动迁移：首次启动自动把旧数据目录 AppData\魔兽助手 迁移为 AppData\wowassist，配置、下载缓存、日志全部保留，已装组件无需重新配置</div>
+          <div><span class="ct ct-imp">改进</span>兼容旧版：旧版本窗口仍可被正常找回并置前；旧命名资源包在下载源中自动识别清理</div>
+          <div><span class="ct ct-imp">改进</span>分发渠道整理：资源包与程序本体分开存放、各走各的下载渠道，来源更清晰稳定</div>
         </div>
-        <div class="kv"><span class="k">v3.10 内置注入器：游戏目录不再出现 VanillaFixes.exe</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v3.11 ｜ 2026-10-26 ｜ 持久化安装：配置幂等 + 冲突备份 + 缓存留盘</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          · 逆向确认：VanillaFixes.exe 唯一不可替代的作用，是在游戏初始化极早期把
-            <b>VfPatcher.dll / nampower.dll</b> 载入游戏进程；其余 7 个模组 DLL 其实是客户端
-            自带的 twloader.dll 按 dlls.txt 加载的（游戏目录 Logs\twloader.log 可查证）<br>
-          · 本程序已<b>内置注入器</b>取而代之：点「启动游戏」时直接把这两个 DLL 注入游戏进程，
-            <b>游戏根目录自始至终都不会再出现 VanillaFixes.exe</b><br>
-          · 启动游戏后界面立即响应（注入在后台完成，不卡顿）；即便注入失败也不影响游玩
-            ——客户端会按 dlls.txt 自行加载全部模组<br>
-          · 老版本残留在游戏目录里的 VanillaFixes.exe 会被自动清理
+          <div><span class="ct ct-chg">变更</span>安装模型从「会话覆盖层（退出即还原删缓存）」改为持久化安装：关闭工具后模组/插件/字体与下载缓存都保留，下次打开显示「已安装」直接复用</div>
+          <div><span class="ct ct-imp">改进</span>「配置组件」幂等：先逐类检测——已下载不重复下载、已安装跳过并显示「已安装(跳过)」，只补缺的部分</div>
+          <div><span class="ct ct-imp">改进</span>安装前若游戏目录已有同名文件，先备份到「插件备份」再覆盖，不再直接删除原有文件</div>
+          <div><span class="ct ct-add">新增</span>缓存留盘 + 自动清理：下载缓存关闭工具后保留；下载页新增「缓存管理」（启用开关、保留天数默认 30 天），超期未用自动删除</div>
+          <div><span class="ct ct-chg">变更</span>「清理还原」改为手动恢复干净客户端（不再退出自动还原）</div>
         </div>
-        <div class="kv"><span class="k">v3.9 备用直链源（蓝奏云抽风的保险）</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v3.10 ｜ 2026-10-26 ｜ 内置注入器：游戏目录不再出现 VanillaFixes.exe</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          · 下载页新增<b>「备用直链」</b>：可直接粘贴任意文件直链（腾讯云 COS / 阿里云 OSS / GitHub / 自建站点都行）<br>
-          · 按<b>文件名自动识别</b>属于模组包 / 插件包分卷 / 字体包，无需手工分类；part 分卷自动按序号排列<br>
-          · 配了直链就<b>优先用直链</b>（下载更快更稳），清空后自动回落到蓝奏云文件夹<br>
-          · 资源卡片实时显示<b>当前使用的来源</b>（直链 / 蓝奏云 / 手动），识别不到的链接会列出文件名提示<br>
-          · 修复中文文件名直链无法下载的问题（链接内含中文会导致底层网络库报错，现已自动转码）
+          <div><span class="ct ct-add">新增</span>本程序内置注入器：点「启动游戏」时在游戏初始化极早期直接注入 VfPatcher.dll / nampower.dll，游戏根目录自始至终不再出现 VanillaFixes.exe</div>
+          <div><span class="ct ct-imp">改进</span>启动游戏后界面立即响应（注入在后台完成，不卡顿）；即便注入失败也不影响游玩——客户端会按 dlls.txt 自行加载全部模组</div>
+          <div><span class="ct ct-rem">移除</span>老版本残留在游戏目录的 VanillaFixes.exe 自动清理</div>
+          <div><span class="ct ct-note">注</span>VanillaFixes.exe 唯一不可替代的作用是加载这两个 DLL；其余 7 个模组 DLL 由客户端自带 twloader.dll 按 dlls.txt 加载（Logs\twloader.log 可查证）</div>
         </div>
-        <div class="kv"><span class="k">v3.8 启动与托盘稳定性修复</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v3.9 ｜ 2026-10-26 ｜ 备用直链源（蓝奏云抽风的保险）</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          · 修复双击 exe 时<b>黑窗口一闪而过</b>（不再创建控制台，所有子进程走无窗口模式）<br>
-          · 修复启动提示框、选择文件框<b>文字发虚</b>（启动即声明高 DPI 感知，按真实缩放渲染）<br>
-          · 修复最小化后<b>托盘图标鼠标一悬停就消失</b>（改为托盘专用线程内调度，不再跨线程操作）<br>
-          · 托盘交互修正：<b>左键</b>恢复主界面，<b>右键</b>只弹「退出」菜单<br>
-          · 修复窗口<b>不在屏幕正中</b>（按缩放比例换算居中坐标，实测偏差 0 像素；换分辨率/缩放的电脑同样居中）<br>
-          · 蓝奏云文件夹解析加<b>自动重试</b>，失败原因写入运行日志，不再一失败就直接报错
+          <div><span class="ct ct-add">新增</span>下载页「备用直链」：可粘贴任意文件直链（腾讯云 COS / 阿里云 OSS / GitHub / 自建站点均可）</div>
+          <div><span class="ct ct-add">新增</span>按文件名自动识别模组包/插件包分卷/字体包，part 分卷自动按序号排列；资源卡片实时显示当前来源（直链/蓝奏云/手动）</div>
+          <div><span class="ct ct-imp">改进</span>配了直链优先用直链（更快更稳），清空后自动回落蓝奏云文件夹</div>
+          <div><span class="ct ct-fix">修复</span>中文文件名直链无法下载（链接含中文致底层网络库报错，已自动转码）</div>
         </div>
-        <div class="kv"><span class="k">v3.7 托盘最小化 + 插件说明修正</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v3.8 ｜ 2026-10-25 ｜ 启动与托盘稳定性修复</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          · <b>当前客户端</b>直接显示<b>客户端版本</b>（乌龟服系显示 1.18，读主程序 exe 版本自动识别）<br>
-          · 点「—」最小化 → <b>自动收进桌面右下角托盘</b>（任务栏不占位）；<b>左键点托盘图标</b>恢复主界面<br>
-          · 托盘右键菜单：<b>显示主界面 / 退出（还原客户端）</b><br>
-          · 插件用途说明<b>按最新整理的 150 条修正版</b>全面更新（名称/分类/介绍）<br>
-          · 下载页删掉「资源地址」「manifest」两张卡片里的灰色说明文字
+          <div><span class="ct ct-fix">修复</span>双击 exe 黑窗口一闪而过（不再创建控制台，子进程全部无窗口模式）</div>
+          <div><span class="ct ct-fix">修复</span>启动提示框、文件选择框文字发虚（启动即声明高 DPI 感知，按真实缩放渲染）</div>
+          <div><span class="ct ct-fix">修复</span>最小化后托盘图标鼠标一悬停就消失（托盘专用线程内调度，不再跨线程操作）</div>
+          <div><span class="ct ct-fix">修复</span>窗口不在屏幕正中（按缩放比例换算居中坐标，实测偏差 0 像素）</div>
+          <div><span class="ct ct-imp">改进</span>托盘交互：左键恢复主界面，右键只弹「退出」；蓝奏云文件夹解析加自动重试，失败原因写入运行日志</div>
         </div>
-        <div class="kv"><span class="k">v3.6 首页信息重排 + 配置组件</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v3.7 ｜ 2026-10-25 ｜ 托盘最小化 + 插件说明修正</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          · 首页两栏各自独立：<b>当前客户端 / 已装插件</b>在左，<b>当前服务器（水豚乐园）/ 服务器地址</b>在右<br>
-          · 删「设为当前」；「打开目录」改为<b>「打开」</b>并移到「设置」右侧，点击打开游戏文件夹并<b>定位 WoW.exe</b><br>
-          · 「环境检测」更名<b>「配置组件」</b>，三个按钮恢复正常大小<br>
-          · 「游戏路径」与按钮同行显示，路径框始终显示<b>完整主程序路径</b>（选完 WoW.exe 不再变回根目录）<br>
-          · 修复选完 WoW.exe 提示<b>「目录不存在」</b>的问题（程序内自动把主程序路径归一到游戏根目录）<br>
-          · 选完路径后<b>立即显示日志区</b>（含选择路径的历史记录）；资源就绪显示<b>「等待安装」</b>而非「继续安装」<br>
-          · 首页信息行<b>字体加大</b>、显示值<b>在本列居中</b>；服务器地址只显示<b>一个网址</b>（apac.capycraft.io）<br>
-          · 「设置」「打开」顺序调正（打开在设置右侧）；三个按钮<b>均匀分布</b>整行<br>
-          · 服务器页连线地址按 <b>realmlist 原格式两行显示</b>；下载页「资源文件夹（蓝奏云分享）」改为<b>「资源地址」</b>
+          <div><span class="ct ct-add">新增</span>最小化收进桌面右下角托盘（任务栏不占位），左键托盘图标恢复主界面；托盘右键菜单：显示主界面 / 退出（还原客户端）</div>
+          <div><span class="ct ct-add">新增</span>首页「当前客户端」直接显示客户端版本（读主程序 exe 版本自动识别，乌龟服系显示 1.18）</div>
+          <div><span class="ct ct-imp">改进</span>插件用途说明按最新整理的 150 条修正版全面更新；下载页删去「资源地址」「manifest」卡片灰色说明文字</div>
         </div>
-        <div class="kv"><span class="k">v3.5 设置按钮 + 操作记录</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v3.6 ｜ 2026-10-25 ｜ 首页信息重排 + 配置组件</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          · 首页新增<b>「设置」</b>按钮：弹文件选择框选 WoW.exe，自动设为当前客户端<br>
-          · 删「游戏路径」行，<b>当前客户端 / 当前服务器</b>并列显示<br>
-          · 状态栏文字<b>加大加粗</b>；三个操作按钮<b>均匀分布</b><br>
-          · 日志区<b>记录启动游戏/清理还原等操作历史</b>（带时间戳）；清理还原时进度文字与实际同步
+          <div><span class="ct ct-imp">改进</span>首页两栏独立：左=当前客户端/已装插件，右=当前服务器/服务器地址；信息行字体加大、显示值居中</div>
+          <div><span class="ct ct-imp">改进</span>「环境检测」更名「配置组件」；「打开目录」改为「打开」并移到「设置」右侧，点击打开游戏文件夹并定位 WoW.exe；三个按钮均匀分布</div>
+          <div><span class="ct ct-imp">改进</span>游戏路径与按钮同行显示，始终显示完整主程序路径；选完路径立即显示日志区；资源就绪显示「等待安装」</div>
+          <div><span class="ct ct-imp">改进</span>服务器页连线地址按 realmlist 原格式两行显示；服务器地址只显示一个网址（apac.capycraft.io）</div>
+          <div><span class="ct ct-fix">修复</span>选完 WoW.exe 提示「目录不存在」（主程序路径自动归一到游戏根目录）</div>
         </div>
-        <div class="kv"><span class="k">v3.4 日志流式 + 字体页明细</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v3.5 ｜ 2026-10-25 ｜ 设置按钮 + 操作记录</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          · 环境检测日志<b>随进度逐行显示</b>，不再结束时一次性出现<br>
-          · 插件页底部提示文字已删除<br>
-          · 字体页：删「来源」行，改为<b>字体明细表（名称+用途+状态）</b>，新增<b>「打开目录」</b>按钮
+          <div><span class="ct ct-add">新增</span>首页「设置」按钮：弹文件选择框选 WoW.exe，自动设为当前客户端</div>
+          <div><span class="ct ct-add">新增</span>日志区记录启动游戏/清理还原等操作历史（带时间戳）；清理还原进度文字与实际同步</div>
+          <div><span class="ct ct-imp">改进</span>删「游戏路径」行，当前客户端/当前服务器并列显示；状态栏文字加大加粗；三个操作按钮均匀分布</div>
         </div>
-        <div class="kv"><span class="k">v3.3 状态与弹窗修正</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v3.4 ｜ 2026-10-25 ｜ 日志流式 + 字体页明细</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          · 环境检测进行中，状态栏不再误报"✓已装"——正在装的项显示<b>「◉安装中…」</b><br>
-          · 检测步骤列表<b>合并为一行</b>显示，更紧凑<br>
-          · 软件窗口<b>在屏幕正中</b>打开<br>
-          · 确认弹窗改为<b>居中「警告」框</b>，不再显示网址字样
+          <div><span class="ct ct-imp">改进</span>环境检测日志随进度逐行显示，不再结束时一次性出现</div>
+          <div><span class="ct ct-imp">改进</span>字体页：删「来源」行，改为字体明细表（名称+用途+状态），新增「打开目录」按钮</div>
+          <div><span class="ct ct-rem">移除</span>插件页底部提示文字</div>
         </div>
-        <div class="kv"><span class="k">v3.2 细节打磨</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v3.3 ｜ 2026-10-25 ｜ 状态与弹窗修正</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          · 插件/模组用途说明<b>只显示介绍文字</b>，不再重复插件名称<br>
-          · 侧栏顺序调整：<b>模组移到插件上面</b>（服务器之下）<br>
-          · 环境检测分步显示<b>「✓ 资源下载：完毕」</b>；安装过程中首页状态栏<b>实时同步 ✓已装</b><br>
-          · 模组页删掉「▸说明」角标和顶部说明文字；点击模组名即显示介绍
+          <div><span class="ct ct-fix">修复</span>环境检测进行中状态栏误报「✓已装」——正在装的项显示「◉安装中…」</div>
+          <div><span class="ct ct-imp">改进</span>检测步骤列表合并为一行更紧凑；软件窗口在屏幕正中打开</div>
+          <div><span class="ct ct-imp">改进</span>确认弹窗改为居中「警告」框，不再显示网址字样</div>
         </div>
-        <div class="kv"><span class="k">v3.1 环境检测 + 清理还原</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v3.2 ｜ 2026-10-25 ｜ 细节打磨</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          · 首页新增<b>「🔎 环境检测」</b>：自动完成资源下载+模组/插件/字体安装并逐项检查，<b>全部通过才能启动游戏</b>（启动游戏只负责启动）<br>
-          · 「退出工具」改为<b>「⏻ 清理还原」</b>：倒计时 5 秒后回到初始界面，程序继续可用；还原时模组/插件/字体<b>彻底删除</b>（不再挪回收区）<br>
-          · 插件/字体的装入、移除按钮统一移到<b>页面顶部</b>；插件删除仍挪到备份文件夹可捞回<br>
-          · 点窗口 X：界面立即消失，还原在后台完成后自动退出
+          <div><span class="ct ct-imp">改进</span>插件/模组用途说明只显示介绍文字，不再重复插件名称；侧栏顺序调整（模组移到插件上面）</div>
+          <div><span class="ct ct-imp">改进</span>环境检测分步显示「✓ 资源下载：完毕」；安装过程中首页状态栏实时同步 ✓已装</div>
+          <div><span class="ct ct-imp">改进</span>模组页删掉「▸说明」角标和顶部说明文字，点击模组名即显示介绍</div>
         </div>
-        <div class="kv"><span class="k">v3.0 关窗后台还原 + 永久删除</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v3.1 ｜ 2026-10-25 ｜ 环境检测 + 清理还原</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          · 点窗口 <b>X 关闭</b>：界面立即消失，还原/清理在后台自动完成，不再卡在退出画面<br>
-          · 插件删除改为<b>永久删除</b>（不再进回收站），移除前有确认提示<br>
-          · 插件列表<b>不再自动换行</b>：过长名称省略号截断，悬停可见完整内容；删掉列表下方说明文字
+          <div><span class="ct ct-add">新增</span>首页「环境检测」：自动完成资源下载+模组/插件/字体安装并逐项检查，全部通过才能启动游戏（启动游戏只负责启动）</div>
+          <div><span class="ct ct-chg">变更</span>「退出工具」改为「清理还原」：倒计时 5 秒回到初始界面，程序继续可用；还原时模组/插件/字体彻底删除（不再挪回收区）</div>
+          <div><span class="ct ct-imp">改进</span>插件/字体的装入、移除按钮统一移到页面顶部；插件删除仍挪备份文件夹可捞回</div>
+          <div><span class="ct ct-imp">改进</span>点窗口 X：界面立即消失，还原在后台完成后自动退出</div>
         </div>
-        <div class="kv"><span class="k">v2.9 装入插件/字体一键直装</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v3.0 ｜ 2026-10-25 ｜ 关窗后台还原 + 永久删除</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          · 插件页新增<b>「装入插件」</b>：插件包没下载会自动先下载再装入客户端，按钮旁实时显示下载/安装进度<br>
-          · 插件列表按<b>「本地插件（已装入）／网络插件（已下载未装入）」</b>分组展示<br>
-          · 字体页「装入字体」同样支持<b>自动下载</b>（退出工具清缓存后再次装入无需去下载页）<br>
-          · 模组/插件/字体三个「装入」按钮统一：缓存为空 → 自动下载 → 安装，全程进度可见
+          <div><span class="ct ct-imp">改进</span>点窗口 X 关闭：界面立即消失，还原/清理在后台自动完成，不再卡在退出画面</div>
+          <div><span class="ct ct-chg">变更</span>插件删除改为永久删除（不再进回收站），移除前有确认提示</div>
+          <div><span class="ct ct-imp">改进</span>插件列表不再自动换行：过长名称省略号截断，悬停显示完整内容</div>
         </div>
-        <div class="kv"><span class="k">v2.8 插件页状态修正</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v2.9 ｜ 2026-10-25 ｜ 装入插件/字体一键直装</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          · 插件页改为<b>完整插件列表</b>：已安装/未安装分别标注（下载了还没装入的显示"未安装"），不再笼统标"已安装插件"<br>
-          · 【标题】列改为<b>【名称】</b>：显示插件用途说明里的中文名<br>
-          · 「装入模组」增强：缓存被清过会<b>自动先下载模组包</b>再安装，按钮旁实时显示下载进度
+          <div><span class="ct ct-add">新增</span>插件页「装入插件」：插件包没下载自动先下载再装入客户端，按钮旁实时显示下载/安装进度</div>
+          <div><span class="ct ct-imp">改进</span>插件列表按「本地插件（已装入）/网络插件（已下载未装入）」分组展示</div>
+          <div><span class="ct ct-imp">改进</span>模组/插件/字体三个「装入」按钮统一：缓存为空 → 自动下载 → 安装，全程进度可见</div>
         </div>
-        <div class="kv"><span class="k">v2.7 启动自检 + 退出清缓存</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v2.8 ｜ 2026-10-25 ｜ 插件页状态修正</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          · 首页状态自检升级：模组/插件/字体<b>分别显示 ✓/✗</b>，三项全部装好才显示"已安装"；点「启动游戏」前也会自检，<b>缺任何一项都不会启动游戏</b><br>
-          · 退出工具还原后，自动删除游戏目录的「插件备份」文件夹与下载缓存（下次使用重新下载，硬盘不留残留）<br>
-          · 窗口固定 980×680（不可缩放）；首页路径显示到 WoW.exe；修复点开说明后<b>关不掉</b>的问题（再点一次即收起）
+          <div><span class="ct ct-fix">修复</span>插件页改为完整插件列表：已安装/未安装分别标注（下载未装入显示"未安装"），不再笼统标"已安装插件"</div>
+          <div><span class="ct ct-imp">改进</span>【标题】列改为【名称】，显示插件用途说明里的中文名</div>
+          <div><span class="ct ct-imp">改进</span>「装入模组」增强：缓存被清过自动先下载模组包再安装，实时显示下载进度</div>
         </div>
-        <div class="kv"><span class="k">v2.6 说明补全 + 退出直达</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v2.7 ｜ 2026-10-25 ｜ 启动自检 + 退出清缓存</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          · 修复插件页<b>用途说明不显示</b>（字段名不匹配导致 150 条说明全部失配）；点插件行展开分类+用途<br>
-          · 模组页新增<b>「装入模组（按勾选）」</b>按钮：不用回首页点启动游戏，勾完立即生效；模组名旁可点开<b>用途说明</b><br>
-          · 点「⏻ 退出工具」倒计时结束后<b>自动关闭程序</b>，不再弹"是否离开网站"确认框<br>
-          · 程序窗口默认尺寸调小（980×680）
+          <div><span class="ct ct-imp">改进</span>首页状态自检升级：模组/插件/字体分别显示 ✓/✗，三项全装好才显示"已安装"；点「启动游戏」前再次自检，缺任何一项不启动</div>
+          <div><span class="ct ct-imp">改进</span>退出还原后自动删除游戏目录的「插件备份」文件夹与下载缓存，不留残留</div>
+          <div><span class="ct ct-imp">改进</span>窗口固定 980×680（不可缩放）；首页路径显示到 WoW.exe</div>
+          <div><span class="ct ct-fix">修复</span>点开说明后关不掉（再点一次即收起）</div>
         </div>
-        <div class="kv"><span class="k">v2.5 蓝奏云文件夹分发</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v2.6 ｜ 2026-10-25 ｜ 说明补全 + 退出直达</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          · 下载页新增<b>资源文件夹</b>：填一个蓝奏云文件夹分享链接+提取码，程序自动列出里面全部文件，按文件名匹配模组/插件/字体分卷并下载解压；作者以后只需在文件夹里增删文件，<b>用户零配置、零更新程序</b><br>
-          · 修复蓝奏云新版下载页（反爬 CDN + apifile 域名 AJAX）直链解析；下载走阿里云盾 acw_sc__v2 自动绕过<br>
-          · 「检查插件更新」支持文件夹里的 manifest.json（增量只下载变化的插件）；原手动分卷链接保留为兜底
+          <div><span class="ct ct-fix">修复</span>插件页用途说明不显示（字段名不匹配致 150 条说明全部失配）；点插件行展开分类+用途</div>
+          <div><span class="ct ct-add">新增</span>模组页「装入模组（按勾选）」按钮：勾完立即生效，不用回首页点启动游戏；模组名旁可点开用途说明</div>
+          <div><span class="ct ct-imp">改进</span>点「⏻ 退出工具」倒计时结束自动关闭程序，不再弹"是否离开网站"确认框；窗口默认尺寸调小（980×680）</div>
         </div>
-        <div class="kv"><span class="k">v2.4 启动即玩 + 全选模组</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v2.5 ｜ 2026-10-25 ｜ 蓝奏云文件夹分发</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          · 首页去掉「一键安装」，合并进「▶ 启动游戏」：点一下自动 装模组→装插件→装字体→启动游戏，带<b>进度条和分步提示</b>（模组/插件/字体 安装中→完毕→启动游戏）；已装过则直接启动<br>
-          · 模组页「应用模组选择」改为表头<b>全选复选框</b>：点一下全选/全不选（半选状态可见），勾选自动保存，启动游戏时按勾选安装<br>
-          · 模组备份文件名改为时间戳在扩展名前（dlls.20261024_230824.txt），双击仍是文本文档
+          <div><span class="ct ct-add">新增</span>下载页「资源文件夹」：填一个蓝奏云分享链接+提取码，自动列出全部文件、按文件名匹配分卷下载解压；作者只需在文件夹增删文件，用户零配置零更新程序</div>
+          <div><span class="ct ct-add">新增</span>「检查插件更新」支持 manifest.json 增量下载（只下变化的插件）；原手动分卷链接保留为兜底</div>
+          <div><span class="ct ct-fix">修复</span>蓝奏云新版下载页（反爬 CDN + apifile 域名 AJAX）直链解析</div>
         </div>
-        <div class="kv"><span class="k">v2.3 无窗口启动</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v2.4 ｜ 2026-10-24 ｜ 启动即玩 + 全选模组</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          · 新增「启动插件助手-无窗口.vbs」：双击后<b>不再弹黑窗口</b>，隐藏后台启动，只出浏览器界面；运行日志写在 run.log（原来的 .bat 保留，想用黑窗口照旧）<br>
-          · 新增「打开插件助手界面.url」：误关浏览器页面后双击它即可回到界面（地址 http://127.0.0.1:8766）<br>
-          · 关页面前弹确认提醒：<b>会话进行中会强烈拦截</b>；退出统一走界面「⏻ 退出工具(并还原)」按钮，防止误关导致不还原
+          <div><span class="ct ct-imp">改进</span>首页「一键安装」合并进「▶ 启动游戏」：点一下自动 装模组→装插件→装字体→启动游戏，带进度条与分步提示；已装过则直接启动</div>
+          <div><span class="ct ct-imp">改进</span>模组页「应用模组选择」改为表头全选复选框（半选状态可见），勾选自动保存，启动游戏时按勾选安装</div>
+          <div><span class="ct ct-imp">改进</span>模组备份文件名时间戳移到扩展名前（dlls.20261024_230824.txt），双击仍是文本文档</div>
         </div>
-        <div class="kv"><span class="k">v2.2 字体 + 模组加载修复</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v2.3 ｜ 2026-10-24 ｜ 无窗口启动</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          · 新增「字体」页：整个 Fonts 文件夹随「一键安装」装入游戏根目录，退出工具时随模组+插件一起自动移除、恢复干净；也可在字体页单独装入/移除<br>
-          · 修复模组全部报 "no module handle" 无法加载：dlls.txt 改为 LF 换行（原文本写入会被转成 CRLF，导致 VanillaFixes 加载不到 DLL）；启动游戏的工作目录改为客户端根目录（等同资源管理器双击）；模组加载顺序对齐模组包原版
+          <div><span class="ct ct-add">新增</span>「启动插件助手-无窗口.vbs」：双击不再弹黑窗口，隐藏后台启动（原 .bat 保留，想用黑窗口照旧）</div>
+          <div><span class="ct ct-add">新增</span>「打开插件助手界面.url」：误关浏览器页面后双击即可回到界面</div>
+          <div><span class="ct ct-imp">改进</span>关页面前弹确认提醒，会话进行中强烈拦截；退出统一走「⏻ 退出工具(并还原)」防止误关不还原</div>
         </div>
-        <div class="kv"><span class="k">v2.1 会话模式</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v2.2 ｜ 2026-10-24 ｜ 字体 + 模组加载修复</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          · <b>会话模式</b>：首页「⚡ 一键安装」按模组页勾选装上模组+插件即可玩；退出工具（按钮/关窗/Ctrl+C）自动结束游戏并删除本次安装，客户端恢复干净；下次开工具自动重装<br>
-          · 模组页改为「勾选安装」：只列模组包内可选模组（<b>游戏自带核心引擎文件不再显示</b>），勾选即保存，一键安装/应用模组选择时生效；VanillaFixes 加载器自动带上；SUNI 四件套（SuperWoWhook/UnitXP_SP3/nampower/Interact）有标注<br>
-          · dlls.txt 自动管理：装模组自动写入、卸模组自动清理，不用手动维护<br>
-          · 首页精简：去掉 realmlist、服务器选择、正在使用、游戏配置；<b>游戏路径设置移到首页</b>；服务器页只留水豚乐园信息<br>
-          · 插件页：本地 Interface 文件夹「整体替换安装」（按插件包作者方式：先备份清空、再整包装入，不混装）
+          <div><span class="ct ct-add">新增</span>「字体」页：整个 Fonts 文件夹随「一键安装」装入游戏根目录，退出工具时随模组+插件一起移除恢复干净；也可单独装入/移除</div>
+          <div><span class="ct ct-fix">修复</span>模组全部报 "no module handle" 无法加载：dlls.txt 改为 LF 换行（文本写入被转成 CRLF 致加载失败）；启动游戏工作目录改为客户端根目录；模组加载顺序对齐模组包原版</div>
         </div>
-        <div class="kv"><span class="k">v1.x 初版</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v2.1 ｜ 2026-10-24 ｜ 会话模式</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          · 插件安装/更新/删除/备份、自定义游戏路径、启动游戏、realmlist 显示
+          <div><span class="ct ct-add">新增</span>会话模式：按模组页勾选装上模组+插件即可玩；退出工具（按钮/关窗/Ctrl+C）自动结束游戏并删除本次安装，客户端恢复干净；下次开工具自动重装</div>
+          <div><span class="ct ct-imp">改进</span>模组页改为勾选安装：只列模组包内可选模组（游戏自带核心引擎文件不再显示），勾选即保存；VanillaFixes 加载器自动带上</div>
+          <div><span class="ct ct-imp">改进</span>dlls.txt 自动管理：装模组自动写入、卸模组自动清理，不用手动维护</div>
+          <div><span class="ct ct-imp">改进</span>首页精简：去掉 realmlist、服务器选择、正在使用、游戏配置；游戏路径设置移到首页；服务器页只留水豚乐园信息</div>
+          <div><span class="ct ct-rem">移除</span>「导入模组包」「写入 dlls.txt」手动操作，改为全自动管理</div>
+        </div>
+        <div class="kv"><span class="k">v2.0 ｜ 2026-10-24 ｜ 界面框架重构 + 模组体系上线</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          <div><span class="ct ct-note">注</span>本条为后期依据开发记录补录（原始记录已丢失）</div>
+          <div><span class="ct ct-add">新增</span>界面重构为暗色侧边栏单页应用：首页 / 服务器 / 插件 / 模组 / 下载 / 更新日志</div>
+          <div><span class="ct ct-add">新增</span>「模组」页：列出客户端根 DLL，核心引擎文件锁定不可禁用，增强模组可勾选启停；SUNI 四件套（SuperWoWhook / UnitXP_SP3 / nampower / Interact）专属标注</div>
+          <div><span class="ct ct-add">新增</span>「导入模组包」：填本地模组包文件夹，把包内 DLL 与 VanillaFixes.exe 拷进客户端根目录，覆盖前自动备份到模组备份（可捞回）</div>
+          <div><span class="ct ct-add">新增</span>插件「整体替换安装」：按插件包作者方式先备份清空、再整包装入，不混装</div>
+          <div><span class="ct ct-add">新增</span>「写入 dlls.txt」：把增强模组按加载顺序写进 dlls.txt，写前自动备份</div>
+          <div><span class="ct ct-imp">改进</span>删除「设置」页（游戏路径在服务器页已可设）；首页服务器卡片只保留水豚乐园</div>
+          <div><span class="ct ct-fix">修复</span>接口返回体为空导致「模组启停」「打开目录」等按钮静默失败的序列化问题</div>
+        </div>
+        <div class="kv"><span class="k">v1.x ｜ 2026-10-24 ｜ 初版「插件助手」</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          <div><span class="ct ct-add">新增</span>自动探测客户端 AddOns 目录；插件安装/更新/删除/备份（旧版自动备份到时间戳文件夹）；已装插件列表（读 toc 名称/版本）</div>
+          <div><span class="ct ct-add">新增</span>蓝奏云链接解析 → 下载 → 解压（zip 内置 + rar/7z 调本机压缩软件）→ 自动安装</div>
+          <div><span class="ct ct-add">新增</span>一键安装/更新；一键删除（移入回收站文件夹可捞回，贴图自动还原）</div>
+          <div><span class="ct ct-add">新增</span>启动游戏；realmlist 显示；CastingBar / TargetingFrame 贴图美化（原版贴图先备份）</div>
+          <div><span class="ct ct-add">新增</span>自定义游戏路径：粘贴客户端根 / Interface / AddOns 任一层级自动纠正，配置持久化</div>
         </div>
       </div>
     </section>
