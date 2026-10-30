@@ -610,9 +610,9 @@ function renderProgress(p){
   pct.textContent = p.pct + '%';
   bar.style.width = p.pct + '%';
   msg.textContent = p.msg || p.stage || '';
-  // 完成态提示醒目：加大字号 + 绿色加粗
+  // 完成态提示醒目：加大字号 + 琥珀金加粗（与「启动游戏」按钮就绪色一致）
   msg.style.cssText = p.done
-    ? 'font-size:15px;font-weight:700;color:var(--accent)'
+    ? 'font-size:15px;font-weight:700;color:#f5a623'
     : '';
   const order = [['下载','资源下载'],['模组','模组安装'],['插件','插件安装'],['字体','字体安装']];
   const done = p.steps || [], cur = p.stage || '';
