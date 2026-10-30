@@ -2288,7 +2288,7 @@ class Handler(BaseHTTPRequestHandler):
             _set_selection("addons", n, en)
             return self._send(200, {"ok": True})
         if self.path == "/api/addons_apply":
-            # 按插件页勾选立即同步：装入勾选未装的；卸载已装但取消勾选的（挪入 WowAbak 备份可捞回）
+            # 按插件页勾选立即同步：装入勾选未装的；卸载已装但取消勾选的（直接删除）
             _hist("应用插件勾选（缓存未就绪会先自动下载）")
             t = _to_addons(payload.get("target", ""))
             if not t:
@@ -2311,18 +2311,20 @@ class Handler(BaseHTTPRequestHandler):
                      if os.path.isdir(os.path.join(src_addons, e)) and not e.startswith("_")]
             chosen = [e for e in names if _addon_locked(e) or sel.get(e.lower(), True)]
             chosen_l = {e.lower() for e in chosen}
-            # 1) 卸载已装但取消勾选的 → WowAbak\插件备份_ts（可捞回）
+            # 1) 卸载已装但取消勾选的 → 直接删除（不备份）
             n_rem = 0
-            bb = os.path.join(backups_base(addons),
-                              "插件备份_" + time.strftime("%Y%m%d_%H%M%S"))
             if os.path.isdir(addons):
                 for e in sorted(os.listdir(addons), key=str.lower):
                     if e.startswith("_") or e.lower() in chosen_l:
                         continue
                     p = os.path.join(addons, e)
-                    if os.path.isdir(p) and _move_to_backup(p, bb, _log, "插件"):
-                        n_rem += 1
-                        _log("[插件] 已卸载（挪入 WowAbak 备份）：" + e)
+                    if os.path.isdir(p):
+                        try:
+                            shutil.rmtree(p)
+                            n_rem += 1
+                            _log("[插件] 已卸载（直接删除）：" + e)
+                        except Exception as ex:
+                            _log("[插件] 卸载 " + e + " 失败：" + str(ex))
             # 2) 装入勾选但未装的
             n_inst = 0
             for e in chosen:
@@ -2370,7 +2372,7 @@ class Handler(BaseHTTPRequestHandler):
             cfg = load_config()
             cfg["session_applied"] = _overlay_present(t)
             save_config(cfg)
-            summary = "字体勾选已应用：装入/更新 %d 个文件（未勾选的已挪入 WowAbak 备份）" % n
+            summary = "字体勾选已应用：装入/更新 %d 个文件（未勾选的已卸载）" % n
             _set_progress(0, done=True, msg=summary)
             return self._send(200, {"ok": True, "log": log_lines, "summary": summary})
         if self.path == "/api/mod_select":
@@ -2995,25 +2997,31 @@ def install_fonts(target, font_src, log):
         os.makedirs(dst, exist_ok=True)
         sel = _get_selection("fonts")
         srcset = set(os.listdir(font_src))
-        conflict_backup = os.path.join(backups_base(target),
-                                       "字体备份_" + time.strftime("%Y%m%d_%H%M%S"))
-        # 安装前备份规则（按勾选）：
-        #   ① 勾选保留、且资源包里没有的字体 → 原地不动（不卸载、不覆盖）
-        #   ② 其余（包内会覆盖更新的 / 取消勾选要卸载的）先挪入 WowAbak\字体备份_ts
+        # 安装前处理规则（按勾选，不备份）：
+        #   ① 资源包里有的 → 留在原地，稍后直接覆盖更新
+        #   ② 勾选保留、且资源包里没有的 → 原地不动（不卸载、不覆盖）
+        #   ③ 取消勾选、且资源包里没有的 → 直接删除（卸载）
         if os.path.isdir(dst):
             npre = 0
             nkeep = 0
             for e in os.listdir(dst):
-                if e not in srcset and sel.get(e.lower(), True):
+                if e in srcset:
+                    continue
+                if sel.get(e.lower(), True):
                     nkeep += 1
                     continue
-                if _move_to_backup(os.path.join(dst, e), conflict_backup, log, "字体"):
+                p = os.path.join(dst, e)
+                try:
+                    if os.path.isdir(p):
+                        shutil.rmtree(p)
+                    else:
+                        os.remove(p)
                     npre += 1
+                    log("[字体] 已卸载（直接删除）：" + e)
+                except Exception as ex:
+                    log("[字体] 卸载 " + e + " 失败：" + str(ex))
             if nkeep:
                 log("[字体] 按勾选保留客户端原有（资源包外）字体 " + str(nkeep) + " 个")
-            if npre:
-                log("[备份] 安装前已把 Fonts 原有 " + str(npre) + " 项整体备份到 WowAbak\\"
-                    + os.path.basename(conflict_backup) + "（未丢失）")
         n_skip = 0
         for e in sorted(os.listdir(font_src)):
             sp = os.path.join(font_src, e)
@@ -3978,7 +3986,7 @@ def apply_mod_selection(target, src, log):
         if os.path.isfile(d):
             if _fast_delete(d):
                 n_rem += 1
-                log("[模组] 移除 " + m["name"])
+                log("[模组] 已卸载（直接删除）：" + m["name"])
     # 加载器：已由内置注入器取代，装模组【不再】往游戏目录拷贝 VanillaFixes.exe；
     # 顺手清掉老版本可能残留在游戏目录里的那个文件（存在即删，无则跳过）。
     legacy = os.path.join(root, "VanillaFixes.exe")
