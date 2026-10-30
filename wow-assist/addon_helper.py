@@ -790,6 +790,13 @@ def normalize_addons_path(path, create=False):
     create=True 时若 Interface/AddOns 不存在则自动新建两级目录"""
     p = os.path.abspath(path.strip().strip('"'))
     if not os.path.isdir(p):
+        # AddOns 目录本身不存在（清理还原后/全新客户端）→ create 时连同 Interface 一起新建
+        if create and p.lower().endswith("addons"):
+            try:
+                os.makedirs(p, exist_ok=True)
+                return p
+            except Exception:
+                return None
         return None
     low = os.path.basename(p).lower()
     if low == "addons":
@@ -2442,7 +2449,12 @@ class Handler(BaseHTTPRequestHandler):
 
             def _log(m):
                 log_lines.append(m)
-            ok, summary, _st = apply_overlay(t, mod_src, addon_src, _log, font_src)
+            try:
+                ok, summary, _st = apply_overlay(t, mod_src, addon_src, _log, font_src)
+            except Exception as ex:
+                ok, summary = False, "安装流程异常：" + repr(ex)
+                _log("[错误] " + summary)
+                _set_progress(0, done=True, msg=summary)
             if ok:
                 _persist_target(t)
             return self._send(200, {"ok": ok, "log": log_lines, "summary": summary,
@@ -2533,7 +2545,12 @@ class Handler(BaseHTTPRequestHandler):
             _reset_progress()
             # 每次都完整执行安装（apply_overlay 幂等，已装的部分重拷很快）：
             # 保证模组+插件+字体全部就绪，缺一项都不允许启动游戏。
-            ok, summary, _st = apply_overlay(t, mod_src, addon_src, _log, font_src)
+            try:
+                ok, summary, _st = apply_overlay(t, mod_src, addon_src, _log, font_src)
+            except Exception as ex:
+                ok, summary = False, "安装流程异常：" + repr(ex)
+                _log("[错误] " + summary)
+                _set_progress(0, done=True, msg=summary)
             if ok:
                 _persist_target(t)
             if not ok:
