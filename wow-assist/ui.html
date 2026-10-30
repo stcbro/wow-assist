@@ -108,7 +108,7 @@ th{color:var(--sub);font-weight:600;font-size:12px}
       <div class="card grow" style="max-width:760px">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 22px">
           <div class="kv home-kv"><span class="k">当前客户端</span><span id="h-path">—</span></div>
-          <div class="kv home-kv"><span class="k">当前服务器</span><span id="h-realm-name">水豚乐园</span></div>
+          <div class="kv home-kv"><span class="k">当前服务器</span><span id="h-realm-name">—</span></div>
           <div class="kv home-kv"><span class="k">已装插件</span><span id="h-addons">—</span></div>
           <div class="kv home-kv"><span class="k" style="white-space:nowrap">服务器地址</span><span id="h-realm">—</span></div>
         </div>
@@ -527,6 +527,8 @@ function nav(p){
 document.querySelectorAll('#nav button').forEach(b=> b.onclick = ()=>nav(b.dataset.p));
 
 // 从 realmlist.wtf 内容中提取 realmlist 行的服务器地址（去引号），如 apac.capycraft.io
+// 已知服务器 → 中文名映射（按 realmlist 地址识别，非写死）
+const REALM_NAMES = { 'apac.capycraft.io': '水豚乐园' };
 function realmHost(raw){
   const m = (raw||'').match(/^set\s+realmlist\s+"?([^"\r\n]+?)"?\s*$/im);
   return m ? m[1].trim() : '';
@@ -557,9 +559,13 @@ async function loadHome(){
   // 当前服务器：名字固定显示水豚乐园；地址只显示一个网址（realmlist 行的主机地址）
   if(state.current){
     const rl = await api('/api/realmlist?target='+encodeURIComponent(state.current));
-    $('#h-realm').textContent = realmHost(rl.realm) || '—';
+    const host = realmHost(rl.realm);
+    $('#h-realm').textContent = host || '—';
+    // 当前服务器：按 realmlist 地址识别（水豚乐园=apac.capycraft.io），未知地址直接显示网址
+    $('#h-realm-name').textContent = REALM_NAMES[host] || host || '—';
   } else {
     $('#h-realm').textContent = '—';
+    $('#h-realm-name').textContent = '—';
   }
   if(!state.current){
     $('#s-msg').style.color = 'var(--accent)';
@@ -1205,7 +1211,7 @@ $('#lz-dr-clear').onclick = async ()=>{
   toast('已清空直链，改用蓝奏云文件夹'); loadLanzou();
 };
 
-loadTargets();
+loadHome();   // 启动即填充首页四个字段（此前只调 loadTargets 只填路径框，其余显示"—"）
 </script>
 </body>
 </html>
