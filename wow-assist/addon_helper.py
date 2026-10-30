@@ -2685,6 +2685,55 @@ class Handler(BaseHTTPRequestHandler):
             save_config(cfg)
             return self._send(200, {"ok": ok, "log": log_lines,
                                     "summary": "字体已移除，客户端恢复原样" if ok else "没有已装入的字体"})
+        if self.path == "/api/mods_remove":
+            # 移除模组：删游戏根里的模组 DLL（内置注入器的 VfPatcher/nampower 一并），
+            # dlls.txt 恢复初始基线；与字体页「移除字体」同形式
+            t_root = _to_root(payload.get("target", ""))
+            log_lines = []
+
+            def _log(m):
+                log_lines.append(m)
+            if not t_root or not os.path.isdir(t_root):
+                return self._send(200, {"ok": False, "log": log_lines,
+                                        "summary": "未设置游戏路径，请先在「首页」设置"})
+            names = list(MOD_DLL_ORDER)
+            try:
+                src = _kind_dst("mods")
+                if src and os.path.isdir(src):
+                    names += [e for e in os.listdir(src)
+                              if os.path.isfile(os.path.join(src, e))
+                              and e.lower().endswith(".dll")]
+            except Exception:
+                pass
+            n = 0
+            for nm in dict.fromkeys(names):
+                p = os.path.join(t_root, nm)
+                if os.path.isfile(p):
+                    try:
+                        os.remove(p)
+                        n += 1
+                        _log("[模组] 已移除：" + nm)
+                    except Exception as ex:
+                        _log("[模组] 移除 " + nm + " 失败：" + str(ex))
+            cfg = load_config()
+            base = cfg.get("baseline_dllstxt")
+            if base is not None:
+                try:
+                    with open(os.path.join(t_root, "dlls.txt"), "w",
+                              encoding="utf-8") as f:
+                        f.write(base)
+                    _log("[模组] dlls.txt 已恢复初始内容")
+                except Exception:
+                    pass
+            ist = cfg.get("install_state", {})
+            if "mods" in ist:
+                ist.pop("mods", None)
+                cfg["install_state"] = ist
+            cfg["session_applied"] = _overlay_present(t_root)
+            save_config(cfg)
+            return self._send(200, {"ok": True, "log": log_lines,
+                                    "summary": ("已移除 %d 个模组文件" % n) if n
+                                    else "没有已装入的模组"})
         if self.path == "/api/session_revert":
             t = _to_addons(payload.get("target", ""))
             log_lines = []

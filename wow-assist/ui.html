@@ -155,12 +155,13 @@ th{color:var(--sub);font-weight:600;font-size:12px}
       <div style="margin:0 0 4px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <button class="btn primary sm" id="a-install">装入插件</button>
         <button class="btn danger sm" id="a-removeall">全部移除</button>
+        <button class="btn sm" id="a-open">打开目录</button>
         <button class="btn sm" id="a-refresh">刷新</button>
         <span id="a-apply-msg" style="font-size:12px;color:var(--sub)"></span>
       </div>
       <div class="card" style="margin-top:10px">
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
-          <span id="a-sel-msg" style="font-size:12px;color:var(--sub)">勾选后点上方「装入插件」生效；取消勾选已装的会卸载（直接删除）</span>
+          <span id="a-sel-msg" style="font-size:12px;color:var(--sub)">勾选后点上方「装入插件」生效；取消勾选后再点击「装入插件」，已装的会卸载。</span>
         </div>
         <table id="a-sel-table">
           <thead><tr><th style="width:42px"><input type="checkbox" id="a-sel-all" title="全选 / 全不选"></th><th>插件</th><th>分类</th><th style="width:90px">状态</th></tr></thead>
@@ -174,6 +175,8 @@ th{color:var(--sub);font-weight:600;font-size:12px}
       <h2>模组</h2>
       <div style="margin:0 0 4px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <button class="btn primary sm" id="dll-apply">装入模组</button>
+        <button class="btn danger sm" id="dll-remove">移除模组</button>
+        <button class="btn sm" id="dll-open">打开目录</button>
         <button class="btn sm" id="dll-refresh">刷新</button>
         <span id="dll-apply-msg" style="font-size:12px;color:var(--sub)"></span>
       </div>
@@ -877,6 +880,13 @@ $('#a-install').onclick = async ()=>{
   loadAddons(); loadAddonSel(); loadHome();
 };
 $('#a-refresh').onclick = loadAddons;
+// 打开目录：插件目录 = 游戏根\Interface\AddOns（没装过则提示目录不存在）
+$('#a-open').onclick = async ()=>{
+  if(!state.current){ toast('还没有可打开的目录'); return; }
+  const p = state.current.replace(/[\\/]+$/,'') + '\\Interface\\AddOns';
+  const r = await api('/api/open', {path: p});
+  if(r && r.ok === false) toast(r.error || r.msg || '目录不存在（还没装过插件）');
+};
 // 模组用途说明（key = 模组包里的 dll 文件名小写）
 const MOD_INFO = {
   "superwowhook.dll":   {n:"超级魔兽核心（SUNI）", d:"乌龟服增强模组的基础库，为 1.12 客户端扩展单位信息接口（目标血/蓝量数值等），大量增强功能依赖它，建议保持勾选。"},
@@ -967,6 +977,21 @@ $('#dll-all').addEventListener('change', async (e)=>{
   $('#dll-apply-msg').textContent = on ? '已全选 ' + boxes.length + ' 个模组' : '已取消全部模组';
 });
 $('#dll-refresh').onclick = ()=> loadMods();
+// 移除模组：删掉游戏根里的模组 DLL，dlls.txt 恢复初始内容（与字体页「移除字体」同形式）
+$('#dll-remove').onclick = async ()=>{
+  if(!state.current){ alert('请先在「首页」设置游戏路径'); return; }
+  if(!(await askConfirm('移除游戏目录里的模组文件？\n（dlls.txt 会恢复初始内容）'))) return;
+  const r = await api('/api/mods_remove', {target:state.current});
+  $('#dll-apply-msg').textContent = r.summary || '';
+  toast(r.summary || '已移除');
+  loadMods(); loadHome();
+};
+// 打开目录：模组装在游戏根目录，直接打开游戏根
+$('#dll-open').onclick = async ()=>{
+  if(!state.current){ toast('还没有可打开的目录'); return; }
+  const r = await api('/api/open', {path: state.current});
+  if(r && r.ok === false) toast(r.error || r.msg || '目录不存在');
+};
 
 // ================= 字体页 =================
 let _fonts_dst = '', _fonts_src = '';
