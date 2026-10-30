@@ -44,6 +44,7 @@ h3{margin:18px 0 10px;font-size:15px;color:var(--sub);font-weight:600}
 .btn.primary{background:var(--accent);color:#06210f;font-weight:700;border:0}
 .btn.primary:hover{filter:brightness(1.08)}
 .btn.blue{background:var(--accent2);color:#fff;border:0}
+.btn.amber{background:#f5a623;color:#3a2604;font-weight:700;border:0}
 .btn.ghost{background:transparent}
 .btn.sm{padding:6px 12px;font-size:12px}
 .btn.danger{border-color:var(--danger);color:var(--danger)}
@@ -212,19 +213,19 @@ th{color:var(--sub);font-weight:600;font-size:12px}
         <h3 style="margin-top:0">资源管理（模组 / 插件 / 字体）</h3>
         <div id="lz-cards"></div>
         <div id="lz-cache-dir" style="margin-top:12px;font-size:12px;color:var(--sub)"></div>
-        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px;flex-wrap:nowrap;white-space:nowrap">
           <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer">
-            <input type="checkbox" id="lz-cache-on" style="width:18px;height:18px;accent-color:#3fb95f;cursor:pointer;vertical-align:middle"><span style="white-space:nowrap;font-size:14px;font-weight:700">启用「长期未使用自动清理」</span>
+            <input type="checkbox" id="lz-cache-on" style="width:18px;height:18px;accent-color:#3fb95f;cursor:pointer;vertical-align:middle"><span style="white-space:nowrap;font-size:14px;font-weight:700;color:var(--txt)">启用「长期未使用自动清理」</span>
           </label>
-          <span style="font-size:14px">超过</span>
+          <span style="font-size:14px;color:var(--txt)">超过</span>
           <input type="number" id="lz-cache-days" min="1" max="365" style="width:70px;height:30px;box-sizing:border-box;vertical-align:middle">
-          <span style="font-size:14px">天未使用则自动删除该资源缓存（默认 30 天）。</span>
+          <span style="font-size:14px;color:var(--txt)">天未使用则自动删除该资源缓存（默认 30 天）。</span>
         </div>
         <div id="lz-cache-lastused" style="margin-top:8px;font-size:12px;color:var(--sub)"></div>
         <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
           <button class="btn primary" id="lz-download-all">⬇ 一键下载全部资源</button>
           <button class="btn blue" id="lz-sync">🔄 检查插件更新</button>
-          <button class="btn primary sm" id="lz-cache-save">保存设置</button>
+          <button class="btn amber" id="lz-cache-save">保存设置</button>
           <span id="lz-hint" style="font-size:12px;color:var(--sub)"></span>
         </div>
         <div id="lz-progress" style="margin-top:14px;display:none">
@@ -245,7 +246,7 @@ th{color:var(--sub);font-weight:600;font-size:12px}
         <div id="lz-fd-files" style="margin-top:8px;font-size:12px;color:var(--sub);line-height:1.8"></div>
       </div>
       <div class="card" style="margin-top:12px;max-width:880px">
-        <h3 style="margin-top:0">备用直链（可选 · 蓝奏云抽风时的保险）</h3>
+        <h3 style="margin-top:0">备用直链</h3>
         <textarea id="lz-dr-text" rows="4" spellcheck="false"
           placeholder="每行填一个文件直链，程序按文件名自动识别类型。支持腾讯云 COS / 阿里云 OSS / GitHub / 任意可下载链接。&#10;例：&#10;https://xxx.cos.ap-guangzhou.myqcloud.com/wowassist_模组包.zip&#10;https://xxx.cos.ap-guangzhou.myqcloud.com/wowassist_插件包_part1.zip"
           style="width:100%;resize:vertical;font-family:inherit;font-size:13px;line-height:1.6;padding:8px 10px;background:var(--card2);color:var(--fg);border:1px solid var(--line);border-radius:6px;box-sizing:border-box"></textarea>
