@@ -2993,18 +2993,27 @@ def install_fonts(target, font_src, log):
     n = 0
     try:
         os.makedirs(dst, exist_ok=True)
+        sel = _get_selection("fonts")
+        srcset = set(os.listdir(font_src))
         conflict_backup = os.path.join(backups_base(target),
                                        "字体备份_" + time.strftime("%Y%m%d_%H%M%S"))
-        # 安装前：Fonts 里原有内容全部先备份到 WowAbak\字体备份_ts（无论是否与本次同名）
+        # 安装前备份规则（按勾选）：
+        #   ① 勾选保留、且资源包里没有的字体 → 原地不动（不卸载、不覆盖）
+        #   ② 其余（包内会覆盖更新的 / 取消勾选要卸载的）先挪入 WowAbak\字体备份_ts
         if os.path.isdir(dst):
             npre = 0
+            nkeep = 0
             for e in os.listdir(dst):
+                if e not in srcset and sel.get(e.lower(), True):
+                    nkeep += 1
+                    continue
                 if _move_to_backup(os.path.join(dst, e), conflict_backup, log, "字体"):
                     npre += 1
+            if nkeep:
+                log("[字体] 按勾选保留客户端原有（资源包外）字体 " + str(nkeep) + " 个")
             if npre:
                 log("[备份] 安装前已把 Fonts 原有 " + str(npre) + " 项整体备份到 WowAbak\\"
                     + os.path.basename(conflict_backup) + "（未丢失）")
-        sel = _get_selection("fonts")
         n_skip = 0
         for e in sorted(os.listdir(font_src)):
             sp = os.path.join(font_src, e)
