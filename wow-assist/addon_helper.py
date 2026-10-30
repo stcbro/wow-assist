@@ -1702,8 +1702,20 @@ def uninstall_all_addons(addons_dir, log):
     并还原被贴图美化覆盖的原版贴图。返回 (移除数)"""
     client_root = client_root_of(addons_dir)
     removed = 0
+    # 只删资源包里的（本程序装入的）；非资源包内容（用户自装）保留
+    pack_names = set()
+    try:
+        _psrc = _kind_dst("addons")
+        if _psrc and os.path.isdir(_psrc):
+            pack_names = {e.lower() for e in os.listdir(_psrc)
+                          if os.path.isdir(os.path.join(_psrc, e))}
+    except Exception:
+        pass
     for e in os.listdir(addons_dir):
         if e.startswith("_备份_") or e.startswith("_贴图备份_"):
+            continue
+        if pack_names and e.lower() not in pack_names:
+            log(f"[跳过] {e}（非资源包内容，保留）")
             continue
         src = os.path.join(addons_dir, e)
         if _fast_delete(src):
@@ -1762,6 +1774,8 @@ def uninstall_all_addons(addons_dir, log):
             os.rmdir(parent)
     if restored:
         log(f"[贴图] 已还原 {restored} 个原版贴图")
+    # 恢复客户端原有（非资源包）插件，然后删除该备份
+    _restore_original_backup(addons_dir, "插件备份", addons_dir, log)
     # 空目录收尾：AddOns 清空后，连同 Interface 空目录一并删除（客户端原本没有该目录的场景）
     if os.path.isdir(addons_dir) and not os.listdir(addons_dir):
         _fast_delete(addons_dir)
@@ -2727,8 +2741,10 @@ class Handler(BaseHTTPRequestHandler):
                               encoding="utf-8") as f:
                         f.write(base)
                     _log("[模组] dlls.txt 已恢复初始内容")
-                except Exception:
-                    pass
+                except Exception as ex:
+                    _log("[模组] dlls.txt 恢复失败：" + str(ex))
+            # 恢复客户端原有（非资源包）模组文件，然后删除该备份
+            _restore_original_backup(t_root, "模组备份", t_root, _log)
             ist = cfg.get("install_state", {})
             if "mods" in ist:
                 ist.pop("mods", None)
@@ -3051,49 +3067,31 @@ def install_fonts(target, font_src, log):
         return 0
     dst = fonts_dst(target)
     cfg = load_config()
-    # 首次：客户端自带 Fonts 先整体备份，清理还原时恢复原样。
-    # 仅在「本程序从未装入过字体」时才备份——否则会把上次装入的包字体误当"客户端原有"，
-    # 导致移除字体时又把它们恢复回来（=移除无效）。
-    if os.path.isdir(dst) and not cfg.get("fonts_backup") \
-            and not cfg.get("install_state", {}).get("fonts", {}).get("done"):
-        try:
-            bb = os.path.join(backups_base(target), "字体备份_Fonts")
-            if not os.path.isdir(bb):
-                shutil.copytree(dst, bb)
-            cfg["fonts_backup"] = bb
-            save_config(cfg)
-            log("[字体] 客户端原有 Fonts 已备份（还原时恢复）")
-        except Exception as ex:
-            log("[字体] 备份原 Fonts 失败：" + str(ex))
     n = 0
     try:
         os.makedirs(dst, exist_ok=True)
         sel = _get_selection("fonts")
         srcset = set(os.listdir(font_src))
-        # 安装前处理规则（按勾选，不备份）：
-        #   ① 资源包里有的 → 留在原地，稍后直接覆盖更新
-        #   ② 勾选保留、且资源包里没有的 → 原地不动（不卸载、不覆盖）
-        #   ③ 取消勾选、且资源包里没有的 → 直接删除（卸载）
+        # 安装前处理规则：
+        #   ① 资源包里有的（本程序装入的）→ 直接删除旧文件，随后按勾选重拷
+        #   ② 客户端原有的（不在资源包里）→ 挪入 WowAbak\字体备份_原有（移除字体时恢复并删除备份）
         if os.path.isdir(dst):
-            npre = 0
-            nkeep = 0
+            npack = 0
+            norig = 0
+            bdir = _original_backup_dir(target, "字体备份")
             for e in os.listdir(dst):
-                # 勾选保留、且资源包里没有的字体 → 原地不动（不卸载、不覆盖）
-                if e not in srcset and sel.get(e.lower(), True):
-                    nkeep += 1
-                    continue
-                # 其余一律删除：包内勾选的（稍后重拷=更新）、未勾选的（=卸载，含包内与包外）
                 p = os.path.join(dst, e)
-                try:
-                    if os.path.isdir(p):
-                        shutil.rmtree(p)
-                    else:
-                        os.remove(p)
-                    npre += 1
-                except Exception as ex:
-                    log("[字体] 删除 " + e + " 失败：" + str(ex))
-            if nkeep:
-                log("[字体] 按勾选保留客户端原有（资源包外）字体 " + str(nkeep) + " 个")
+                if e in srcset:
+                    if _fast_delete(p):
+                        npack += 1
+                    continue
+                if _move_to_backup(p, bdir, log, "字体"):
+                    norig += 1
+            if npack:
+                log("[字体] 已删除旧包字体 " + str(npack) + " 项（随后按勾选重装）")
+            if norig:
+                log("[备份] 客户端原有（非资源包）字体 " + str(norig)
+                    + " 项已备份到 WowAbak\\字体备份_原有（移除字体时恢复）")
         n_skip = 0
         for e in sorted(os.listdir(font_src)):
             sp = os.path.join(font_src, e)
@@ -3124,21 +3122,24 @@ def install_fonts(target, font_src, log):
 
 
 def remove_fonts(target, log):
-    """移除会话装入的 Fonts 文件夹；客户端原有 Fonts（有备份）则恢复原样。"""
+    """移除字体：删掉资源包装入的字体 → 恢复客户端原有（WowAbak\字体备份_原有）→ 删除该备份。
+    Fonts 清空后连同目录一并移除。返回是否有变化。"""
     dst = fonts_dst(target)
-    if not os.path.isdir(dst):
+    src = _kind_dst("fonts")
+    pack_names = set(os.listdir(src)) if src and os.path.isdir(src) else set()
+    n = 0
+    if os.path.isdir(dst):
+        for e in os.listdir(dst):
+            if e in pack_names and _fast_delete(os.path.join(dst, e)):
+                n += 1
+    if n:
+        log("[还原] 已移除资源包装入的字体 " + str(n) + " 项")
+    n2 = _restore_original_backup(target, "字体备份", dst, log)
+    if os.path.isdir(dst) and not os.listdir(dst):
+        _fast_delete(dst)
+        log("[还原] 字体已移除，空目录 Fonts 一并删除")
+    if n == 0 and n2 == 0 and not os.path.isdir(dst):
         return False
-    if not _fast_delete(dst):
-        log("[还原] 移除字体文件夹失败")
-        return False
-    log("[还原] 已移除字体文件夹 Fonts")
-    backup = load_config().get("fonts_backup")
-    if backup and os.path.isdir(backup):
-        try:
-            shutil.copytree(backup, dst)
-            log("[还原] 已恢复客户端原有 Fonts")
-        except Exception as ex:
-            log("[还原] 恢复原 Fonts 失败：" + str(ex))
     return True
 
 
@@ -3176,6 +3177,41 @@ def ensure_mods_loaded(target, log):
 #       关闭工具不会卸载/删除，下次打开显示「已安装」直接复用；缓存同样留盘。
 #       仅「清理还原」按钮会手动移除本次装入的内容（先备份再移除），恢复干净客户端。
 SESSION_BASELINE_PREFIX = "Blizzard_"  # 客户端自带插件目录名前缀（还原时保留）
+
+
+def _original_backup_dir(target, tag):
+    """客户端原有内容的固定备份目录：WowAbak\\<tag>_原有。
+    装入时把客户端原有的（非资源包）内容挪进来；移除时恢复并把目录删掉。"""
+    d = os.path.join(backups_base(target), tag + "_原有")
+    try:
+        os.makedirs(d, exist_ok=True)
+    except Exception:
+        pass
+    return d
+
+
+def _restore_original_backup(target, tag, dst, log):
+    """把 WowAbak 下 <tag>_原有 备份夹里的客户端原有内容恢复到 dst，然后删除该备份目录。
+    返回恢复的项数。"""
+    bdir = os.path.join(backups_base(target), tag + "_原有")
+    n = 0
+    if os.path.isdir(bdir):
+        for e in os.listdir(bdir):
+            s = os.path.join(bdir, e)
+            d2 = os.path.join(dst, e)
+            try:
+                os.makedirs(os.path.dirname(d2) or dst, exist_ok=True)
+                shutil.move(s, d2)
+                n += 1
+            except Exception as ex:
+                log("[恢复失败] " + e + "：" + str(ex))
+        try:
+            if os.path.isdir(bdir) and not os.listdir(bdir):
+                os.rmdir(bdir)
+                log("[备份] 客户端原有内容已恢复，WowAbak\\" + tag + "_原有 已删除")
+        except Exception:
+            pass
+    return n
 
 
 def _fast_delete(path):
@@ -3272,6 +3308,11 @@ def revert_overlay(target, log, kill=True, backup=True):
         log("[还原] 移除会话插件 " + str(removed) + " 个（已备份到 WowAbak，可捞回；保留客户端自带且不在资源包内的插件）")
     else:
         log("[还原] 移除已装插件 " + str(removed) + " 个（彻底移除，不备份；保留客户端自带且不在资源包内的插件）")
+    # 恢复客户端原有（非资源包）插件，然后删除该备份
+    _addons_dst = addons or os.path.join(root, "Interface", "AddOns")
+    _restore_original_backup(target, "插件备份", _addons_dst, log)
+    # 恢复客户端原有（非资源包）模组文件，然后删除该备份
+    _restore_original_backup(target, "模组备份", root, log)
     # 2) 移除本程序装入的模组 DLL + 老版 VanillaFixes.exe 残留
     mod_removed = 0
     for name in MOD_DLL_ORDER + ["VanillaFixes.exe"]:
@@ -3583,21 +3624,29 @@ def apply_overlay(target, mod_src, addon_src, log, font_src=None):
             status["mods"] = (False, "已安装(跳过)")
             _touch_cache("mods")
         else:
-            backup_dir = _backup_dir_for(target, "模组备份")
-            # 安装前：游戏根里原本就有的模组 DLL（无论是否与本包同名）全部先备份到 WowAbak\模组备份_ts
+            # 安装前处理：资源包里的（本程序装的）直接删旧，随后重装；
+            # 客户端原有的（不在资源包里）挪入 WowAbak\模组备份_原有（移除模组时恢复并删除备份）
+            bdir = _original_backup_dir(target, "模组备份")
+            pack_names = {m["name"] for m in info["mods"]}
             pre = [n for n in dict.fromkeys(list(MOD_DLL_ORDER) + [m["name"] for m in chosen])
                    if os.path.exists(os.path.join(root, n))]
-            npre = 0
+            npack = norig = 0
             for n in pre:
-                if _move_to_backup(os.path.join(root, n), backup_dir, log, "模组"):
-                    npre += 1
-            if npre:
-                log("[备份] 安装前检测到游戏根原有 " + str(npre) + " 个模组 DLL，已整体备份到 WowAbak\\"
-                    + os.path.basename(backup_dir) + "（未丢失）")
+                p = os.path.join(root, n)
+                if n in pack_names:
+                    if _fast_delete(p):
+                        npack += 1
+                elif _move_to_backup(p, bdir, log, "模组"):
+                    norig += 1
+            if npack:
+                log("[模组] 已删除旧包模组 " + str(npack) + " 个（随后重装）")
+            if norig:
+                log("[备份] 客户端原有（非资源包）模组文件 " + str(norig)
+                    + " 个已备份到 WowAbak\\模组备份_原有（移除模组时恢复）")
             nmod = 0
             for i, m in enumerate(chosen):
                 if _safe_install_file(os.path.join(mod_src, m["name"]),
-                                     os.path.join(root, m["name"]), backup_dir, log, "模组"):
+                                     os.path.join(root, m["name"]), bdir, log, "模组"):
                     nmod += 1
                 _set_progress(5 + 25 * (i + 1) // max(1, len(chosen)))
             if chosen:
@@ -3632,18 +3681,27 @@ def apply_overlay(target, mod_src, addon_src, log, font_src=None):
             status["addons"] = (False, "已安装(跳过)")
             _touch_cache("addons")
         else:
-            backup_dir = _backup_dir_for(target, "插件备份")
-            # 安装前：插件目录里原有内容（无论是否与本包同名）全部先备份到 WowAbak\插件备份_ts
-            npre = 0
+            # 安装前处理：资源包里的（本程序装的）直接删旧，随后按勾选重装；
+            # 客户端原有的（不在资源包里）挪入 WowAbak\插件备份_原有（移除插件时恢复并删除备份）
+            bdir = _original_backup_dir(target, "插件备份")
+            pack_names = {e.lower() for e in os.listdir(src_addons)
+                          if os.path.isdir(os.path.join(src_addons, e))}
+            npack = norig = 0
             if os.path.isdir(addons):
                 for e in os.listdir(addons):
                     if e.startswith("_"):
                         continue
-                    if _move_to_backup(os.path.join(addons, e), backup_dir, log, "插件"):
-                        npre += 1
-            if npre:
-                log("[备份] 安装前已把插件目录原有 " + str(npre) + " 项整体备份到 WowAbak\\"
-                    + os.path.basename(backup_dir) + "（未丢失）")
+                    p = os.path.join(addons, e)
+                    if e.lower() in pack_names:
+                        if _fast_delete(p):
+                            npack += 1
+                    elif _move_to_backup(p, bdir, log, "插件"):
+                        norig += 1
+            if npack:
+                log("[插件] 已删除旧包插件 " + str(npack) + " 个（随后按勾选重装）")
+            if norig:
+                log("[备份] 客户端原有（非资源包）插件 " + str(norig)
+                    + " 个已备份到 WowAbak\\插件备份_原有（移除插件时恢复）")
             # 按插件页勾选过滤：只装勾选的（库插件/客户端前置锁定必装）；未勾选已装的已在上面备份挪走=卸载
             asel = _get_selection("addons")
             all_dirs = [e for e in sorted(os.listdir(src_addons))
