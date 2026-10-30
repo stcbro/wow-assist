@@ -161,7 +161,7 @@ th{color:var(--sub);font-weight:600;font-size:12px}
       </div>
       <div class="card" style="margin-top:10px">
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
-          <span id="a-sel-msg" style="font-size:12px;color:var(--sub)">勾选后点上方「装入插件」生效；取消勾选后再点击「装入插件」，已装的会卸载。</span>
+          <span id="a-sel-msg" style="font-size:12px;color:var(--sub)">勾选后点上方「装入插件」生效；取消勾选后再点击「装入插件」，已装的会移除。</span>
         </div>
         <table id="a-sel-table">
           <thead><tr><th style="width:42px"><input type="checkbox" id="a-sel-all" title="全选 / 全不选"></th><th>插件</th><th>分类</th><th style="width:90px">状态</th></tr></thead>
@@ -287,8 +287,8 @@ th{color:var(--sub);font-weight:600;font-size:12px}
       <div class="card grow" style="max-width:720px">
         <div class="kv"><span class="k">v3.15 ｜ 2026-10-30 ｜ 插件/字体勾选管理 + 状态行「资源」项</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          <div><span class="ct ct-add">新增</span>插件页「勾选管理」（模组页同款）：只装勾选的插件；取消勾选已装的自动卸载（直接删除）；库插件（! 开头）与 Blizzard_ / Turtle_ 客户端前置锁定必选、不可取消</div>
-          <div><span class="ct ct-add">新增</span>字体页同样按勾选同步：装入勾选的字体、卸载取消勾选的（字体无锁定项，客户端原本没有 Fonts 文件夹）</div>
+          <div><span class="ct ct-add">新增</span>插件页「勾选管理」（模组页同款）：只装勾选的插件；取消勾选已装的自动移除（直接删除）；库插件（! 开头）与 Blizzard_ / Turtle_ 客户端前置锁定必选、不可取消</div>
+          <div><span class="ct ct-add">新增</span>字体页同样按勾选同步：装入勾选的字体、移除取消勾选的（字体无锁定项，客户端原本没有 Fonts 文件夹）</div>
           <div><span class="ct ct-add">新增</span>首页状态行新增「资源」项：未检测显示「待检测」，检测后显示 已下载 / 下载中 / 未下载</div>
           <div><span class="ct ct-imp">改进</span>配置组件完成后，进度条上的完成提示加大字号并以醒目绿色显示</div>
           <div><span class="ct ct-imp">改进</span>更新日志全面重排版：统一为「版本 ｜ 日期 ｜ 主题」，条目按 新增 / 改进 / 变更 / 修复 / 移除 分类标注；补全 v2.0 与 v1.x 历史条目，补齐各版本发布日期</div>
@@ -848,7 +848,9 @@ $('#a-sel-all').addEventListener('change', async (e)=>{
     await api('/api/addons_select', {name: cb.dataset.n, selected: on});
   }
   syncASel();
-  $('#a-sel-msg').textContent = on ? '已全选 '+boxes.length+' 个插件' : '已取消全部勾选（锁定项除外）';
+  // 全选提示按「全部插件数」计（含锁定的库插件），而非仅可勾选数
+  const total = document.querySelectorAll('#a-sel-table tbody input[type=checkbox]').length;
+  $('#a-sel-msg').textContent = on ? '已全选 '+total+' 个插件' : '已取消全部勾选（锁定项除外）';
 });
 
 // 旧「插件列表（当前客户端）」卡片已移除（与勾选管理重复），loadAddons 保留为空实现兼容旧调用点
@@ -1041,7 +1043,10 @@ $('#f-all').addEventListener('change', async (e)=>{
   }
   syncFAll();
   const msgEl = $('#f-apply-msg');
-  if(msgEl) msgEl.textContent = on ? '已全选 '+boxes.length+' 个字体' : '已取消全部勾选';
+  if(msgEl){
+    const total = document.querySelectorAll('#f-table tbody input[type=checkbox]').length;
+    msgEl.textContent = on ? '已全选 '+total+' 个字体' : '已取消全部勾选';
+  }
 });
 $('#f-open').onclick = async ()=>{
   // 已装入 → 打开游戏 Fonts 目录；未装入 → 打开字体包缓存目录

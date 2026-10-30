@@ -2299,7 +2299,7 @@ class Handler(BaseHTTPRequestHandler):
             _set_selection("addons", n, en)
             return self._send(200, {"ok": True})
         if self.path == "/api/addons_apply":
-            # 按插件页勾选立即同步：装入勾选未装的；卸载已装但取消勾选的（直接删除）
+            # 按插件页勾选立即同步：装入勾选未装的；移除已装但取消勾选的（直接删除）
             _hist("应用插件勾选（缓存未就绪会先自动下载）")
             t = _to_addons(payload.get("target", ""))
             if not t:
@@ -2322,7 +2322,7 @@ class Handler(BaseHTTPRequestHandler):
                      if os.path.isdir(os.path.join(src_addons, e)) and not e.startswith("_")]
             chosen = [e for e in names if _addon_locked(e) or sel.get(e.lower(), True)]
             chosen_l = {e.lower() for e in chosen}
-            # 1) 卸载已装但取消勾选的 → 直接删除（不备份）
+            # 1) 移除已装但取消勾选的 → 直接删除（不备份）
             n_rem = 0
             if os.path.isdir(addons):
                 for e in sorted(os.listdir(addons), key=str.lower):
@@ -2333,9 +2333,9 @@ class Handler(BaseHTTPRequestHandler):
                         try:
                             shutil.rmtree(p)
                             n_rem += 1
-                            _log("[插件] 已卸载（直接删除）：" + e)
+                            _log("[插件] 已移除（直接删除）：" + e)
                         except Exception as ex:
-                            _log("[插件] 卸载 " + e + " 失败：" + str(ex))
+                            _log("[插件] 移除 " + e + " 失败：" + str(ex))
             # 2) 装入勾选但未装的
             n_inst = 0
             for e in chosen:
@@ -2353,7 +2353,7 @@ class Handler(BaseHTTPRequestHandler):
             cfg = load_config()
             cfg["session_applied"] = _overlay_present(t)
             save_config(cfg)
-            summary = "插件勾选已应用：装入 %d 个、卸载 %d 个，共勾选 %d 个" % (n_inst, n_rem, len(chosen))
+            summary = "插件勾选已应用：装入 %d 个、移除 %d 个，共勾选 %d 个" % (n_inst, n_rem, len(chosen))
             _set_progress(0, done=True, msg=summary)
             return self._send(200, {"ok": True, "log": log_lines, "summary": summary})
         if self.path == "/api/fonts_select":
@@ -2361,7 +2361,7 @@ class Handler(BaseHTTPRequestHandler):
                            bool(payload.get("selected", False)))
             return self._send(200, {"ok": True})
         if self.path == "/api/fonts_apply":
-            # 按字体页勾选立即同步：装入勾选未装的；未勾选已装的会被安装前备份挪走（=卸载，可捞回）
+            # 按字体页勾选立即同步：装入勾选未装的；未勾选已装的会被安装前处理移除（=直接删除）
             _hist("应用字体勾选（缓存未就绪会先自动下载）")
             t = _to_addons(payload.get("target", ""))
             if not t:
@@ -2383,7 +2383,7 @@ class Handler(BaseHTTPRequestHandler):
             cfg = load_config()
             cfg["session_applied"] = _overlay_present(t)
             save_config(cfg)
-            summary = "字体勾选已应用：装入/更新 %d 个文件（未勾选的已卸载）" % n
+            summary = "字体勾选已应用：装入/更新 %d 个文件（未勾选的已移除）" % n
             _set_progress(0, done=True, msg=summary)
             return self._send(200, {"ok": True, "log": log_lines, "summary": summary})
         if self.path == "/api/mod_select":
@@ -4080,7 +4080,7 @@ def apply_mod_selection(target, src, log):
         if os.path.isfile(d):
             if _fast_delete(d):
                 n_rem += 1
-                log("[模组] 已卸载（直接删除）：" + m["name"])
+                log("[模组] 已移除（直接删除）：" + m["name"])
     # 加载器：已由内置注入器取代，装模组【不再】往游戏目录拷贝 VanillaFixes.exe；
     # 顺手清掉老版本可能残留在游戏目录里的那个文件（存在即删，无则跳过）。
     legacy = os.path.join(root, "VanillaFixes.exe")
