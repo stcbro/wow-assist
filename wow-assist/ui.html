@@ -48,6 +48,7 @@ h3{margin:18px 0 10px;font-size:15px;color:var(--sub);font-weight:600}
 .btn.ghost{background:transparent}
 .btn.sm{padding:6px 12px;font-size:12px}
 .btn.danger{border-color:var(--danger);color:var(--danger)}
+.btn.danger-solid{background:#933741;color:#ffd7da;border:0;font-weight:700}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 input,textarea,select{background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:10px 12px;font-size:13px;font-family:inherit;width:100%}
 textarea{min-height:84px;resize:vertical}
@@ -120,8 +121,8 @@ th{color:var(--sub);font-weight:600;font-size:12px}
         <div id="s-msg" style="margin-top:10px;font-size:13px;color:var(--sub)"></div>
         <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center">
           <button class="btn primary" id="h-check" title="自动下载资源并装入模组/插件/字体，全部就绪后才能启动游戏">🔧 配置组件</button>
-          <button class="btn primary" id="h-launch" disabled title="请先点「配置组件」，全部完成后才能启动">▶ 启动游戏</button>
-          <button class="btn danger" id="h-exit">⏻ 清理还原</button>
+          <button class="btn blue" id="h-launch" disabled title="请先点「配置组件」，全部完成后才能启动">▶ 启动游戏</button>
+          <button class="btn danger-solid" id="h-exit">⏻ 清理还原</button>
         </div>
         <div id="h-session" style="margin-top:12px;font-size:15px;font-weight:700;color:var(--sub)"></div>
         <div id="h-progress" style="margin-top:14px;display:none">
@@ -213,13 +214,14 @@ th{color:var(--sub);font-weight:600;font-size:12px}
         <h3 style="margin-top:0">资源管理（模组 / 插件 / 字体）</h3>
         <div id="lz-cards"></div>
         <div id="lz-cache-dir" style="margin-top:12px;font-size:12px;color:var(--sub)"></div>
-        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px;flex-wrap:nowrap;white-space:nowrap">
-          <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer">
-            <input type="checkbox" id="lz-cache-on" style="width:18px;height:18px;accent-color:#3fb95f;cursor:pointer;vertical-align:middle"><span style="white-space:nowrap;font-size:14px;font-weight:700;color:var(--txt);line-height:30px">启用「长期未使用自动清理」</span>
+        <div style="margin-top:8px;font-size:14px;line-height:32px;color:var(--txt)">
+          <label style="cursor:pointer">
+            <input type="checkbox" id="lz-cache-on" style="width:18px;height:18px;accent-color:#3fb95f;cursor:pointer;vertical-align:middle">
+            <b>启用「长期未使用自动清理」</b>
           </label>
-          <span style="font-size:14px;color:var(--txt);line-height:30px">超过</span>
-          <input type="number" id="lz-cache-days" min="1" max="365" style="width:70px;height:30px;box-sizing:border-box;vertical-align:middle">
-          <span style="font-size:14px;color:var(--txt);line-height:30px">天未使用则自动删除该资源缓存（默认 30 天）。</span>
+          超过
+          <input type="number" id="lz-cache-days" min="1" max="365" style="width:70px;height:26px;box-sizing:border-box;vertical-align:middle">
+          天未使用则自动删除该资源缓存（默认 30 天）。
         </div>
         <div id="lz-cache-lastused" style="margin-top:8px;font-size:12px;color:var(--sub)"></div>
         <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
