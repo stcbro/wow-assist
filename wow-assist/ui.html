@@ -500,7 +500,7 @@ async function api(path, body){
 function esc(s){ const d=document.createElement('div'); d.textContent=s==null?"":s; return d.innerHTML; }
 
 // 自定义确认弹窗（替代原生 confirm）：琥珀警示横条 + 居中正文 + 右侧确认（2026-10-27 定稿）
-function askConfirm(msg){
+function askConfirm(msg, title){
   return new Promise(res=>{
     const mask = document.createElement('div');
     mask.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;'
@@ -509,7 +509,7 @@ function askConfirm(msg){
       + 'overflow:hidden;width:440px;max-width:88%;box-shadow:0 14px 40px rgba(0,0,0,.55)">'
       + '<div style="background:#ef9f27;padding:10px 18px;display:flex;align-items:center;gap:10px">'
       + '<svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 3 L22 20 H2 Z" fill="none" stroke="#412402" stroke-width="2" stroke-linejoin="round"/><line x1="12" y1="10" x2="12" y2="14" stroke="#412402" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16.8" r="1.1" fill="#412402"/></svg>'
-      + '<span style="color:#412402;font-size:15px;font-weight:600;letter-spacing:4px">清理还原确认</span></div>'
+      + '<span style="color:#412402;font-size:15px;font-weight:600;letter-spacing:4px">' + esc(title || "清理还原确认") + '</span></div>'
       + '<div class="wb-msg" style="padding:22px 20px;font-size:14.5px;font-weight:500;color:#e8ecf3;line-height:1.9;'
       + 'font-family:\'Microsoft YaHei\',\'微软雅黑\',\'PingFang SC\',sans-serif;text-align:center"></div>'
       + '<div style="padding:0 20px 18px;display:flex;justify-content:center;gap:14px">'
@@ -863,7 +863,7 @@ $('#a-sel-all').addEventListener('change', async (e)=>{
 // 旧「插件列表（当前客户端）」卡片已移除（与勾选管理重复），loadAddons 保留为空实现兼容旧调用点
 async function loadAddons(){ return; }
 $('#a-removeall').onclick = async ()=>{
-  if(!(await askConfirm('移除本程序安装的所有插件文件并恢复客户端初始状态？'))) return;
+  if(!(await askConfirm('移除本程序安装的所有插件文件并恢复客户端初始状态？', '移除插件确认'))) return;
   const r = await api('/api/uninstall_all', {target:state.current});
   const msg = $('#a-apply-msg'); if(msg) msg.textContent = r.summary || '';
   toast(r.summary || '完成');
@@ -990,7 +990,7 @@ $('#dll-refresh').onclick = ()=> loadMods();
 // 移除模组：删掉游戏根里的模组 DLL，dlls.txt 恢复初始内容（与字体页「移除字体」同形式）
 $('#dll-remove').onclick = async ()=>{
   if(!state.current){ alert('请先在「首页」设置游戏路径'); return; }
-  if(!(await askConfirm('移除本程序安装的所有模组文件并恢复客户端初始状态？'))) return;
+  if(!(await askConfirm('移除本程序安装的所有模组文件并恢复客户端初始状态？', '移除模组确认'))) return;
   const r = await api('/api/mods_remove', {target:state.current});
   $('#dll-apply-msg').textContent = r.summary || '';
   toast(r.summary || '已移除');
@@ -1084,7 +1084,7 @@ $('#f-install').onclick = async ()=>{
 };
 $('#f-remove').onclick = async ()=>{
   if(!state.current){ alert('请先在「首页」设置游戏路径'); return; }
-  if(!(await askConfirm('移除本程序安装的所有字体文件并恢复客户端初始状态？'))) return;
+  if(!(await askConfirm('移除本程序安装的所有字体文件并恢复客户端初始状态？', '移除字体确认'))) return;
   const r = await api('/api/fonts_remove', {target:state.current});
   showLog('#f-log', (r.log||[]).join('\n')+'\n'+(r.summary||''));
   toast(r.summary || '已移除');
