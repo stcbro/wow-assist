@@ -1046,10 +1046,11 @@ async function loadLanzou(){
   Object.keys(LZ_KINDS).forEach(k=>{
     const b = $('#lz-dl-'+k); if(b) b.onclick = ()=> startLzDownload(k);
   });
-  // folder 分享配置
+  // folder 分享配置：不回显链接地址（内置地址即可下载），仅在占位符提示状态
   const fd = d.folder||{};
-  $('#lz-fd-url').value = fd.url||'';
-  $('#lz-fd-pwd').value = fd.pwd||'';
+  $('#lz-fd-url').value = '';
+  $('#lz-fd-pwd').value = '';
+  $('#lz-fd-url').placeholder = fd.url ? '已内置资源地址，可直接下载（如需更换再填写）' : 'https://xxx.lanzoum.com/b01xxxxx';
   if(fd.url){
     if(fd.err){
       $('#lz-fd-status').innerHTML = `<span style="color:var(--warn)">● ${esc(fd.err)}</span>`;
@@ -1128,7 +1129,7 @@ $('#lz-cache-save').onclick = async ()=>{
 };
 $('#lz-fd-save').onclick = async ()=>{
   const url = ($('#lz-fd-url').value||'').trim();
-  if(!url){ toast('请填写文件夹分享链接'); return; }
+  if(!url){ toast('已留空：继续使用内置默认资源地址'); loadLanzou(); return; }
   const r = await api('/api/lanzou_config', {kind:'folder',
     url, pwd:($('#lz-fd-pwd').value||'').trim()});
   if(r.ok && r.err){ toast('解析失败：'+r.err); }
