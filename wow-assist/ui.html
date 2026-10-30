@@ -215,6 +215,7 @@ th{color:var(--sub);font-weight:600;font-size:12px}
           <button class="btn primary" id="lz-download-all">⬇ 一键下载全部资源</button>
           <button class="btn blue" id="lz-sync">🔄 检查插件更新</button>
           <span id="lz-hint" style="font-size:12px;color:var(--sub)"></span>
+          <span id="lz-cache-dir" style="font-size:12px;color:var(--sub)"></span>
         </div>
         <div id="lz-progress" style="margin-top:14px;display:none">
           <div style="height:8px;background:var(--card2);border-radius:4px;overflow:hidden">
@@ -222,21 +223,17 @@ th{color:var(--sub);font-weight:600;font-size:12px}
           </div>
           <div id="lz-dl-msg" style="margin-top:6px;font-size:12px;color:var(--sub)"></div>
         </div>
-        <div style="border-top:1px solid var(--line);margin:16px 0 12px"></div>
-        <h3 style="margin:0 0 8px">缓存管理（下载资源留盘复用）</h3>
-        <div style="font-size:12px;color:var(--sub);margin-bottom:8px">
-          关闭工具后下载缓存<b>不再删除</b>，下次配置组件可直接复用、无需重新下载；资源长期未使用会自动清理。
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;margin-top:4px;font-size:14px;flex-wrap:wrap">
+        <div style="border-top:1px solid var(--line);margin:14px 0 10px"></div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:14px;flex-wrap:wrap">
           <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer">
             <input type="checkbox" id="lz-cache-on" style="width:18px;height:18px;accent-color:#3fb95f;cursor:pointer"><span style="white-space:nowrap;font-size:15px;font-weight:700">启用「长期未使用自动清理」</span>
           </label>
           <span>超过</span>
           <input type="number" id="lz-cache-days" min="1" max="365" style="width:70px">
           <span>天未使用则自动删除该资源缓存（默认 30 天）。</span>
+          <button class="btn primary sm" id="lz-cache-save" style="margin-left:auto">保存设置</button>
         </div>
         <div id="lz-cache-lastused" style="margin-top:8px;font-size:12px;color:var(--sub)"></div>
-        <button class="btn primary sm" id="lz-cache-save" style="margin-top:8px">保存设置</button>
       </div>
       <div class="card" style="margin-top:12px;max-width:880px">
         <h3 style="margin-top:0">资源地址</h3>
@@ -1080,8 +1077,9 @@ async function loadLanzou(){
         <button class="btn sm" id="lz-dl-${k}" ${st.state==='ready'||st.state==='downloading'?'disabled':''}>${st.state==='ready'?'✓ 已缓存':'⬇ 下载'}</button>
       </div></div>`;
   }).join('');
-  $('#lz-cards').innerHTML = cards +
-    `<div style="font-size:12px;color:var(--sub);margin-top:6px">缓存目录：${esc(d.cache_dir||'—')}（已用 ${d.cache_mb} MB，关闭工具后保留，换电脑需重新下载）</div>`;
+  $('#lz-cards').innerHTML = cards;
+  const cdir = $('#lz-cache-dir');
+  if(cdir) cdir.innerHTML = `缓存目录：${esc(d.cache_dir||'—')}（已用 ${d.cache_mb} MB，关闭工具后保留，换电脑需重新下载）`;
   // 缓存管理设置 + 各资源最近使用时间
   const cc = d.cache_cfg||{auto_clean:true, keep_days:30};
   const cOn = $('#lz-cache-on'), cDays = $('#lz-cache-days');
