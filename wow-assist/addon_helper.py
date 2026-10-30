@@ -2083,8 +2083,10 @@ class Handler(BaseHTTPRequestHandler):
             cfg = load_config()
             t = _to_addons(cfg.get("target", ""))
             mi, ai, fi = _install_flags(t)
+            res = all(_kind_ready(k) for k in _LANZOU_KINDS)
             return self._send(200, json.dumps({"applied": bool(mi and ai and fi),
-                                               "mods": mi, "addons": ai, "fonts": fi},
+                                               "mods": mi, "addons": ai, "fonts": fi,
+                                               "res": res},
                                               ensure_ascii=False))
         self._send(404, "not found", "text/plain")
 

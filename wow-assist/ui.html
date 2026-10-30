@@ -694,7 +694,7 @@ async function refreshSession(p){
   const el = $('#h-session'); if(!el) return;
   // 没点过「配置组件」且当前没有安装在进行 → 一律显示「待检测」，不按磁盘判定已装
   if(!prechecked && (!p || p.done)){
-    const pend = ['模组','插件','字体'].map(k=>
+    const pend = ['资源','模组','插件','字体'].map(k=>
       '<span style="color:var(--txt)">'+k+'</span> <b style="color:#e8b34b">待检测</b>').join('　');
     el.innerHTML = pend + '　<span style="color:var(--sub);font-size:12px">点「配置组件」检测后显示结果</span>';
     return;
@@ -710,6 +710,7 @@ async function refreshSession(p){
     return 'no';
   };
   const st = {
+    res:    stOf(d.res,    '下载'),
     mods:   stOf(d.mods,   '模组'),
     addons: stOf(d.addons, '插件'),
     fonts:  stOf(d.fonts,  '字体'),
@@ -717,11 +718,14 @@ async function refreshSession(p){
   const mk = s => s==='ok'   ? '<b style="color:var(--accent)">✓已装</b>'
               : s==='busy' ? '<b style="color:var(--warn)">◉安装中…</b>'
               :              '<b style="color:var(--danger)">✗未装</b>';
+  const mkRes = s => s==='ok'   ? '<b style="color:var(--accent)">已下载</b>'
+              : s==='busy' ? '<b style="color:var(--warn)">◉下载中…</b>'
+              :              '<b style="color:var(--danger)">✗未下载</b>';
   const lb = k => '<span style="color:var(--txt)">'+k+'</span>';
-  const allOk = st.mods==='ok' && st.addons==='ok' && st.fonts==='ok';
-  el.innerHTML = lb('模组') + ' ' + mk(st.mods) + '　' + lb('插件') + ' ' + mk(st.addons)
-    + '　' + lb('字体') + ' ' + mk(st.fonts)
-    + (allOk ? '　<b style="color:var(--accent)">已就绪</b>' : '');
+  const allOk = st.res==='ok' && st.mods==='ok' && st.addons==='ok' && st.fonts==='ok';
+  el.innerHTML = lb('资源') + ' ' + mkRes(st.res) + '　' + lb('模组') + ' ' + mk(st.mods)
+    + '　' + lb('插件') + ' ' + mk(st.addons) + '　' + lb('字体') + ' ' + mk(st.fonts)
+    + (allOk ? '　<b style="color:var(--accent)">所有组件已就绪，可以启动游戏啦！</b>' : '');
 }
 // 【清理还原】：结束游戏 + 移除本次装入的模组/插件/字体(先备份到插件备份) + 恢复 dlls.txt，
 // 客户端恢复初始状态；倒计时结束后回到初始界面，程序继续可用（不退出）。
