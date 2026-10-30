@@ -285,6 +285,13 @@ th{color:var(--sub);font-weight:600;font-size:12px}
         </div>
       </div>
       <div class="card grow" style="max-width:720px">
+        <div class="kv"><span class="k">v3.16 ｜ 2026-10-31 ｜ 备份夹清理修复 + 移除确认文案统一</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          <div><span class="ct ct-fix">修复</span>移除模组/插件/字体（含「清理还原」）后，旧模型遗留的带时间戳备份夹（如 模组备份_20261031_005524）不再残留：恢复客户端原有内容后该夹一并删除</div>
+          <div><span class="ct ct-fix">修复</span>「清理还原」此前只认旧模型时间戳备份夹，会漏还原新模型固定夹「XX备份_原有」里的客户端原有内容并误删——现已同时兼容两类备份夹</div>
+          <div><span class="ct ct-imp">改进</span>客户端原本没有模组/插件/字体时，装入不再生成空白备份文件夹；恢复冲突项先丢回收站再覆盖，不丢数据</div>
+          <div><span class="ct ct-chg">变更</span>三个移除确认文案统一为「移除本程序安装的所有模组/插件/字体文件并恢复客户端初始状态？」</div>
+        </div>
         <div class="kv"><span class="k">v3.15 ｜ 2026-10-30 ｜ 插件/字体勾选管理 + 状态行「资源」项</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
           <div><span class="ct ct-add">新增</span>插件页「勾选管理」（模组页同款）：只装勾选的插件；取消勾选已装的自动移除（直接删除）；库插件（! 开头）与 Blizzard_ / Turtle_ 客户端前置锁定必选、不可取消</div>
@@ -856,7 +863,7 @@ $('#a-sel-all').addEventListener('change', async (e)=>{
 // 旧「插件列表（当前客户端）」卡片已移除（与勾选管理重复），loadAddons 保留为空实现兼容旧调用点
 async function loadAddons(){ return; }
 $('#a-removeall').onclick = async ()=>{
-  if(!(await askConfirm('全部移除？\n客户端里的插件会直接删除（不备份），客户端自带的除外'))) return;
+  if(!(await askConfirm('移除本程序安装的所有插件文件并恢复客户端初始状态？'))) return;
   const r = await api('/api/uninstall_all', {target:state.current});
   const msg = $('#a-apply-msg'); if(msg) msg.textContent = r.summary || '';
   toast(r.summary || '完成');
@@ -983,7 +990,7 @@ $('#dll-refresh').onclick = ()=> loadMods();
 // 移除模组：删掉游戏根里的模组 DLL，dlls.txt 恢复初始内容（与字体页「移除字体」同形式）
 $('#dll-remove').onclick = async ()=>{
   if(!state.current){ alert('请先在「首页」设置游戏路径'); return; }
-  if(!(await askConfirm('移除游戏目录里的模组文件？\n（dlls.txt 会恢复初始内容）'))) return;
+  if(!(await askConfirm('移除本程序安装的所有模组文件并恢复客户端初始状态？'))) return;
   const r = await api('/api/mods_remove', {target:state.current});
   $('#dll-apply-msg').textContent = r.summary || '';
   toast(r.summary || '已移除');
@@ -1077,7 +1084,7 @@ $('#f-install').onclick = async ()=>{
 };
 $('#f-remove').onclick = async ()=>{
   if(!state.current){ alert('请先在「首页」设置游戏路径'); return; }
-  if(!(await askConfirm('移除游戏目录里的 Fonts 字体文件夹？\n（客户端原有字体会恢复）'))) return;
+  if(!(await askConfirm('移除本程序安装的所有字体文件并恢复客户端初始状态？'))) return;
   const r = await api('/api/fonts_remove', {target:state.current});
   showLog('#f-log', (r.log||[]).join('\n')+'\n'+(r.summary||''));
   toast(r.summary || '已移除');

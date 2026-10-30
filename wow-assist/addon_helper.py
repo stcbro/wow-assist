@@ -32,7 +32,7 @@ from lanzou_core import LanzouClient, DOMAIN_RE  # noqa: E402
 PORT = 8766
 
 # 单一版本来源：发版时只改这一行（同步更新 ui.html 更新日志、以及打包后的文件名版本号）
-APP_VERSION = "3.15"
+APP_VERSION = "3.16"
 # 打包成 exe 后：APP_DIR 用 exe 所在目录；未打包（脚本运行）时用脚本所在目录。
 # ui.html 等资源从 PyInstaller 解压目录 _MEIPASS 读。
 if getattr(sys, "frozen", False):
@@ -3163,11 +3163,9 @@ def ensure_mods_loaded(target, log):
     if merged == existing:
         return True, "dlls.txt 已包含全部模组，无需改动"
     if os.path.isfile(path):
-        bb = _backup_dir_for(target, "模组备份")   # 与模组 DLL 同一个带时间戳的备份夹
-        # 时间戳放扩展名【前】：dlls.20261024_230824.txt（放后面会变成无关联后缀，不能双击默认打开）
-        bak = os.path.join(bb, "dlls." + time.strftime("%Y%m%d_%H%M%S") + ".txt")
-        shutil.copy2(path, bak)
-        log("[备份] 原 dlls.txt → WowAbak\\" + os.path.basename(bb) + "\\" + os.path.basename(bak))
+        # dlls.txt 备份取消：初始基线已存 config.baseline_dllstxt（还原时据此恢复），
+        # 不再额外生成带时间戳的模组备份夹。
+        pass
     _write_dlls_txt(path, merged)
     log("[模组] 已写入 dlls.txt：" + ", ".join(present))
     return True, "ok"
@@ -3181,34 +3179,51 @@ SESSION_BASELINE_PREFIX = "Blizzard_"  # 客户端自带插件目录名前缀（
 
 def _original_backup_dir(target, tag):
     """客户端原有内容的固定备份目录：WowAbak\\<tag>_原有。
-    装入时把客户端原有的（非资源包）内容挪进来；移除时恢复并把目录删掉。"""
-    d = os.path.join(backups_base(target), tag + "_原有")
-    try:
-        os.makedirs(d, exist_ok=True)
-    except Exception:
-        pass
-    return d
+    仅返回路径、不预建目录——只有实际挪入客户端原有内容时才由 _move_to_backup 创建，
+    避免没有原有内容时生成空备份夹。移除时恢复并把目录删掉。"""
+    return os.path.join(backups_base(target), tag + "_原有")
 
 
 def _restore_original_backup(target, tag, dst, log):
-    """把 WowAbak 下 <tag>_原有 备份夹里的客户端原有内容恢复到 dst，然后删除该备份目录。
-    返回恢复的项数。"""
-    bdir = os.path.join(backups_base(target), tag + "_原有")
+    """把 WowAbak 下 <tag>_原有 及旧模型遗留的时间戳备份夹（<tag>_YYYYMMDD_HHMMSS，
+    如 模组备份_20261031_005524）里的客户端原有内容恢复到 dst，然后删除这些备份夹
+    （不留空备份夹）。返回恢复的项数。"""
+    bb = backups_base(target)
+    # 待恢复夹顺序：新模型 <tag>_原有 优先，旧模型时间戳夹随后
+    restore_dirs = []
+    ts_dirs = []
+    if os.path.isdir(bb):
+        for name in os.listdir(bb):
+            full = os.path.join(bb, name)
+            if not os.path.isdir(full):
+                continue
+            if name == tag + "_原有":
+                restore_dirs.append(full)
+            elif re.match(r"^" + re.escape(tag) + r"_\d{8}_\d{6}$", name):
+                ts_dirs.append(full)
+    restore_dirs = restore_dirs + ts_dirs
     n = 0
-    if os.path.isdir(bdir):
+    for bdir in restore_dirs:
         for e in os.listdir(bdir):
             s = os.path.join(bdir, e)
             d2 = os.path.join(dst, e)
             try:
+                # 恢复若与 dst 已有同名项冲突：原 dst 先丢回收站再覆盖（不丢数据）
+                if os.path.exists(d2):
+                    _to_trash(d2)
                 os.makedirs(os.path.dirname(d2) or dst, exist_ok=True)
                 shutil.move(s, d2)
                 n += 1
             except Exception as ex:
                 log("[恢复失败] " + e + "：" + str(ex))
+        # 用完即删这些备份夹（空夹直接删；有残留项说明上面 move 失败，整夹清掉避免遗留空/脏备份夹）
         try:
-            if os.path.isdir(bdir) and not os.listdir(bdir):
-                os.rmdir(bdir)
-                log("[备份] 客户端原有内容已恢复，WowAbak\\" + tag + "_原有 已删除")
+            if os.path.isdir(bdir):
+                if not os.listdir(bdir):
+                    os.rmdir(bdir)
+                else:
+                    safe_rmtree(bdir)
+                log("[备份] 客户端原有内容已恢复，WowAbak\\" + os.path.basename(bdir) + " 已删除")
         except Exception:
             pass
     return n
@@ -3945,35 +3960,38 @@ def _cleanup_restore(target, log):
     root = client_root_of(target)
     addons = normalize_addons_path(target, create=False)
     bb = backups_base(target)
-    pat = re.compile(r"^(模组备份|插件备份|字体备份)_\d{8}_\d{6}$")
+    # 同时兼容：新模型固定夹 <tag>_原有 与 旧模型时间戳夹 <tag>_YYYYMMDD_HHMMSS
+    pat = re.compile(r"^(模组备份|插件备份|字体备份)(_\d{8}_\d{6}|_原有)$")
     dst_of = {"模组备份": root, "插件备份": addons, "字体备份": fonts_dst(target)}
     label_of = {"模组备份": "模组", "插件备份": "插件", "字体备份": "字体"}
     if os.path.isdir(bb):
         for tag in ("模组备份", "插件备份", "字体备份"):
-            cands = sorted(d for d in os.listdir(bb) if pat.match(d) and d.startswith(tag))
-            if not cands:
+            src_dirs = [os.path.join(bb, d) for d in sorted(os.listdir(bb))
+                        if pat.match(d) and d.startswith(tag)]
+            if not src_dirs:
                 continue
-            src_dir = os.path.join(bb, cands[0])
             dst = dst_of[tag]
             if not dst:
                 continue
             n = 0
-            for e in os.listdir(src_dir):
-                if tag == "模组备份" and re.match(r"^dlls\.\d{8}_\d{6}\.txt$", e):
-                    continue   # dlls.txt 走基线恢复机制，不作为散文件回拷进游戏根
-                s, d2 = os.path.join(src_dir, e), os.path.join(dst, e)
-                try:
-                    os.makedirs(os.path.dirname(d2) or dst, exist_ok=True)
-                    if os.path.isdir(s):
-                        shutil.copytree(s, d2, dirs_exist_ok=True)
-                    else:
-                        shutil.copy2(s, d2)
-                    n += 1
-                except Exception as ex:
-                    log("[还原失败] " + e + "：" + str(ex))
+            for src_dir in src_dirs:
+                for e in os.listdir(src_dir):
+                    if tag == "模组备份" and re.match(r"^dlls\.\d{8}_\d{6}\.txt$", e):
+                        continue   # dlls.txt 走基线恢复机制，不作为散文件回拷进游戏根
+                    s, d2 = os.path.join(src_dir, e), os.path.join(dst, e)
+                    try:
+                        os.makedirs(os.path.dirname(d2) or dst, exist_ok=True)
+                        if os.path.exists(d2):
+                            _to_trash(d2)   # 恢复冲突不丢数据
+                        if os.path.isdir(s):
+                            shutil.copytree(s, d2, dirs_exist_ok=True)
+                        else:
+                            shutil.copy2(s, d2)
+                        n += 1
+                    except Exception as ex:
+                        log("[还原失败] " + e + "：" + str(ex))
             if n:
-                log("[还原] 从 WowAbak\\" + cands[0] + " 还原客户端原有"
-                    + label_of[tag] + " " + str(n) + " 项")
+                log("[还原] 从 WowAbak 还原客户端原有" + label_of[tag] + " " + str(n) + " 项")
         # ③ 备份已完成使命：清空删除整个 WowAbak
         try:
             shutil.rmtree(bb, ignore_errors=True)
