@@ -158,8 +158,7 @@ th{color:var(--sub);font-weight:600;font-size:12px}
       </div>
       <div class="card" style="margin-top:10px">
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
-          <h3 style="margin:0">勾选管理</h3>
-          <span id="a-sel-msg" style="font-size:12px;color:var(--sub)"></span>
+          <span id="a-sel-msg" style="font-size:12px;color:var(--sub)">勾选后点上方「装入插件」生效；取消勾选已装的会卸载（挪入 WowAbak 备份）</span>
         </div>
         <table id="a-sel-table">
           <thead><tr><th style="width:42px"><input type="checkbox" id="a-sel-all" title="全选 / 全不选"></th><th>插件</th><th>分类</th><th style="width:90px">状态</th></tr></thead>
@@ -633,6 +632,10 @@ function setLaunchEnabled(on){
   const b = $('#h-launch'); if(!b) return;
   b.disabled = !on;
   b.title = on ? '' : '请先点「配置组件」，全部完成后才能启动';
+  // 配置通过后按钮换醒目色（琥珀金），一眼看出"可以启动了"
+  b.style.cssText = on
+    ? 'background:#f5a623;border-color:#f5a623;color:#3a2604;font-weight:700'
+    : '';
 }
 // 【配置组件】= 启动游戏的前置工作：资源下载(缺则自动下载)→模组→插件→字体，
 // 全部完成才算通过；通过后「启动游戏」才可点（启动游戏只负责启动，不再装东西）
