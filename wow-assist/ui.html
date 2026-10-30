@@ -199,7 +199,7 @@ th{color:var(--sub);font-weight:600;font-size:12px}
       </div>
       <div class="card">
         <table id="f-table">
-          <thead><tr><th style="width:42px"><input type="checkbox" id="f-all" title="全选 / 全不选"></th><th style="width:30%">字体文件</th><th>用途</th><th style="width:90px">状态</th></tr></thead>
+          <thead><tr><th style="width:42px"><input type="checkbox" id="f-all" title="全选 / 全不选"></th><th style="width:130px">字体文件</th><th>用途</th><th style="width:90px">状态</th></tr></thead>
           <tbody><tr><td colspan="4" class="empty">加载中…</td></tr></tbody>
         </table>
         <div id="f-log" class="log" style="margin-top:12px;display:none"></div>
@@ -987,7 +987,7 @@ async function loadFonts(){
     const cb = f.in_pack === false
       ? '<input type="checkbox" disabled checked title="客户端已有字体（不在字体包内），不参与勾选">'
       : `<input type="checkbox" data-n="${esc(f.name)}" ${f.selected!==false?'checked':''}>`;
-    return `<tr><td>${cb}</td><td style="white-space:nowrap">${esc(f.name)}</td><td style="line-height:1.7">${esc(f.desc)}</td><td>${st}</td></tr>`;
+    return `<tr><td>${cb}</td><td style="white-space:nowrap">${esc(f.name)}</td><td style="white-space:nowrap">${esc(f.desc)}</td><td>${st}</td></tr>`;
   }).join('');
   syncFAll();
 }
