@@ -215,12 +215,12 @@ th{color:var(--sub);font-weight:600;font-size:12px}
         <div id="lz-cards"></div>
         <div id="lz-cache-dir" style="margin-top:12px;font-size:12px;color:var(--sub)"></div>
         <div style="margin-top:8px;font-size:14px;line-height:32px;color:var(--txt);white-space:nowrap">
-          <label style="cursor:pointer">
-            <input type="checkbox" id="lz-cache-on" style="width:18px;height:18px;accent-color:#3fb95f;cursor:pointer;vertical-align:middle">
-            <b>启用「长期未使用自动清理」</b>
+          <label style="display:inline;cursor:pointer;color:var(--txt);font-size:14px;margin:0">
+            <input type="checkbox" id="lz-cache-on" style="width:18px;height:18px;padding:0;accent-color:#3fb95f;cursor:pointer;vertical-align:middle">
+            启用「长期未使用自动清理」
           </label>
           超过
-          <input type="number" id="lz-cache-days" min="1" max="365" style="width:70px;height:26px;box-sizing:border-box;vertical-align:middle">
+          <input type="number" id="lz-cache-days" min="1" max="365" style="width:70px;height:26px;padding:2px 6px;box-sizing:border-box;font-size:14px;color:var(--txt);vertical-align:middle">
           天未使用则自动删除该资源缓存（默认 30 天）。
         </div>
         <div id="lz-cache-lastused" style="margin-top:8px;font-size:12px;color:var(--sub)"></div>
