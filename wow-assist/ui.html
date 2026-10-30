@@ -158,24 +158,13 @@ th{color:var(--sub);font-weight:600;font-size:12px}
       </div>
       <div class="card" style="margin-top:10px">
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
-          <h3 style="margin:0">勾选管理（按勾选装入 / 卸载）</h3>
-          <span style="font-size:12px;color:var(--sub)">只装勾选的插件；取消勾选已装的会卸载（挪入 WowAbak 备份，可捞回）。<b style="color:var(--warn)">锁定</b> = 库插件 / 客户端前置，不可取消勾选</span>
+          <h3 style="margin:0">勾选管理</h3>
+          <span id="a-sel-msg" style="font-size:12px;color:var(--sub)">勾选后点上方「装入插件」生效；取消勾选已装的会卸载（挪入 WowAbak 备份）</span>
         </div>
-        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-          <button class="btn primary sm" id="a-apply-sel">应用勾选</button>
-          <span id="a-sel-msg" style="font-size:12px;color:var(--sub)"></span>
-        </div>
-        <table id="a-sel-table" style="margin-top:8px">
+        <table id="a-sel-table">
           <thead><tr><th style="width:42px"><input type="checkbox" id="a-sel-all" title="全选 / 全不选"></th><th>插件</th><th>分类</th><th style="width:90px">状态</th></tr></thead>
           <tbody><tr><td colspan="4" class="empty">加载中…</td></tr></tbody>
         </table>
-        <div id="a-sel-log" class="log" style="margin-top:12px;display:none"></div>
-      </div>
-      <div class="row">
-        <div class="card grow">
-          <h3 style="margin-top:0">插件列表（当前客户端）</h3>
-          <div id="a-list"><span class="empty">加载中…</span></div>
-        </div>
       </div>
     </section>
 
@@ -840,80 +829,9 @@ $('#a-sel-all').addEventListener('change', async (e)=>{
   syncASel();
   $('#a-sel-msg').textContent = on ? '已全选 '+boxes.length+' 个插件' : '已取消全部勾选（锁定项除外）';
 });
-// 应用勾选：立即按勾选装入/卸载（缓存未就绪自动先下载）
-$('#a-apply-sel').onclick = async ()=>{
-  if(!state.current){ alert('请先在「首页」设置游戏路径'); return; }
-  const btn=$('#a-apply-sel'); btn.disabled=true; const old=btn.textContent; btn.textContent='应用中…';
-  $('#a-sel-msg').textContent = '准备中…';
-  const timer = setInterval(async ()=>{
-    try{
-      const p = await api('/api/progress');
-      if(p && p.stage==='下载' && !p.done) $('#a-sel-msg').textContent = p.msg || '下载中…';
-    }catch(e){}
-  }, 500);
-  const r = await api('/api/addons_apply', {target:state.current});
-  clearInterval(timer);
-  btn.disabled=false; btn.textContent=old;
-  showLog('#a-sel-log', (r.log||[]).join('\n')+'\n'+(r.summary||''));
-  $('#a-sel-msg').textContent = r.summary || (r.ok?'完成':'失败');
-  toast(r.summary || (r.ok?'插件勾选已应用':'操作失败'));
-  loadAddonSel(); loadAddons(); loadHome();
-};
 
-async function loadAddons(){
-  if(!state.current){ await loadTargets(); }
-  if(!state.current){ $('#a-list').innerHTML='<span class="empty">请先在「首页」设置游戏路径</span>'; return; }
-  const d = await api('/api/addons?target='+encodeURIComponent(state.current));
-  state.addons = d.addons||[];
-  // 合并缓存包目录：下载了但未装入的插件也列出来（状态"未安装"），不再只看客户端
-  let catalog = [];
-  try{ const c = await api('/api/addons_catalog'); if(c.ready) catalog = c.plugins||[]; }catch(e){}
-  const instMap = {};
-  state.addons.forEach(a=>{ instMap[(a.dir||'').toLowerCase()] = a; });
-  const allNames = [...new Set([
-    ...state.addons.map(a=>a.dir||''),
-    ...catalog
-  ])];
-  // 分组：本地插件（已装进客户端）排前，网络插件（已下载未装入）排后
-  const localNames = allNames.filter(n=>instMap[n.toLowerCase()])
-    .sort((x,y)=>x.toLowerCase().localeCompare(y.toLowerCase()));
-  const remoteNames = allNames.filter(n=>!instMap[n.toLowerCase()])
-    .sort((x,y)=>x.toLowerCase().localeCompare(y.toLowerCase()));
-  if(!allNames.length){ $('#a-list').innerHTML='<span class="empty">客户端暂无插件；缓存包也未下载（点「装入插件」会自动下载并装入）</span>'; return; }
-  const groupRow = (label, n)=>`<tr class="a-group"><td colspan="5" style="background:var(--card2);font-weight:700;font-size:12px;letter-spacing:1px;color:var(--sub);padding:6px 10px">${esc(label)}（${n} 个）</td></tr>`;
-  const pluginRow = (nm)=>{
-    const a = instMap[nm.toLowerCase()];
-    const installed = !!a;
-    // 名称：优先插件用途说明里的中文名，其次 .toc 标题
-    const info = PLUGIN_INFO[nm.toLowerCase()];
-    const disp = (info && info.n) || (a && a.title) || '';
-    const cat = info && info.c ? `<span class="tag" style="color:var(--accent)">${esc(info.c)}</span>` : '';
-    const st = installed
-      ? '<span style="color:var(--accent)">已安装</span>'
-      : '<span style="color:var(--sub)">未安装</span>';
-    const detail = info
-      ? `<tr class="a-detail" data-for="${esc(nm)}" style="display:none"><td colspan="5" style="background:var(--card2);border-radius:8px;line-height:1.7;text-indent:2em">${esc(info.d||'')}</td></tr>`
-      : '';
-    return `<tr class="a-row" data-n="${esc(nm)}" ${info?'title="点击查看用途说明" style="cursor:pointer"':''}><td class="clip" title="${esc(nm)}">${esc(nm)}</td><td class="clip" title="${esc(disp)}">${esc(disp)}</td><td>${cat}</td><td>${st}</td>`
-      + `<td>${installed?`<button class="btn sm danger" data-n="${esc(nm)}">移除</button>`:''}</td></tr>` + detail;
-  };
-  $('#a-list').innerHTML = `<table><thead><tr><th>插件</th><th>名称</th><th>分类</th><th>状态</th><th></th></tr></thead><tbody>`
-    + (localNames.length ? groupRow('本地插件 · 已装入客户端', localNames.length)
-        + localNames.map(pluginRow).join('') : '')
-    + (remoteNames.length ? groupRow('网络插件 · 已下载未装入（点「装入插件」安装）', remoteNames.length)
-        + remoteNames.map(pluginRow).join('') : '')
-    + `</tbody></table>`;
-  document.querySelectorAll('#a-list .danger').forEach(b=> b.onclick=async()=>{
-    if(!(await askConfirm('移除 '+b.dataset.n+'？\n会挪到备份文件夹，可手动捞回'))) return;
-    await api('/api/uninstall_one', {target:state.current, name:b.dataset.n});
-    loadAddons();
-  });
-  document.querySelectorAll('#a-list .a-row').forEach(r=> r.onclick=(e)=>{
-    if(e.target.closest('button')) return;
-    const d = document.querySelector('#a-list .a-detail[data-for="'+(window.CSS&&CSS.escape?CSS.escape(r.dataset.n):r.dataset.n)+'"]');
-    if(d) d.style.display = (d.style.display === 'none') ? '' : 'none';
-  });
-}
+// 旧「插件列表（当前客户端）」卡片已移除（与勾选管理重复），loadAddons 保留为空实现兼容旧调用点
+async function loadAddons(){ return; }
 $('#a-removeall').onclick = async ()=>{
   if(!(await askConfirm('全部移除？\n客户端里的插件会挪到备份文件夹（可捞回），客户端自带的除外'))) return;
   const r = await api('/api/uninstall_all', {target:state.current});
@@ -1134,19 +1052,17 @@ const LZ_STATE_TEXT = {ready:'已就绪', downloading:'下载中', need_download
 
 async function loadLanzou(){
   let d; try{ d = await api('/api/lanzou_state'); }catch(e){ return; }
-  // 资源卡
+  // 资源卡：标题与状态同一行；不显示来源；清单对比信息在「更新清单」卡片展示
   const cards = Object.keys(LZ_KINDS).map(k=>{
     const info = LZ_KINDS[k], st = (d.kinds&&d.kinds[k])||{state:'no_links',volumes:0};
     const stColor = st.state==='ready' ? 'var(--accent)' : (st.state==='need_download'?'var(--warn)':'var(--sub)');
-    let extra = '';
-    if(k==='addons' && d.diff){
-      extra = ` · 清单对比：<b>${d.diff.total}</b> 个插件，待更新 <b style="color:var(--warn)">${d.diff.todo.length}</b> 个（新增${d.diff.missing.length}/变化${d.diff.update.length}）`;
-    }
     return `<div class="card" style="margin:10px 0;padding:12px 14px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-        <div><b>${info.name}</b> <span style="color:var(--sub);font-size:12px">${info.desc}</span><br>
+        <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
+          <b>${info.name}</b> <span style="color:var(--sub);font-size:12px">${info.desc}</span>
           <span style="font-size:12px;color:${stColor}">● ${LZ_STATE_TEXT[st.state]||st.state}</span>
-          <span style="font-size:12px;color:var(--sub)"> · ${st.volumes} 个分卷${st.src?` · 来源 <b style="color:var(--accent)">${esc(st.src)}</b>`:''}</span>${extra}</div>
+          ${st.volumes?`<span style="font-size:12px;color:var(--sub)">· ${st.volumes} 个分卷</span>`:''}
+        </div>
         <button class="btn sm" id="lz-dl-${k}" ${st.state==='ready'||st.state==='downloading'?'disabled':''}>${st.state==='ready'?'✓ 已缓存':'⬇ 下载'}</button>
       </div></div>`;
   }).join('');
@@ -1211,8 +1127,8 @@ async function loadLanzou(){
   // manifest 配置
   $('#lz-mf-url').value = (d.manifest&&d.manifest.url)||'';
   $('#lz-mf-pwd').value = (d.manifest&&d.manifest.pwd)||'';
-  $('#lz-mf-status').textContent = d.diff
-    ? `清单版本 ${d.diff.version||'?'}：共 ${d.diff.total} 个插件，待更新 ${d.diff.todo.length} 个${(d.manifest&&d.manifest.url)?'':'（来自文件夹 manifest.json）'}`
+  $('#lz-mf-status').innerHTML = d.diff
+    ? `清单版本 ${d.diff.version||'?'}：共 <b>${d.diff.total}</b> 个插件，待更新 <b style="color:var(--warn)">${d.diff.todo.length}</b> 个（新增${d.diff.missing.length}/变化${d.diff.update.length}）${(d.manifest&&d.manifest.url)?'':'<span style="color:var(--sub)">（来自文件夹 manifest.json）</span>'}`
     : '未配置 manifest（文件夹里有 manifest.json 时自动启用增量更新）';
   // 下载进度
   const dl = d.dl||{};
