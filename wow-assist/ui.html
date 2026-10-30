@@ -222,7 +222,7 @@ th{color:var(--sub);font-weight:600;font-size:12px}
             启用「长期未使用自动清理」
           </label>
           <span>超过</span>
-          <input type="number" id="lz-cache-days" min="1" max="365" style="width:70px;height:26px;padding:0 6px;box-sizing:border-box;font-size:14px;color:var(--txt)">
+          <input type="number" id="lz-cache-days" min="1" max="365" style="width:70px;height:26px;padding:0 6px;box-sizing:border-box;font-size:14px;color:var(--txt);text-align:center">
           <span>天未使用则自动删除该资源缓存（默认 30 天）。</span>
         </div>
         <div id="lz-cache-lastused" style="margin-top:8px;font-size:12px;color:var(--sub)"></div>
@@ -720,7 +720,7 @@ $('#h-open').onclick = ()=>{
 };
 
 async function refreshSession(p){
-  const d = await api('/api/session_state');
+  const d = await api('/api/session_state?target='+encodeURIComponent(state.current||''));
   const el = $('#h-session'); if(!el) return;
   // 没点过「配置组件」且当前没有安装在进行 → 一律显示「待检测」，不按磁盘判定已装
   if(!prechecked && (!p || p.done)){

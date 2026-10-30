@@ -2155,7 +2155,12 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, json.dumps(_lanzou_state(), ensure_ascii=False))
         if self.path.startswith("/api/session_state"):
             cfg = load_config()
-            t = _to_addons(cfg.get("target", ""))
+            # 目标客户端路径：优先用前端传来的当前路径（query），其次配置里的 target。
+            # 便携模式下 config.target 常为 None（程序靠 exe 同目录自动识别），必须接收前端传入，
+            # 否则 _install_flags 拿到空 target 会误报「未装」，与「配置组件」进度清单（✓完毕）不一致。
+            _q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            tgt = (_q.get("target", [""])[0] or cfg.get("target") or "")
+            t = _to_addons(tgt)
             mi, ai, fi = _install_flags(t)
             res = all(_kind_ready(k) for k in _LANZOU_KINDS)
             return self._send(200, json.dumps({"applied": bool(mi and ai and fi),
