@@ -751,6 +751,37 @@ def set_mod_selection(name, selected):
     save_config(cfg)
 
 
+def _get_selection(kind):
+    """插件/字体页勾选状态：{名(小写): bool}，未记录过的默认勾选(True)。
+    kind: 'addons' | 'fonts'（配置键 addons_selected / fonts_selected）。"""
+    cfg = load_config()
+    sel = cfg.get(kind + "_selected")
+    return sel if isinstance(sel, dict) else {}
+
+
+def _set_selection(kind, name, selected):
+    """持久化单个插件/字体的勾选状态。"""
+    if not name:
+        return
+    cfg = load_config()
+    key = kind + "_selected"
+    sel = cfg.get(key)
+    if not isinstance(sel, dict):
+        sel = {}
+    sel[name.lower()] = bool(selected)
+    cfg[key] = sel
+    save_config(cfg)
+
+
+def _addon_locked(name):
+    """库插件 / 客户端前置，锁定必选、不允许取消勾选：
+    - ! 开头：库插件（如 !Libs），被大量插件依赖
+    - Blizzard_ 开头：客户端自带 UI 模块（插件包内同套 12 个）
+    - Turtle_ 开头：乌龟服服务端 UI（.pub 结构）"""
+    n = (name or "").strip().lower()
+    return n.startswith(("!", "blizzard_", "turtle_"))
+
+
 def normalize_addons_path(path, create=False):
     """用户随手输入的路径自动纠正为 AddOns 目录：
     - 已是 AddOns → 原样
@@ -1926,11 +1957,16 @@ def install_addons_from_interface(src_iface, addons_dir, log):
         cands = sorted(d for d in os.listdir(backups_base(addons_dir)) if d.startswith("_备份_"))
         if cands:
             backup_dir = os.path.join(backups_base(addons_dir), cands[-1])
-    # 2) 拷入新插件（跳过 _ 开头的内部目录）
+    # 2) 拷入新插件（跳过 _ 开头的内部目录；按插件页勾选过滤，库/客户端前置锁定必装）
+    sel = _get_selection("addons")
     names = [e for e in sorted(os.listdir(addons_src))
              if os.path.isdir(os.path.join(addons_src, e)) and not e.startswith("_")]
+    installable = [n for n in names if _addon_locked(n) or sel.get(n.lower(), True)]
+    n_skip = len(names) - len(installable)
+    if n_skip:
+        log("[插件] 按勾选跳过 " + str(n_skip) + " 个未勾选插件（未丢失，重新勾选可装回）")
     n, details = 0, []
-    for name in names:
+    for name in installable:
         src = os.path.join(addons_src, name)
         dst = os.path.join(addons_dir, name)
         try:
@@ -2023,6 +2059,14 @@ class Handler(BaseHTTPRequestHandler):
                         names.append(e)
             return self._send(200, json.dumps(
                 {"ready": _kind_ready("addons"), "plugins": names}, ensure_ascii=False))
+        if self.path.startswith("/api/addons_pack"):
+            q = urllib.parse.urlsplit(self.path).query
+            target = urllib.parse.parse_qs(q).get("target", [""])[0]
+            return self._send(200, json.dumps(list_package_addons(target), ensure_ascii=False))
+        if self.path.startswith("/api/fonts_pack"):
+            q = urllib.parse.urlsplit(self.path).query
+            target = urllib.parse.parse_qs(q).get("target", [""])[0]
+            return self._send(200, json.dumps(list_package_fonts(target), ensure_ascii=False))
         if self.path.startswith("/api/addons"):
             q = urllib.parse.urlsplit(self.path).query
             target = urllib.parse.parse_qs(q).get("target", [""])[0]
@@ -2054,9 +2098,10 @@ class Handler(BaseHTTPRequestHandler):
             ta = _to_addons(target)
             dst = fonts_dst(ta) if ta else ""
             installed = bool(ta) and os.path.isdir(dst) and not cfg.get("fonts_backup")
-            # 字体明细：已装入（游戏 Fonts）+ 可装入（缓存包），名称+用途
-            files, seen = [], set()
-            for base, flag in ((dst, True), (src, False)):
+            # 字体明细：先扫字体包（参与勾选），再扫游戏 Fonts 补充"已装入但不在包里"的
+            fsel = _get_selection("fonts")
+            files, seen = [], {}
+            for base, flag, inpack in ((src, False, True), (dst, True, False)):
                 if not (base and os.path.isdir(base)):
                     continue
                 for fn in sorted(os.listdir(base)):
@@ -2064,11 +2109,15 @@ class Handler(BaseHTTPRequestHandler):
                         continue
                     key = fn.lower()
                     if key in seen:
+                        if flag and not seen[key]["installed"]:
+                            seen[key]["installed"] = True
                         continue
-                    seen.add(key)
-                    files.append({"name": fn,
-                                  "desc": FONT_INFO.get(key, "美化字体文件，覆盖客户端对应位置的默认字体"),
-                                  "installed": flag})
+                    rec = {"name": fn,
+                           "desc": FONT_INFO.get(key, "美化字体文件，覆盖客户端对应位置的默认字体"),
+                           "installed": flag, "in_pack": inpack,
+                           "selected": bool(fsel.get(key, True))}
+                    files.append(rec)
+                    seen[key] = rec
             files.sort(key=lambda f: (not f["installed"], f["name"].lower()))
             return self._send(200, json.dumps({
                 "ok": True, "src": src, "src_exists": os.path.isdir(src),
@@ -2230,6 +2279,100 @@ class Handler(BaseHTTPRequestHandler):
             src = payload.get("src", "")
             ok, log_lines, summary = mod_import_package(t, src)
             return self._send(200, {"ok": ok, "log": log_lines, "summary": summary})
+        if self.path == "/api/addons_select":
+            n = payload.get("name", "")
+            en = bool(payload.get("selected", False))
+            if _addon_locked(n) and not en:
+                return self._send(200, {"ok": False,
+                                        "msg": "该插件是库插件/客户端前置，不能取消勾选"})
+            _set_selection("addons", n, en)
+            return self._send(200, {"ok": True})
+        if self.path == "/api/addons_apply":
+            # 按插件页勾选立即同步：装入勾选未装的；卸载已装但取消勾选的（挪入 WowAbak 备份可捞回）
+            _hist("应用插件勾选（缓存未就绪会先自动下载）")
+            t = _to_addons(payload.get("target", ""))
+            if not t:
+                return self._send(200, {"ok": False,
+                                        "summary": "未设置游戏路径，请先在「首页」设置"})
+            log_lines = []
+
+            def _log(m):
+                log_lines.append(m)
+            _err = _ensure_kind_downloaded("addons", log_lines)
+            if _err:
+                return self._send(200, {"ok": False, "log": log_lines, "summary": _err})
+            src_addons = _kind_dst("addons")
+            if not (src_addons and os.path.isdir(src_addons)):
+                return self._send(200, {"ok": False, "log": log_lines,
+                                        "summary": "插件资源不可用，请到「下载」页检查"})
+            addons = normalize_addons_path(t, create=True)
+            sel = _get_selection("addons")
+            names = [e for e in sorted(os.listdir(src_addons))
+                     if os.path.isdir(os.path.join(src_addons, e)) and not e.startswith("_")]
+            chosen = [e for e in names if _addon_locked(e) or sel.get(e.lower(), True)]
+            chosen_l = {e.lower() for e in chosen}
+            # 1) 卸载已装但取消勾选的 → WowAbak\插件备份_ts（可捞回）
+            n_rem = 0
+            bb = os.path.join(backups_base(addons),
+                              "插件备份_" + time.strftime("%Y%m%d_%H%M%S"))
+            if os.path.isdir(addons):
+                for e in sorted(os.listdir(addons), key=str.lower):
+                    if e.startswith("_") or e.lower() in chosen_l:
+                        continue
+                    p = os.path.join(addons, e)
+                    if os.path.isdir(p) and _move_to_backup(p, bb, _log, "插件"):
+                        n_rem += 1
+                        _log("[插件] 已卸载（挪入 WowAbak 备份）：" + e)
+            # 2) 装入勾选但未装的
+            n_inst = 0
+            for e in chosen:
+                dstp = os.path.join(addons, e)
+                if os.path.isdir(dstp):
+                    continue
+                try:
+                    shutil.copytree(os.path.join(src_addons, e), dstp)
+                    n_inst += 1
+                    _log("[插件] 装入 " + e)
+                except Exception as ex:
+                    _log("[插件] 装入 " + e + " 失败：" + str(ex))
+            if n_inst or n_rem:
+                _mark_installed("addons", _log)
+            cfg = load_config()
+            cfg["session_applied"] = _overlay_present(t)
+            save_config(cfg)
+            summary = "插件勾选已应用：装入 %d 个、卸载 %d 个，共勾选 %d 个" % (n_inst, n_rem, len(chosen))
+            _set_progress(0, done=True, msg=summary)
+            return self._send(200, {"ok": True, "log": log_lines, "summary": summary})
+        if self.path == "/api/fonts_select":
+            _set_selection("fonts", payload.get("name", ""),
+                           bool(payload.get("selected", False)))
+            return self._send(200, {"ok": True})
+        if self.path == "/api/fonts_apply":
+            # 按字体页勾选立即同步：装入勾选未装的；未勾选已装的会被安装前备份挪走（=卸载，可捞回）
+            _hist("应用字体勾选（缓存未就绪会先自动下载）")
+            t = _to_addons(payload.get("target", ""))
+            if not t:
+                return self._send(200, {"ok": False,
+                                        "summary": "未设置游戏路径，请先在「首页」设置"})
+            log_lines = []
+
+            def _log(m):
+                log_lines.append(m)
+            _err = _ensure_kind_downloaded("fonts", log_lines)
+            if _err:
+                return self._send(200, {"ok": False, "log": log_lines, "summary": _err})
+            src = _kind_dst("fonts")
+            if not (src and os.path.isdir(src)):
+                return self._send(200, {"ok": False, "log": log_lines,
+                                        "summary": "字体资源不可用，请到「下载」页检查"})
+            n = install_fonts(t, src, _log)
+            _mark_installed("fonts", _log)
+            cfg = load_config()
+            cfg["session_applied"] = _overlay_present(t)
+            save_config(cfg)
+            summary = "字体勾选已应用：装入/更新 %d 个文件（未勾选的已挪入 WowAbak 备份）" % n
+            _set_progress(0, done=True, msg=summary)
+            return self._send(200, {"ok": True, "log": log_lines, "summary": summary})
         if self.path == "/api/mod_select":
             n = payload.get("name", "")
             en = bool(payload.get("selected", False))
@@ -2861,19 +3004,31 @@ def install_fonts(target, font_src, log):
             if npre:
                 log("[备份] 安装前已把 Fonts 原有 " + str(npre) + " 项整体备份到 WowAbak\\"
                     + os.path.basename(conflict_backup) + "（未丢失）")
+        sel = _get_selection("fonts")
+        n_skip = 0
         for e in sorted(os.listdir(font_src)):
             sp = os.path.join(font_src, e)
             dp = os.path.join(dst, e)
             if os.path.isdir(sp):
+                if not sel.get(e.lower(), True):
+                    n_skip += 1
+                    continue
                 shutil.copytree(sp, dp, dirs_exist_ok=True)
                 n += _count_files(sp)
             elif os.path.isfile(sp):
+                if not e.lower().endswith(_FONT_EXTS):
+                    continue
+                if not sel.get(e.lower(), True):
+                    n_skip += 1
+                    continue
                 shutil.copy2(sp, dp)
                 n += 1
+        if n_skip:
+            log("[字体] 按勾选跳过 " + str(n_skip) + " 个未勾选字体（未丢失，重新勾选可装回）")
         if n:
             log("[字体] 已装入/更新 " + str(n) + " 个字体文件 → 游戏目录\\Fonts")
         else:
-            log("[字体] 字体均已是最新，无需更新")
+            log("[字体] 没有需要装入的字体（勾选为空或均已是最新）")
     except Exception as ex:
         log("[字体] 装入失败：" + str(ex))
     return n
@@ -3185,6 +3340,11 @@ def _kind_sig(kind):
             sig += "|p=" + json.dumps(vers, sort_keys=True, ensure_ascii=False)
         except Exception:
             pass
+        sig += "|sel=" + json.dumps(_get_selection("addons"), sort_keys=True,
+                                    ensure_ascii=False)
+    elif kind == "fonts":
+        sig += "|sel=" + json.dumps(_get_selection("fonts"), sort_keys=True,
+                                    ensure_ascii=False)
     return sig
 
 
@@ -3207,14 +3367,24 @@ def _kind_on_disk(target, kind):
         addons = normalize_addons_path(target, create=False)
         if not (src and os.path.isdir(src) and addons and os.path.isdir(addons)):
             return False
+        sel = _get_selection("addons")
         names = [e for e in os.listdir(src)
                  if os.path.isdir(os.path.join(src, e)) and not e.startswith("_")]
+        names = [e for e in names if _addon_locked(e) or sel.get(e.lower(), True)]
         if not names:
             return True
         return all(os.path.isdir(os.path.join(addons, e)) for e in names)
     if kind == "fonts":
         dst = fonts_dst(target)
-        return os.path.isdir(dst) and any(True for _ in os.scandir(dst))
+        if not os.path.isdir(dst):
+            return False
+        sel = _get_selection("fonts")
+        d = _kind_dst("fonts")
+        if not (d and os.path.isdir(d)):
+            return False
+        need = [e for e in os.listdir(d)
+                if e.lower().endswith(_FONT_EXTS) and sel.get(e.lower(), True)]
+        return all(os.path.isfile(os.path.join(dst, e)) for e in need)
     return False
 
 
@@ -3363,8 +3533,12 @@ def apply_overlay(target, mod_src, addon_src, log, font_src=None):
             if npre:
                 log("[备份] 安装前已把插件目录原有 " + str(npre) + " 项整体备份到 WowAbak\\"
                     + os.path.basename(backup_dir) + "（未丢失）")
-            dirs = [e for e in sorted(os.listdir(src_addons))
-                    if os.path.isdir(os.path.join(src_addons, e)) and not e.startswith("_")]
+            # 按插件页勾选过滤：只装勾选的（库插件/客户端前置锁定必装）；未勾选已装的已在上面备份挪走=卸载
+            asel = _get_selection("addons")
+            all_dirs = [e for e in sorted(os.listdir(src_addons))
+                        if os.path.isdir(os.path.join(src_addons, e)) and not e.startswith("_")]
+            dirs = [e for e in all_dirs if _addon_locked(e) or asel.get(e.lower(), True)]
+            n_skip = len(all_dirs) - len(dirs)
             nadd = 0
             for i, e in enumerate(dirs):
                 try:
@@ -3375,7 +3549,10 @@ def apply_overlay(target, mod_src, addon_src, log, font_src=None):
                 except Exception as ex:
                     log("[装入失败] " + e + "：" + str(ex))
                 _set_progress(38 + 42 * (i + 1) // max(1, len(dirs)))
-            log("[插件] 从「" + os.path.basename(addon_src.rstrip("\\/")) + "」装入 " + str(nadd) + " 个")
+            if n_skip:
+                log("[插件] 按勾选跳过 " + str(n_skip) + " 个未勾选插件")
+            log("[插件] 从「" + os.path.basename(addon_src.rstrip("\\/")) + "」装入 " + str(nadd)
+                + " 个（按勾选）")
             _set_progress(82, "字体", "插件安装完毕，字体安装中…", step="插件")
             _mark_installed("addons", log)
             status["addons"] = (True, "已安装(%d个)" % nadd)
@@ -3673,6 +3850,46 @@ def _install_console_handler():
         ctypes.windll.kernel32.SetConsoleCtrlHandler(_CONSOLE_CB, True)
     except Exception:
         pass
+
+
+_FONT_EXTS = (".ttf", ".otf", ".ttc")
+
+
+def list_package_addons(target):
+    """插件包内插件清单（含勾选/锁定/安装状态）。返回 {ok, addons, src, msg}。"""
+    d = _kind_dst("addons")
+    ta = _to_addons(target)
+    sel = _get_selection("addons")
+    out = []
+    if d and os.path.isdir(d):
+        for e in sorted(os.listdir(d), key=str.lower):
+            p = os.path.join(d, e)
+            if os.path.isdir(p) and not e.startswith("_"):
+                locked = _addon_locked(e)
+                out.append({"name": e, "locked": locked,
+                            "selected": True if locked else bool(sel.get(e.lower(), True)),
+                            "installed": bool(ta) and os.path.isdir(os.path.join(ta, e))})
+    return {"ok": bool(out), "addons": out, "src": d or "",
+            "msg": "" if out else "插件包还没下载（点「应用勾选」会自动下载）"}
+
+
+def list_package_fonts(target):
+    """字体包内字体清单（含勾选/安装状态）。返回 {ok, fonts, src, msg}。"""
+    d = _kind_dst("fonts")
+    ta = _to_addons(target)
+    root = client_root_of(ta) if ta else ""
+    fdst = os.path.join(root, "Fonts") if root else ""
+    sel = _get_selection("fonts")
+    out = []
+    if d and os.path.isdir(d):
+        for e in sorted(os.listdir(d), key=str.lower):
+            p = os.path.join(d, e)
+            if os.path.isfile(p) and e.lower().endswith(_FONT_EXTS):
+                out.append({"name": e, "locked": False,
+                            "selected": bool(sel.get(e.lower(), True)),
+                            "installed": bool(fdst) and os.path.isfile(os.path.join(fdst, e))})
+    return {"ok": bool(out), "fonts": out, "src": d or "",
+            "msg": "" if out else "字体包还没下载（点「装入字体」会自动下载）"}
 
 
 def list_package_mods(target, src):
