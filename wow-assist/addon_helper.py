@@ -3071,11 +3071,11 @@ def install_fonts(target, font_src, log):
             npre = 0
             nkeep = 0
             for e in os.listdir(dst):
-                if e in srcset:
-                    continue
-                if sel.get(e.lower(), True):
+                # 勾选保留、且资源包里没有的字体 → 原地不动（不卸载、不覆盖）
+                if e not in srcset and sel.get(e.lower(), True):
                     nkeep += 1
                     continue
+                # 其余一律删除：包内勾选的（稍后重拷=更新）、未勾选的（=卸载，含包内与包外）
                 p = os.path.join(dst, e)
                 try:
                     if os.path.isdir(p):
@@ -3083,9 +3083,8 @@ def install_fonts(target, font_src, log):
                     else:
                         os.remove(p)
                     npre += 1
-                    log("[字体] 已卸载（直接删除）：" + e)
                 except Exception as ex:
-                    log("[字体] 卸载 " + e + " 失败：" + str(ex))
+                    log("[字体] 删除 " + e + " 失败：" + str(ex))
             if nkeep:
                 log("[字体] 按勾选保留客户端原有（资源包外）字体 " + str(nkeep) + " 个")
         n_skip = 0
