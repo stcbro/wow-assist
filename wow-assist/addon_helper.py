@@ -3047,8 +3047,11 @@ def install_fonts(target, font_src, log):
         return 0
     dst = fonts_dst(target)
     cfg = load_config()
-    # 首次：客户端自带 Fonts 先整体备份，清理还原时恢复原样
-    if os.path.isdir(dst) and not cfg.get("fonts_backup"):
+    # 首次：客户端自带 Fonts 先整体备份，清理还原时恢复原样。
+    # 仅在「本程序从未装入过字体」时才备份——否则会把上次装入的包字体误当"客户端原有"，
+    # 导致移除字体时又把它们恢复回来（=移除无效）。
+    if os.path.isdir(dst) and not cfg.get("fonts_backup") \
+            and not cfg.get("install_state", {}).get("fonts", {}).get("done"):
         try:
             bb = os.path.join(backups_base(target), "字体备份_Fonts")
             if not os.path.isdir(bb):

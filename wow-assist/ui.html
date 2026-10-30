@@ -856,8 +856,9 @@ async function loadAddons(){ return; }
 $('#a-removeall').onclick = async ()=>{
   if(!(await askConfirm('全部移除？\n客户端里的插件会挪到备份文件夹（可捞回），客户端自带的除外'))) return;
   const r = await api('/api/uninstall_all', {target:state.current});
-  showLog('#a-log', (r.log||[]).join('\n')+'\n'+(r.summary||''));
-  loadAddons();
+  const msg = $('#a-apply-msg'); if(msg) msg.textContent = r.summary || '';
+  toast(r.summary || '完成');
+  loadAddonSel(); loadHome();
 };
 // 装入插件：按「勾选管理」的勾选立即同步（装入勾选未装的、卸载取消勾选已装的）；
 // 缓存未下载会自动先下载，按钮旁实时显示进度
