@@ -1698,24 +1698,21 @@ def install_from_gitee_zip(zip_path, addons_dir, log):
 
 
 def uninstall_all_addons(addons_dir, log):
-    """一键清空插件：全部挪到游戏目录 WowAbak/已删除插件_时间 文件夹（可手动捞回），
-    并还原被贴图美化覆盖的原版贴图。返回 (移除数, 备份路径)"""
+    """一键清空插件：全部直接删除（不备份，与「移除字体」同规则），
+    并还原被贴图美化覆盖的原版贴图。返回 (移除数)"""
     client_root = client_root_of(addons_dir)
-    ts = time.strftime("%Y%m%d_%H%M%S")
-    trash = os.path.join(backups_base(addons_dir), "已删除插件_" + ts)
-    moved = 0
+    removed = 0
     for e in os.listdir(addons_dir):
         if e.startswith("_备份_") or e.startswith("_贴图备份_"):
             continue
         src = os.path.join(addons_dir, e)
-        os.makedirs(trash, exist_ok=True)
-        try:
-            shutil.move(src, os.path.join(trash, e))
-            moved += 1
-        except Exception as ex:
-            log(f"[移除失败] {e}: {ex}")
-    if moved:
-        log(f"[清空] {moved} 项已移入 WowAbak\\已删除插件_{ts}（可手动捞回）")
+        if _fast_delete(src):
+            removed += 1
+            log(f"[移除] {e}（直接删除）")
+        else:
+            log(f"[移除失败] {e}")
+    if removed:
+        log(f"[清空] {removed} 项已直接删除（不备份）")
 
     # 还原原版贴图（取最新一次含贴图备份的备份文件夹），并删除本包新增的贴图
     tex_baks = []
@@ -1765,21 +1762,28 @@ def uninstall_all_addons(addons_dir, log):
             os.rmdir(parent)
     if restored:
         log(f"[贴图] 已还原 {restored} 个原版贴图")
-    return moved, trash
+    # 空目录收尾：AddOns 清空后，连同 Interface 空目录一并删除（客户端原本没有该目录的场景）
+    if os.path.isdir(addons_dir) and not os.listdir(addons_dir):
+        _fast_delete(addons_dir)
+        log("[清空] 插件目录已空，AddOns 一并移除")
+        iface = os.path.dirname(addons_dir)
+        if os.path.isdir(iface) and not os.listdir(iface):
+            _fast_delete(iface)
+            log("[清空] 空目录 Interface 一并移除")
+    return removed
 
 
 def uninstall_one(addons_dir, name, log):
-    """移除单个插件（挪到备份文件夹，可捞回）"""
+    """移除单个插件（直接删除，不备份）"""
     safe = os.path.basename(name)  # 防路径穿越
     src = os.path.join(addons_dir, safe)
     if not os.path.isdir(src):
         return False, "插件不存在"
-    trash = os.path.join(backups_base(addons_dir), "已删除插件_" + time.strftime("%Y%m%d_%H%M%S"))
-    os.makedirs(trash, exist_ok=True)
     try:
-        shutil.move(src, os.path.join(trash, safe))
-        log(f"[移除] {safe} → 已删除插件_{os.path.basename(trash)[5:]}")
-        return True, trash
+        if _fast_delete(src):
+            log(f"[移除] {safe}（直接删除）")
+            return True, "已移除"
+        return False, "删除失败"
     except Exception as ex:
         return False, str(ex)
 
@@ -2948,8 +2952,8 @@ class Handler(BaseHTTPRequestHandler):
         if not target or not os.path.isdir(target):
             return self._send(200, json.dumps(
                 {"log": ["[错误] 安装位置无效"], "summary": "安装位置无效"}, ensure_ascii=False))
-        moved, trash = uninstall_all_addons(target, log)
-        summary = f"已移除 {moved} 项（存放在 {trash}，可捞回）。重启游戏生效。" if moved \
+        moved = uninstall_all_addons(target, log)
+        summary = f"已直接移除 {moved} 项插件（不备份）。重启游戏生效。" if moved \
             else "目录本来就是空的，没有可移除的插件。"
         return self._send(200, json.dumps(
             {"log": log_lines, "summary": summary}, ensure_ascii=False))

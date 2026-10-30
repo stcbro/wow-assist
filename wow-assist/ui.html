@@ -854,7 +854,7 @@ $('#a-sel-all').addEventListener('change', async (e)=>{
 // 旧「插件列表（当前客户端）」卡片已移除（与勾选管理重复），loadAddons 保留为空实现兼容旧调用点
 async function loadAddons(){ return; }
 $('#a-removeall').onclick = async ()=>{
-  if(!(await askConfirm('全部移除？\n客户端里的插件会挪到备份文件夹（可捞回），客户端自带的除外'))) return;
+  if(!(await askConfirm('全部移除？\n客户端里的插件会直接删除（不备份），客户端自带的除外'))) return;
   const r = await api('/api/uninstall_all', {target:state.current});
   const msg = $('#a-apply-msg'); if(msg) msg.textContent = r.summary || '';
   toast(r.summary || '完成');
