@@ -291,7 +291,7 @@ th{color:var(--sub);font-weight:600;font-size:12px}
           <div><span class="ct ct-add">新增</span>插件页「勾选管理」（模组页同款）：只装勾选的插件；取消勾选已装的自动卸载（挪入 WowAbak 备份，可捞回）；库插件（! 开头）与 Blizzard_ / Turtle_ 客户端前置锁定必选、不可取消</div>
           <div><span class="ct ct-add">新增</span>字体页同样按勾选同步：装入勾选的字体、卸载取消勾选的（字体无锁定项，客户端原本没有 Fonts 文件夹）</div>
           <div><span class="ct ct-add">新增</span>首页状态行新增「资源」项：未检测显示「待检测」，检测后显示 已下载 / 下载中 / 未下载</div>
-          <div><span class="ct ct-imp">改进</span>全部组件检测/安装完毕后，状态行提示改为「所有组件已就绪，可以启动游戏啦！」</div>
+          <div><span class="ct ct-imp">改进</span>配置组件完成后，进度条上的完成提示加大字号并以醒目绿色显示</div>
           <div><span class="ct ct-imp">改进</span>更新日志全面重排版：统一为「版本 ｜ 日期 ｜ 主题」，条目按 新增 / 改进 / 变更 / 修复 / 移除 分类标注；补全 v2.0 与 v1.x 历史条目，补齐各版本发布日期</div>
           <div><span class="ct ct-imp">改进</span>下载页「资源地址」不再回显分享链接和提取码，留空即用内置默认地址（如需更换再填写）</div>
           <div><span class="ct ct-imp">改进</span>缓存管理的开关与天数合并为一行；下载页模组/插件卡片去掉括号补充说明</div>
@@ -611,6 +611,10 @@ function renderProgress(p){
   pct.textContent = p.pct + '%';
   bar.style.width = p.pct + '%';
   msg.textContent = p.msg || p.stage || '';
+  // 完成态提示醒目：加大字号 + 绿色加粗
+  msg.style.cssText = p.done
+    ? 'font-size:15px;font-weight:700;color:var(--accent)'
+    : '';
   const order = [['下载','资源下载'],['模组','模组安装'],['插件','插件安装'],['字体','字体安装']];
   const done = p.steps || [], cur = p.stage || '';
   steps.innerHTML = order.map(([k,label])=>{
@@ -734,8 +738,7 @@ async function refreshSession(p){
   const lb = k => '<span style="color:var(--txt)">'+k+'</span>';
   const allOk = st.res==='ok' && st.mods==='ok' && st.addons==='ok' && st.fonts==='ok';
   el.innerHTML = lb('资源') + ' ' + mkRes(st.res) + '　' + lb('模组') + ' ' + mk(st.mods)
-    + '　' + lb('插件') + ' ' + mk(st.addons) + '　' + lb('字体') + ' ' + mk(st.fonts)
-    + (allOk ? '　<b style="color:var(--accent)">所有组件已就绪，可以启动游戏啦！</b>' : '');
+    + '　' + lb('插件') + ' ' + mk(st.addons) + '　' + lb('字体') + ' ' + mk(st.fonts);
 }
 // 【清理还原】：结束游戏 + 移除本次装入的模组/插件/字体(先备份到插件备份) + 恢复 dlls.txt，
 // 客户端恢复初始状态；倒计时结束后回到初始界面，程序继续可用（不退出）。
