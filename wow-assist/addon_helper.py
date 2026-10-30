@@ -3231,18 +3231,40 @@ def revert_overlay(target, log, kill=True, backup=True):
             log("[移除失败] " + (name_for_log or os.path.basename(item)) + "：" + str(ex))
             return False
 
-    # 1) 移除非自带插件（保留 Blizzard_* 自带插件，跳过 _ 内部目录）
+    # 1) 移除本程序装入的插件：资源包里的全部移除（含 Blizzard_ 系修复插件）；
+    #    客户端自带（不在资源包里）的 Blizzard_* 保留；跳过 _ 内部目录
     removed = 0
+    pack_names = set()
+    try:
+        _psrc = _kind_dst("addons")
+        if _psrc and os.path.isdir(_psrc):
+            pack_names = {e.lower() for e in os.listdir(_psrc)
+                          if os.path.isdir(os.path.join(_psrc, e))}
+    except Exception:
+        pass
     if addons and os.path.isdir(addons):
         for e in os.listdir(addons):
-            if e.startswith(SESSION_BASELINE_PREFIX) or e.startswith("_"):
+            if e.startswith("_"):
                 continue
+            if e.startswith(SESSION_BASELINE_PREFIX) and e.lower() not in pack_names:
+                continue  # 客户端自带插件（不在资源包内）保留
             if _remove(os.path.join(addons, e), "插件"):
                 removed += 1
+        # 客户端原本没有 Interface/AddOns 时不留空目录：清空后连目录一起移除
+        try:
+            if not os.listdir(addons):
+                _fast_delete(addons)
+                log("[还原] 插件目录已空，AddOns 一并移除（客户端原本没有该目录）")
+                iface = os.path.dirname(addons)
+                if iface and os.path.isdir(iface) and not os.listdir(iface):
+                    _fast_delete(iface)
+                    log("[还原] 空目录 Interface 一并移除")
+        except Exception:
+            pass
     if backup:
-        log("[还原] 移除会话插件 " + str(removed) + " 个（已备份到 WowAbak，可捞回；保留客户端自带 Blizzard 插件）")
+        log("[还原] 移除会话插件 " + str(removed) + " 个（已备份到 WowAbak，可捞回；保留客户端自带且不在资源包内的插件）")
     else:
-        log("[还原] 移除已装插件 " + str(removed) + " 个（彻底移除，不备份；保留客户端自带 Blizzard 插件）")
+        log("[还原] 移除已装插件 " + str(removed) + " 个（彻底移除，不备份；保留客户端自带且不在资源包内的插件）")
     # 2) 移除本程序装入的模组 DLL + 老版 VanillaFixes.exe 残留
     mod_removed = 0
     for name in MOD_DLL_ORDER + ["VanillaFixes.exe"]:
