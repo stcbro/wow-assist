@@ -27,14 +27,14 @@
 - **分发链接真相（2026-10-26 22:20 用户纠正后更新）**：`https://sycc.lanzoum.com/b01i5y3r7c` + 提取码 `9p81` 指向的分享文件夹原名「乌龟服资源包20261025」（`fol14138872`），**已被用户在网页改名为「wow-resources」**；内含 `wowassist_插件包_part1~4.zip` / `wowassist_字体.zip` / `wowassist_模组包.zip` / 上传清单.txt，**不含 exe**。**「wow-assist」文件夹（`fol14145295`）是另一个目录**（只放 exe，**待作者在网页手动分享**）——两者不是同一个，别再混。
 - **exe 放在两个位置**：「wow-resources」（=对外分享链接指向的**资源包**文件夹，**用户明确决定不放 exe**）与「wow-assist」（exe 专区，待作者在网页生成分享链接后对外）。旧文件夹「魔兽助手」`fol14144103` 已删除。
 - `get_direct_link` 返 `(state,link)` 勿按 (url,err) 解包；反爬(iframe CDN/websign=2/acw_sc__v2)已处理；抓取 3 次重试，失败原因落 run.log `[蓝奏云]` 行。**manifest.json 未上传**。
-- **一键上传脚本（已固化）**：`wow-assist/上传蓝奏云.py` —— 读 `APP_VERSION`→定位最新 `wowassist-v*.exe`→网页登录→进文件夹→上传→校验→`--prune` 清理同名副本与旧版本。参数：`--file/--folder/--prune/--skip-upload/--state/--dry-run`。凭据走环境变量 **`LZ_USER` + `LZ_PW`**（⚠️ **变量名含 PASS 会被环境过滤成 None**，务必用 `LZ_PW`；脚本也兼容 `LZ_KEY/LZ_SECRET`）。登录态缓存 `temp/lz_state.json`（可删=强制重新登录）。
-- **`打包exe.bat` 已串联上传**：打包清理 dist/build 后，若存在 `LZ_USER`+`LZ_PW` 则自动上传到「wow-assist」和「wow-resources」两个文件夹（各带 `--prune`）；未设置则打印提示并跳过。
+- **一键上传脚本（已固化）**：`wow-assist/上传蓝奏云.py` —— 读 `APP_VERSION`→定位最新 `wowassist-v*.exe`→网页登录→进文件夹→上传→校验（完成判据=刷新后列表真实出现文件名，不再依赖易误判的『100%』文案）。参数：`--file/--folder/--prune(默认关闭)/--no-prune/--skip-upload/--state/--dry-run`（`--prune` 默认 False：用户 2026-10-31 裁定保留所有历史版本 exe，不再删老版本）。凭据走环境变量 **`LZ_USER` + `LZ_PW`**（⚠️ **变量名含 PASS 会被环境过滤成 None**，务必用 `LZ_PW`；脚本也兼容 `LZ_KEY/LZ_SECRET`）。登录态缓存 `temp/lz_state.json`（可删=强制重新登录）。
+- **`打包exe.bat` 已串联上传**：打包清理 dist/build 后，若存在 `LZ_USER`+`LZ_PW` 则自动上传到「wow-assist」（`--no-prune`，保留历史版本；exe 永不传 wow-resources 铁律）；未设置则打印提示并跳过。
 - **`验证分发链接.py`**：无登录打开分享链接+提取码，列出文件并检查 exe 是否存在/是否重复并存。
 - **`上传资源包.py`（v3.12 新增）**：批量上传资源包 zip + 上传清单到分发文件夹，并删除旧命名（`魔兽助手_*.zip`）文件。参数 `--src/--folder/--keep-old/--only-clean`。
 - **`build_font_pack.py` / `upload_font_pack.py`（2026-10-31 新增）**：字体包单独重建/替换上传。build_font_pack 从 `.wbdata/resources/Fonts/`(已是思源黑体) 重建 `wowassist_字体.zip`(Fonts/ 前缀) 到 `D:/WorkBuddy/发布/蓝奏云资源包/`；upload_font_pack 进蓝奏云「wow-resources」删旧包(同名并存)再传新包并校验副本数=1。二者仅动字体卷，不碰模组/插件包。
 - ⚠️ **上传成功判定铁律**：不能用「DOM 里出现文件名」（webuploader 待上传队列本来就有文件名，会误判）——必须等 `100%`/上传完成提示后**刷新列表**核对文件真的在。此坑曾导致漏传 3 个文件。
 - **蓝奏云 Web 操作要点（踩坑记录）**：浏览器**直连**（沙盒代理对该站 `ERR_PROXY_CONNECTION_FAILED`）；用系统 Edge，Playwright 须传 **Windows 路径** `C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe`（写 `/c/...` 会解析成 `\c\...` 找不到）；登录页要先访问 `www.lanzou.com` 再点「登录」进 `up.woozooo.com/account.php?action=login`（直接跳 accounts 页会因缺 formhash 失败）；文件管理在 `mydisk.php` 的 **iframe**（url 含 `item=files`）内操作；文件夹行 = `div.f_tb`（id 形如 `f326653283`），`a.f_selb` 弹菜单（下载/删除文件），**`a.f_sela` 才是分享/属性面板**（外链分享地址/自定义外链/密码设置/修改资料/短网址），面板里短网址/自定义外链的 AJAX 常年"获取中..."读不到值，**别用自动点击去取分享链接，易误触删除**。
-- **蓝奏云同名文件不覆盖、会并存**：每次上传同名 exe 都会多出一份，**必须 `--prune`**（保留 DOM 顺序第一个=最新，删其余）。且**上传后列表是异步刷新的**，清理前须强制刷新列表，否则读到旧列表会漏删。
+- **蓝奏云同名文件不覆盖、会并存**：每次上传同名 exe 会多出一份。**用户 2026-10-31 裁定：上传 exe 后不再删除老版本（保留所有历史版本供回退）** → `上传蓝奏云.py` 的 `--prune` 默认改为 **False**，`打包exe.bat` 用 `--no-prune`；仅 `release_manifest.txt` 仍由 `fix_release_manifest.py` 保持唯一副本（清单不能多份并存，否则客户端读哪个不确定）。`--prune` 仍可作临时选项，但默认关闭。
 - **WorkBuddy 内置云不可用于公开分发**（需登录/无公开URL/签名1h）。备选腾讯云COS。
 - **内置「自定义直链源」(v3.9)**：config.direct.urls 存任意直链，按文件名归类，优先级 直链>蓝奏云>手动。坑：中文 URL 须 quote path 否则 UnicodeEncodeError。
 
@@ -63,11 +63,11 @@
 
 ## 用户环境与当前状态
 - 水豚乐园 `apac.capycraft.io`；客户端 `D:/game/twmoa_1181`(乌龟服1.18；1920x1080 125%缩放)。
-- 最新 exe=**v3.20**（WowAssist / wow-assist 目录 / wowassist-v3.20.exe / AppData\wowassist / wowassist_*.zip），已构建部署到 `D:/game/twmoa_1181/wowassist.exe`（MD5 fb091c403af7123c9958ef3fc1e7ab2a）。本版新增 **3.18 应用自动更新**（读 wow-assist 文件夹 release_manifest.json，下载→md5 校验→bat 自替换重启）、**3.19 本地导入模组/插件/字体**（install_state.custom 记录，能被移除/清理还原清理）、**3.20 加密保存账号（机器绑定，cryptography Fernet+HKDF，明文零落盘）**。**分发已就绪：原资源分享链接 b01i5y3r7c/9p81 列表首项即 `wowassist-v3.20.exe`**。
+- 最新 exe=**v3.22**（WowAssist / wow-assist 目录 / wowassist-v3.22.exe / AppData\wowassist / wowassist_*.zip），游戏根 `D:/game/twmoa_1181/wowassist.exe` 仍是 v3.20 待部署（用户未要求）；v3.22 的 MD5 为 bfd5c4158351352db0fba501ff0fe64c、size 17049062。已含 **3.18 应用自动更新**（读 wow-assist 文件夹 release_manifest.json，下载→md5 校验→bat 自替换重启）、**3.19 本地导入模组/插件/字体**（install_state.custom 记录，能被移除/清理还原清理）、**3.20 加密保存账号（机器绑定，cryptography Fernet+HKDF，明文零落盘）**。**分发已就绪：原资源分享链接 b01i5y3r7c/9p81 列表首项即 `wowassist-v3.22.exe`**。
 - ✅ **真实游戏端到端验证已由用户完成**（2026-10-26 19:00 确认）。
-- ✅ **更新源已上线**：蓝奏云「wow-assist」文件夹分享 `https://sycc.lanzoum.com/b01i5y8pmf` 提取码 `1acw`（同时是 3.18 自动更新源），已上传 `wowassist-v3.20.exe` + `release_manifest.txt`（旧 v3.14 已 prune）。`app_update` 默认源已硬编码为该链接/码。⚠️ **蓝奏云静默拒收 `.json`**（客户端 100% 但服务端不落盘）→ 分发清单必须用 `release_manifest.txt`（内容仍是 JSON）；app 读 manifest 优先 `.txt` 兼容 `.json`，且 manifest 不可读时回退扫描 `wowassist-v*.exe` 文件名推断版本（跳过 md5）。
+- ✅ **更新源已上线**：蓝奏云「wow-assist」文件夹分享 `https://sycc.lanzoum.com/b01i5y8pmf` 提取码 `1acw`（同时是 3.18 自动更新源），已上传 `wowassist-v3.22.exe` + `release_manifest.txt`（**保留历史版本 exe，不再 prune**）。`app_update` 默认源已硬编码为该链接/码。⚠️ **蓝奏云静默拒收 `.json`**（客户端 100% 但服务端不落盘）→ 分发清单必须用 `release_manifest.txt`（内容仍是 JSON）；app 读 manifest 优先 `.txt` 兼容 `.json`，且 manifest 不可读时回退扫描 `wowassist-v*.exe` 文件名推断版本（跳过 md5）。
 - ⏳ 待用户动作：①真机 GUI 端到端验证三特性 + 自动更新横幅（沙盒无显示器无法验）；②可选迁腾讯云COS；③蓝奏云凭据一律只走运行时环境变量/缓存登录态（temp/lz_state.json 不含密码），不写入 git 追踪文件、不写入历史对话之外任何地方。
-- **版本号**：3.17（UI 背景重设计）已决定跳过，以后作为 **3.21**；3.18/3.19/3.20 已发不可插入。
+- **版本号**：3.17（UI 背景重设计）已决定跳过；3.18/3.19/3.20/3.21/3.22 均已发。最新 **v3.22** = 源码清理落地 + 蓝奏云上传不再删老版本（prune 默认 False）。
 
 ## 待办与暂缓项（用户拍板：先不改，记着以后改）
 - **exe 图标待换**：当前 `capy.ico`（`打包exe.bat` 的 `--icon capy.ico` 写死引用；`ui.html` 亦引用作 favicon）。用户 2026-10-31 决定先不换，以后改；风格未定（候选：水豚卡通吉祥物 / WA 字母标志 / 水豚+游戏科技感）。换图时若改文件名须同步改 bat 与 ui.html 引用。
