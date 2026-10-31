@@ -64,4 +64,6 @@
 - 水豚乐园 `apac.capycraft.io`；客户端 `D:/game/twmoa_1181`(乌龟服1.18；1920x1080 125%缩放)。
 - 最新 exe=**v3.20**（WowAssist / wow-assist 目录 / wowassist-v3.20.exe / AppData\wowassist / wowassist_*.zip），已构建部署到 `D:/game/twmoa_1181/wowassist.exe`（MD5 701cc08ccc52ba76bb050739b36053a3）。本版新增 **3.18 应用自动更新**（读 wow-assist 文件夹 release_manifest.json，下载→md5 校验→bat 自替换重启）、**3.19 本地导入模组/插件/字体**（install_state.custom 记录，能被移除/清理还原清理）、**3.20 加密保存账号（机器绑定，cryptography Fernet+HKDF，明文零落盘）**。**分发已就绪：原资源分享链接 b01i5y3r7c/9p81 列表首项即 `wowassist-v3.20.exe`**。
 - ✅ **真实游戏端到端验证已由用户完成**（2026-10-26 19:00 确认）。
-- ⏳ 待用户动作：①**「wow-assist」蓝奏云文件夹对外分享链接待作者在网页手动生成**（该链接同时是 3.18 自动更新源；生成后上传 `wowassist-v3.20.exe` + `release_manifest.json` 并填入 app_update 配置）；②可选迁腾讯云COS；③蓝奏云密码曾明文出现在历史对话，凭据一律不写入 git 追踪文件。
+- ✅ **更新源已上线**：蓝奏云「wow-assist」文件夹分享 `https://sycc.lanzoum.com/b01i5y8pmf` 提取码 `1acw`（同时是 3.18 自动更新源），已上传 `wowassist-v3.20.exe` + `release_manifest.txt`（旧 v3.14 已 prune）。`app_update` 默认源已硬编码为该链接/码。⚠️ **蓝奏云静默拒收 `.json`**（客户端 100% 但服务端不落盘）→ 分发清单必须用 `release_manifest.txt`（内容仍是 JSON）；app 读 manifest 优先 `.txt` 兼容 `.json`，且 manifest 不可读时回退扫描 `wowassist-v*.exe` 文件名推断版本（跳过 md5）。
+- ⏳ 待用户动作：①真机 GUI 端到端验证三特性 + 自动更新横幅（沙盒无显示器无法验）；②可选迁腾讯云COS；③蓝奏云凭据一律只走运行时环境变量/缓存登录态（temp/lz_state.json 不含密码），不写入 git 追踪文件、不写入历史对话之外任何地方。
+- **版本号**：3.17（UI 背景重设计）已决定跳过，以后作为 **3.21**；3.18/3.19/3.20 已发不可插入。
