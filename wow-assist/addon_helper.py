@@ -1544,14 +1544,49 @@ def launch_game(addons_dir):
             break
     if not exe:
         return False, root
+
+    # —— 3.20 加密账号落地：把账号/密码注入本次启动 ——
+    # ① 命令行 -account/-password（标准 1.12/乌龟服客户端支持，直接自动登录）；
+    # ② 若客户端自带 Imports 账号记忆功能（参考水豚/参考客户端的“账号密码记忆”，
+    #    格式 "账号 密码;"，写 Imports/accountName.txt），两栏都会填上。
+    # 明文密码只在内存里解密，用完即丢；仅当客户端已有 Imports 目录才写该文件，
+    # 避免在无此功能的客户端游戏目录里留下明文密码文件。
+    cred_args = []
+    try:
+        acc = _load_account()
+        if acc.get("has") and acc.get("user"):
+            u = acc["user"]
+            pw = acc.get("pwd") or ""
+            cred_args = ["-account", u]
+            if pw:
+                cred_args += ["-password", pw]
+                try:
+                    imp_dir = os.path.join(root, "Imports")
+                    if os.path.isdir(imp_dir):
+                        with open(os.path.join(imp_dir, "accountName.txt"),
+                                  "w", encoding="utf-8") as _f:
+                            _f.write(f"{u} {pw};")
+                except Exception:
+                    pass
+        else:
+            # 未记住账号 → 清掉客户端里可能残留的记忆文件
+            try:
+                _stale = os.path.join(root, "Imports", "accountName.txt")
+                if os.path.isfile(_stale):
+                    os.remove(_stale)
+            except Exception:
+                pass
+    except Exception:
+        cred_args = []
+
     inject = [os.path.join(root, n) for n in INJECT_DLLS]
     inject = [p for p in inject if os.path.isfile(p)]
     if not inject or sys.platform != "win32":
         try:
-            _popen_hidden([exe], cwd=root)
+            _popen_hidden([exe] + cred_args, cwd=root)
         except Exception:
             try:
-                _popen_hidden([exe])
+                _popen_hidden([exe] + cred_args)
             except Exception:
                 pass
         return True, exe
@@ -1561,8 +1596,12 @@ def launch_game(addons_dir):
     si = _STARTUPINFOW()
     si.cb = ctypes.sizeof(si)
     pi = _PROCESS_INFORMATION()
-    # CREATE_NO_WINDOW：对 WoW.exe 这类 GUI 程序无影响，只防控制台类程序弹黑窗
-    if k.CreateProcessW(exe, None, None, None, False, 0x08000000, None, root,
+    # CREATE_NO_WINDOW：对 WoW.exe 这类 GUI 程序无影响，只防控制台类程序弹黑窗。
+    # 命令行需含 exe 路径作首 token；账号/密码可能含空格，统一加引号。
+    cmdline = '"' + exe + '"'
+    for _a in cred_args:
+        cmdline += ' "' + _a + '"'
+    if k.CreateProcessW(None, cmdline, None, None, False, 0x08000000, None, root,
                         ctypes.byref(si), ctypes.byref(pi)):
         pid = pi.dwProcessId
         try:
@@ -1575,10 +1614,10 @@ def launch_game(addons_dir):
         return True, exe
     # 兜底：CreateProcess 失败就退回子进程封装，保证游戏一定能开
     try:
-        _popen_hidden([exe], cwd=root)
+        _popen_hidden([exe] + cred_args, cwd=root)
     except Exception:
         try:
-            _popen_hidden([exe])
+            _popen_hidden([exe] + cred_args)
         except Exception:
             pass
     return True, exe
@@ -3105,11 +3144,11 @@ FONT_INFO = {
     "ariblk.ttf":   "粗体标题字体：面板标题、等级数字等加粗文字",
     "babsaml__.ttf":"备用正文字体：部分旧界面文字",
     "bbsimsun.ttf": "中文宋体：繁中界面备用字体",
-    "fzbwjw.ttf":   "方正北魏楷书：任务书卷、信件类文字（美化）",
-    "fzjzjw.ttf":   "方正准圆：界面通用中文字体（美化）",
-    "fzlbjw.ttf":   "方正隶变：标题、书卷类文字（美化）",
-    "fzxhjw.ttf":   "方正细黑：聊天与界面小字（美化）",
-    "fzxhlw.ttf":   "方正细黑（等线）：聊天与界面小字（美化）",
+    "fzbwjw.ttf":   "思源黑体（Noto Sans SC）：任务书卷、信件类文字（美化）",
+    "fzjzjw.ttf":   "思源黑体（Noto Sans SC）：界面通用中文字体（美化）",
+    "fzlbjw.ttf":   "思源黑体（Noto Sans SC）：标题、书卷类文字（美化）",
+    "fzxhjw.ttf":   "思源黑体（Noto Sans SC）：聊天与界面小字（美化）",
+    "fzxhlw.ttf":   "思源黑体（Noto Sans SC）：聊天与界面小字（美化）",
 }
 
 

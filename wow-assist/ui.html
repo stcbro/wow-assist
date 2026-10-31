@@ -780,8 +780,8 @@ $('#h-launch').onclick = async ()=>{
   if(!state.current){ alert('请先在「首页」点「设置」选择 WoW.exe'); return; }
   if(!check_ok){ toast('请先点「配置组件」，全部完成后才能启动游戏'); return; }
   const btn = $('#h-launch');
-  btn.disabled = true; btn.textContent = '启动中…';
-  toast('正在启动游戏…');               // 立即反馈，不等接口返回
+  btn.disabled = true; btn.textContent = '游戏正在启动……';
+  toast('游戏正在启动……');             // 立即反馈，不等接口返回
   const r = await api('/api/launch', {target:state.current});
   btn.disabled = false; btn.textContent = '▶ 启动游戏';
   toast(r.ok ? '游戏已启动' : '启动失败');

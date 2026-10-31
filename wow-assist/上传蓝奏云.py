@@ -50,6 +50,10 @@ UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
 HOME_URLS = ["https://www.lanzou.com/", "https://lanzou.com/"]
 MYDISK_URL = "https://up.woozooo.com/mydisk.php"
 
+# 自动清理用的 exe 识别正则：覆盖 wowassist-v3.20.exe / wowassist.exe /
+# 大小写变体 / 历史异名（如 WowAssist-v3.14.exe），避免旧版本/重复副本残留。
+EXE_RE = re.compile(r"wowassist[^\s\\/]*\.exe", re.IGNORECASE)
+
 
 # ----------------------------------------------------------------- 本地工具
 def read_app_version():
@@ -326,42 +330,54 @@ def refresh_folder(page, fr, folder):
 
 
 def prune_folder(page, fr, keep_name, folder):
-    """清理：删除旧版本号文件 + 同名重复副本（保留最新一个），最后刷新复核。
+    """清理：只保留刚上传的 keep_name 这一份 exe，删除同目录里其它所有
+    wowassist*.exe（旧版本 / 同名重复副本 / 历史异名 / 大小写变体）。最后刷新复核。
 
     注意：上传后蓝奏云列表是异步刷新的，所以进来先强制刷新一遍再统计，
     否则读到的还是上传前的旧列表，会漏删重复副本。
     """
+    keep_l = keep_name.lower()
     fr = refresh_folder(page, fr, folder)
     rows = list_rows(fr)
-    same, olds = [], []
+    keep_ids, del_ids = set(), []
     for r in rows:
         txt = r.get("txt", "")
-        for m in re.finditer(r"wowassist-v[0-9.]+\.exe", txt):
+        matched = False
+        for m in EXE_RE.finditer(txt):
+            matched = True
             nm = m.group(0)
-            if nm == keep_name:
-                if r["id"] not in [x[0] for x in same]:
-                    same.append((r["id"], nm))
-            elif nm not in [x[0] for x in olds]:
-                olds.append((r["id"], nm))
-    if len(same) > 1:
-        print(f"    [清理] 发现 {len(same)} 份『{keep_name}』，保留最新 1 份，删除其余 {len(same)-1} 份")
-        for rid, nm in same[1:]:
-            delete_row(fr, page, rid)
-    if olds:
-        print(f"    [清理] 删除旧版本: {', '.join(n for _, n in olds)}")
-        for rid, nm in olds:
-            delete_row(fr, page, rid)
-    if not same and not olds:
-        print("    [清理] 无重复/旧版本文件")
+            rid = r["id"]
+            if nm.lower() == keep_l:
+                # 同名文件保留 DOM 顺序第一个（最新），其余同名副本一并删除
+                if not keep_ids:
+                    keep_ids.add(rid)
+                else:
+                    if rid not in del_ids:
+                        del_ids.append(rid)
+            else:
+                if rid not in keep_ids and rid not in del_ids:
+                    del_ids.append(rid)
+        # 一行里同时出现多个 exe 名时，已作为 keep 保留的行不再删
+        if matched and r["id"] in keep_ids and r["id"] in del_ids:
+            del_ids.remove(r["id"])
+    # 安全护栏：若刚上传的 keep_name 并不在文件夹里（上传可能静默失败），
+    # 绝不删除任何文件，避免把仅存的旧版本全删光。
+    if not any(keep_l in (r.get("txt", "") or "").lower() for r in rows):
+        print(f"    [清理] 未在当前文件夹找到『{keep_name}』，跳过删除（疑似上传未真正落盘）")
         return
+    if not del_ids:
+        print("    [清理] 无旧版本/重复副本文件")
+        return
+    print(f"    [清理] 保留『{keep_name}』，准备删除 {len(del_ids)} 个旧版本/重复 exe")
+    for rid in del_ids:
+        delete_row(fr, page, rid)
     # 刷新复核
     page.wait_for_timeout(2000)
     fr2 = refresh_folder(page, fr, folder)
     if fr2 is None:
         return
-    left = [r for r in list_rows(fr2)
-            if keep_name in r.get("txt", "") or re.search(r"wowassist-v[0-9.]+\.exe", r.get("txt", ""))]
-    print(f"    [清理] 复核：当前该文件夹内相关文件 {len(left)} 份")
+    left = [r for r in list_rows(fr2) if EXE_RE.search(r.get("txt", ""))]
+    print(f"    [清理] 复核：当前文件夹内 exe 共 {len(left)} 份")
     for r in left:
         print(f"             - {r.get('txt','')[:70]}")
 
@@ -384,7 +400,10 @@ def main():
     ap = argparse.ArgumentParser(description="蓝奏云一键上传（带版本号）")
     ap.add_argument("--file", default=None, help="要上传的 exe（默认取最新带版本号产物）")
     ap.add_argument("--folder", default="wow-assist", help="目标文件夹名")
-    ap.add_argument("--prune", action="store_true", help="删除同目录其它旧版本号文件")
+    ap.add_argument("--prune", action="store_true", help="删除同目录其它旧版本号文件（默认开启）")
+    ap.add_argument("--no-prune", dest="prune", action="store_false",
+                    help="关闭自动清理旧版本（保留所有副本）")
+    ap.set_defaults(prune=True)
     ap.add_argument("--share", action="store_true", help="尝试读取分享链接")
     ap.add_argument("--skip-upload", action="store_true", help="只做分享链接/清理，不重复上传")
     ap.add_argument("--state", default=DEFAULT_STATE, help="登录态缓存文件")
