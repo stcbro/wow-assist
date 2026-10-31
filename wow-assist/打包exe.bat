@@ -37,6 +37,7 @@ rem 生成 exe 版本信息（版权/产品名写入文件属性，右键 exe→
   --collect-all clr_loader ^
   --hidden-import bottle ^
   --hidden-import proxy_tools ^
+  --hidden-import cryptography ^
   --clean ^
   --noconfirm ^
   addon_helper.py

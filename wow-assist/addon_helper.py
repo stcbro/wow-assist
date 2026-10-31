@@ -32,7 +32,7 @@ from lanzou_core import LanzouClient, DOMAIN_RE  # noqa: E402
 PORT = 8766
 
 # 单一版本来源：发版时只改这一行（同步更新 ui.html 更新日志、以及打包后的文件名版本号）
-APP_VERSION = "3.16"
+APP_VERSION = "3.20"
 # 打包成 exe 后：APP_DIR 用 exe 所在目录；未打包（脚本运行）时用脚本所在目录。
 # ui.html 等资源从 PyInstaller 解压目录 _MEIPASS 读。
 if getattr(sys, "frozen", False):
@@ -2073,6 +2073,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, json.dumps(
                 {"targets": roots, "current": current, "exe": _find_game_exe(current),
                  "ver": _game_version(current), "app_ver": APP_VERSION}, ensure_ascii=False))
+        if self.path == "/api/app_update_status":
+            return self._send(200, json.dumps(dict(_APP_UPDATE), ensure_ascii=False))
+        if self.path == "/api/account_get":
+            return self._send(200, json.dumps(_load_account(), ensure_ascii=False))
         if self.path.startswith("/api/addons_catalog"):
             # 插件目录（来自蓝奏云缓存包）：下载了但未装入的插件也列出来，标"未安装"
             d = _kind_dst("addons")
@@ -2308,6 +2312,11 @@ class Handler(BaseHTTPRequestHandler):
             t = _to_addons(payload.get("target", ""))
             src = payload.get("src", "")
             ok, log_lines, summary = mod_import_package(t, src)
+            if ok and src and os.path.isdir(src):
+                # 记录本次导入的 DLL 文件名，供「移除模组」/「清理还原」清理
+                _dlls = [f for f in os.listdir(src) if f.lower().endswith(".dll")]
+                if _dlls:
+                    _record_custom("mods", _dlls)
             return self._send(200, {"ok": ok, "log": log_lines, "summary": summary})
         if self.path == "/api/addons_select":
             n = payload.get("name", "")
@@ -2455,6 +2464,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, {"ok": False, "log": ["[错误] 安装位置无效，请先设置游戏路径"],
                                         "summary": "安装位置无效"})
             n, details = install_addons_from_interface(src, t, _log)
+            if n and details:
+                # 记录本次整体替换装入的插件文件夹，供「移除」/「清理还原」清理
+                _record_custom("addons", details)
             return self._send(200, {"ok": n > 0, "count": n, "log": log_lines,
                                     "summary": ("已整体替换，装入 " + str(n) + " 个插件") if n else "未装入任何插件，请看日志"})
         if self.path == "/api/session_apply":
@@ -2750,6 +2762,17 @@ class Handler(BaseHTTPRequestHandler):
                     _log("[模组] dlls.txt 恢复失败：" + str(ex))
             # 恢复客户端原有（非资源包）模组文件，然后删除该备份
             _restore_original_backup(t_root, "模组备份", t_root, _log)
+            # 移除自定义导入的模组 DLL（install_state.custom.mods）
+            for _nm in _custom_imports().get("mods", []):
+                _p = os.path.join(t_root, _nm)
+                if os.path.isfile(_p):
+                    try:
+                        os.remove(_p)
+                        n += 1
+                        _log("[模组] 已移除自定义：" + _nm)
+                    except Exception as _ex:
+                        _log("[模组] 移除 " + _nm + " 失败：" + str(_ex))
+            _clear_custom("mods")
             ist = cfg.get("install_state", {})
             if "mods" in ist:
                 ist.pop("mods", None)
@@ -2777,6 +2800,46 @@ class Handler(BaseHTTPRequestHandler):
                 os._exit(0)
             threading.Thread(target=_go, daemon=True).start()
             return
+        if self.path == "/api/app_update_config":
+            au = _app_update_cfg()
+            au["enabled"] = bool(payload.get("enabled", au.get("enabled", True)))
+            au["folder_url"] = str(payload.get("folder_url", au.get("folder_url", ""))).strip()
+            au["folder_pwd"] = str(payload.get("folder_pwd", au.get("folder_pwd", ""))).strip()
+            if "skipped" in payload:
+                au["skipped"] = str(payload.get("skipped", "")).strip()
+            _save_app_update_cfg(au)
+            return self._send(200, {"ok": True})
+        if self.path == "/api/app_update_check":
+            return self._send(200, json.dumps(_check_app_update(), ensure_ascii=False))
+        if self.path == "/api/app_update_apply":
+            threading.Thread(target=_apply_app_update, daemon=True).start()
+            return self._send(200, {"ok": True, "msg": "已开始下载更新，完成后自动重启"})
+        if self.path == "/api/choose_dir":
+            _flt = str(payload.get("filter", "*.dll") or "*.dll")
+            _picked = choose_dir_dialog(load_config().get("target", ""), _flt)
+            if _picked:
+                return self._send(200, {"ok": True, "path": _picked})
+            return self._send(200, {"ok": False, "msg": "未选择文件夹"})
+        if self.path == "/api/fonts_import_local":
+            t = _to_addons(payload.get("target", ""))
+            src = payload.get("src", "")
+            log_lines = []
+
+            def _log(m):
+                log_lines.append(m)
+            if not t or not os.path.isdir(t):
+                return self._send(200, {"ok": False, "log": ["[错误] 安装位置无效，请先设置游戏路径"],
+                                        "summary": "安装位置无效"})
+            n = import_fonts_local(src, t, _log)
+            return self._send(200, {"ok": n > 0, "log": log_lines,
+                                    "summary": ("已从本地导入 %d 个字体" % n) if n else "未导入任何字体，请看日志"})
+        if self.path == "/api/account_save":
+            _save_account(str(payload.get("user", "")), str(payload.get("pwd", "")),
+                         bool(payload.get("remember", False)))
+            return self._send(200, {"ok": True})
+        if self.path == "/api/account_clear":
+            _save_account("", "", False)
+            return self._send(200, {"ok": True})
         self._send(404, {"error": "not found"})
 
     def _api_open(self, payload):
@@ -2974,6 +3037,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, json.dumps(
                 {"log": ["[错误] 安装位置无效"], "summary": "安装位置无效"}, ensure_ascii=False))
         moved = uninstall_all_addons(target, log)
+        _clear_custom("addons")
         summary = f"已直接移除 {moved} 项插件（不备份）。重启游戏生效。" if moved \
             else "目录本来就是空的，没有可移除的插件。"
         return self._send(200, json.dumps(
@@ -3143,6 +3207,15 @@ def remove_fonts(target, log):
     if os.path.isdir(dst) and not os.listdir(dst):
         _fast_delete(dst)
         log("[还原] 字体已移除，空目录 Fonts 一并删除")
+    # 移除自定义导入的字体（install_state.custom.fonts）
+    if os.path.isabs(dst) and os.path.isdir(dst):
+        for _nm in _custom_imports().get("fonts", []):
+            _p = os.path.join(dst, _nm)
+            if os.path.isfile(_p) or os.path.isdir(_p):
+                if _fast_delete(_p):
+                    n += 1
+                    log("[还原] 已移除自定义字体 " + _nm)
+        _clear_custom("fonts")
     if n == 0 and n2 == 0 and not os.path.isdir(dst):
         return False
     return True
@@ -3277,6 +3350,7 @@ def revert_overlay(target, log, kill=True, backup=True):
     addons = normalize_addons_path(target, create=False)
     if kill:
         kill_game(log)
+    _remove_custom_all(target, log)   # 先移除自定义导入的模组/插件/字体
     backup_dir = _backup_dir_for(target, "清理还原") if backup else None
 
     def _remove(item, label, name_for_log=None):
@@ -3960,6 +4034,7 @@ def _cleanup_restore(target, log):
         return False, "未设置游戏路径"
     if _game_running():
         kill_game(log)
+    _remove_custom_all(target, log)   # 先移除自定义导入的模组/插件/字体
     revert_overlay(target, log, kill=False, backup=False)  # ① 直删已装组件
     # ② 从 WowAbak 还原客户端原有内容（最早的时间戳备份）
     root = client_root_of(target)
@@ -4714,6 +4789,442 @@ def _run_window(url):
         return False
 
 
+# ================= 3.18 自动更新（app 自更新）=================
+# 更新源 = 用户填的蓝奏云「exe 专区」文件夹（wow-assist 文件夹）。该文件夹里放
+# release_manifest.json（版本/说明/exe 文件名+md5）与最新 wowassist-v*.exe。
+# 启动时后台检查一次；用户也可手动「检查更新」。发现新版则下载并替换自身、重启。
+
+_APP_UPDATE = {
+    "checked": False, "available": False, "current": APP_VERSION,
+    "latest": "", "notes": "", "required": False, "enabled": True,
+    "configured": False, "exe_name": "", "exe_md5": "", "exe_size": 0,
+    "err": "", "downloading": False, "pct": 0,
+}
+
+def _app_update_cfg():
+    cfg = load_config()
+    au = cfg.get("app_update", {}) or {}
+    au.setdefault("enabled", True)
+    au.setdefault("folder_url", "")
+    au.setdefault("folder_pwd", "")
+    au.setdefault("channel", "stable")
+    au.setdefault("skipped", "")
+    return au
+
+def _save_app_update_cfg(au):
+    cfg = load_config()
+    cfg["app_update"] = au
+    save_config(cfg)
+
+def _parse_version(v):
+    if not v:
+        return (0, 0, 0)
+    v = str(v).lstrip("vV").strip()
+    out = []
+    for p in re.split(r"[.\-+]", v)[:3]:
+        try:
+            out.append(int(re.sub(r"[^0-9].*$", "", p) or 0))
+        except Exception:
+            out.append(0)
+    while len(out) < 3:
+        out.append(0)
+    return tuple(out[:3])
+
+def _version_newer(latest, current):
+    return _parse_version(latest) > _parse_version(current)
+
+def _fetch_release_manifest(au):
+    """从更新源文件夹取 release_manifest.json 并解析。返回 (dict|None, err)。"""
+    url = (au.get("folder_url") or "").strip()
+    pwd = (au.get("folder_pwd") or "").strip()
+    if not url:
+        return None, "未配置更新源文件夹"
+    try:
+        from lanzou_core import LanzouClient
+        c = LanzouClient(timeout=30)
+        st, files = c.get_folder_files(url, pwd)
+        if st != "Success" or not files:
+            return None, "更新源文件夹解析失败（链接/提取码或网络）"
+        mf_file = None
+        for f in files:
+            if (f.get("name") or "") == "release_manifest.json":
+                mf_file = f
+                break
+        if not mf_file:
+            return None, "更新源文件夹里没有 release_manifest.json"
+        st2, link = c.get_direct_link(mf_file.get("url", ""), pwd)
+        if st2 != "Success" or not link:
+            return None, "release_manifest.json 直链解析失败"
+        req = urllib.request.Request(link, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=20) as r:
+            data = json.loads(r.read().decode("utf-8"))
+        exe_info = data.get("exe") or {}
+        if not exe_info.get("name"):
+            # manifest 没给 exe 文件名 → 自动取文件夹里最新的 wowassist-v*.exe
+            for f in files:
+                nm = (f.get("name") or "")
+                if re.match(r"^wowassist-v[\d.]+\.exe$", nm, re.I):
+                    exe_info = {"name": nm, "md5": "", "size": 0}
+                    break
+            data["exe"] = exe_info
+        return data, ""
+    except Exception as e:
+        return None, "检查更新异常：" + str(e)
+
+def _check_app_update():
+    au = _app_update_cfg()
+    _APP_UPDATE["enabled"] = bool(au.get("enabled", True))
+    _APP_UPDATE["configured"] = bool((au.get("folder_url") or "").strip())
+    _APP_UPDATE["current"] = APP_VERSION
+    _APP_UPDATE["checked"] = True
+    if not _APP_UPDATE["enabled"] or not _APP_UPDATE["configured"]:
+        _APP_UPDATE["available"] = False
+        _APP_UPDATE["err"] = "" if _APP_UPDATE["configured"] else "未配置更新源（见「下载」页）"
+        return dict(_APP_UPDATE)
+    data, err = _fetch_release_manifest(au)
+    if err or not data:
+        _APP_UPDATE["available"] = False
+        _APP_UPDATE["err"] = err or "manifest 获取失败"
+        return dict(_APP_UPDATE)
+    latest = str(data.get("version", "") or "")
+    if not latest:
+        _APP_UPDATE["available"] = False
+        _APP_UPDATE["err"] = "manifest 缺少 version 字段"
+        return dict(_APP_UPDATE)
+    skipped = str(au.get("skipped", "") or "")
+    _APP_UPDATE.update({
+        "available": _version_newer(latest, APP_VERSION) and latest != skipped,
+        "latest": latest,
+        "notes": data.get("notes", "") or "",
+        "required": bool(data.get("required", False)),
+        "exe_name": (data.get("exe") or {}).get("name", ""),
+        "exe_md5": (data.get("exe") or {}).get("md5", ""),
+        "exe_size": int((data.get("exe") or {}).get("size", 0) or 0),
+        "err": "",
+    })
+    return dict(_APP_UPDATE)
+
+def _bg_app_update_check():
+    try:
+        _check_app_update()
+    except Exception:
+        pass
+
+def _apply_app_update():
+    """下载最新 exe → 校验 md5 → 写更新批处理 → 启动并退出当前进程。
+    仅打包(frozen)模式替换自身；脚本模式只下载不替换。返回 (ok, msg)。"""
+    au = _app_update_cfg()
+    data, err = _fetch_release_manifest(au)
+    if err or not data:
+        _APP_UPDATE["err"] = err or "manifest 获取失败"
+        return False, _APP_UPDATE["err"]
+    exe_info = data.get("exe") or {}
+    exe_name = exe_info.get("name", "")
+    exe_md5 = exe_info.get("md5", "")
+    if not exe_name:
+        return False, "manifest 未指定 exe 文件名"
+    from lanzou_core import LanzouClient
+    c = LanzouClient(timeout=30)
+    st, files = c.get_folder_files((au.get("folder_url") or "").strip(),
+                                   (au.get("folder_pwd") or "").strip())
+    exe_file = None
+    if st == "Success" and files:
+        for f in files:
+            if (f.get("name") or "") == exe_name:
+                exe_file = f
+                break
+    if not exe_file:
+        return False, "更新源文件夹里找不到 " + exe_name
+    st2, link = c.get_direct_link(exe_file.get("url", ""), (au.get("folder_pwd") or "").strip())
+    if st2 != "Success" or not link:
+        return False, "新版本 exe 直链解析失败"
+    _APP_UPDATE["downloading"] = True
+    _APP_UPDATE["pct"] = 0
+    dest = os.path.join(TEMP_DIR, "wowassist_update.exe")
+    try:
+        def _cb(done, total):
+            _APP_UPDATE["pct"] = int(done * 100 / total) if total else 0
+        got = download_file(link, TEMP_DIR, _cb)
+        if not got:
+            return False, "下载新版本失败"
+        if os.path.abspath(got) != os.path.abspath(dest):
+            if os.path.exists(dest):
+                os.remove(dest)
+            os.rename(got, dest)
+        if exe_md5:
+            import hashlib
+            h = hashlib.md5()
+            with open(dest, "rb") as f:
+                for chunk in iter(lambda: f.read(1048576), b""):
+                    h.update(chunk)
+            if h.hexdigest().lower() != exe_md5.lower():
+                return False, "新版本 md5 校验不一致，已取消更新"
+    except Exception as e:
+        return False, "下载/校验失败：" + str(e)
+    finally:
+        _APP_UPDATE["downloading"] = False
+    if not getattr(sys, "frozen", False):
+        return True, "脚本模式已完成下载（路径 " + dest + "），跳过替换自身"
+    try:
+        _launch_update_bat(dest)
+        return True, "更新已下载，正在重启完成更新…"
+    except Exception as e:
+        return False, "启动更新失败：" + str(e)
+
+def _launch_update_bat(new_exe):
+    """写批处理：备份旧 exe → 覆盖新 exe → 重新启动 → 自删。当前进程随后退出。"""
+    cur = os.path.abspath(sys.executable)
+    bat = os.path.join(TEMP_DIR, "wowassist_update.bat")
+    lines = [
+        "@echo off",
+        "chcp 65001 >nul",
+        "timeout /t 1 /nobreak >nul",
+        'taskkill /f /im "%s" >nul 2>&1' % os.path.basename(cur),
+        'if exist "%s" copy /y "%s" "%s.bak" >nul 2>&1' % (cur, cur, cur),
+        'move /y "%s" "%s" >nul 2>&1' % (new_exe, cur),
+        'start "" "%s"' % cur,
+        'del /f /q "%s"' % bat,
+    ]
+    with open(bat, "w", encoding="utf-8") as f:
+        f.write("\r\n".join(lines) + "\r\n")
+    try:
+        subprocess.Popen('"%s"' % bat, shell=True,
+                         creationflags=0x08000000 if sys.platform == "win32" else 0)
+    except Exception:
+        if sys.platform == "win32":
+            os.startfile(bat)
+    time.sleep(1.2)
+    os._exit(0)
+
+
+# ================= 3.19 用户自行导入本地模组/插件/字体 =================
+# 复用现有备份/安装模型；在 install_state.custom 记录自定义导入项，
+# 使其能被「移除」/「清理还原」识别与清理。
+
+def _custom_imports():
+    cfg = load_config()
+    st = cfg.setdefault("install_state", {})
+    cu = st.setdefault("custom", {"mods": [], "addons": [], "fonts": []})
+    for k in ("mods", "addons", "fonts"):
+        cu.setdefault(k, [])
+    return cu
+
+def _record_custom(kind, names):
+    names = [n for n in (names or []) if n]
+    if not names:
+        return
+    cfg = load_config()
+    st = cfg.setdefault("install_state", {})
+    cu = st.setdefault("custom", {"mods": [], "addons": [], "fonts": []})
+    cu.setdefault(kind, [])
+    have = set(x.lower() for x in cu[kind])
+    for n in names:
+        if n.lower() not in have:
+            cu[kind].append(n)
+            have.add(n.lower())
+    save_config(cfg)
+
+def _clear_custom(kind):
+    cfg = load_config()
+    st = cfg.get("install_state", {})
+    cu = st.get("custom")
+    if cu and kind in cu:
+        cu[kind] = []
+        save_config(cfg)
+
+def _remove_custom_all(target, log):
+    """移除所有自定义导入的模组/插件/字体（清理还原/移除时调用）。"""
+    cu = _custom_imports()
+    if not (target and os.path.isdir(target)):
+        return
+    root = client_root_of(target)
+    addons = normalize_addons_path(target, create=False)
+    dst_fonts = fonts_dst(target)
+    for nm in list(cu.get("mods", [])):
+        p = os.path.join(root, nm)
+        if os.path.isfile(p):
+            try:
+                os.remove(p)
+                log("[移除] 自定义模组 " + nm)
+            except Exception as e:
+                log("[移除失败] " + nm + "：" + str(e))
+    for nm in list(cu.get("addons", [])):
+        p = os.path.join(addons, nm) if addons else ""
+        if p and os.path.isdir(p):
+            try:
+                shutil.rmtree(p)
+                log("[移除] 自定义插件 " + nm)
+            except Exception as e:
+                log("[移除失败] " + nm + "：" + str(e))
+    for nm in list(cu.get("fonts", [])):
+        p = os.path.join(dst_fonts, nm) if dst_fonts else ""
+        if p and (os.path.isfile(p) or os.path.isdir(p)):
+            try:
+                _fast_delete(p)
+                log("[移除] 自定义字体 " + nm)
+            except Exception as e:
+                log("[移除失败] " + nm + "：" + str(e))
+
+def import_fonts_local(src_fonts, target, log):
+    """从用户本地文件夹导入字体到游戏 Fonts（覆盖式；客户端原有同名字体先备份）。
+    返回装入文件数。"""
+    if not src_fonts or not os.path.isdir(src_fonts):
+        log("[失败] 字体源文件夹不存在：" + str(src_fonts))
+        return 0
+    dst = fonts_dst(target)
+    try:
+        os.makedirs(dst, exist_ok=True)
+        names = [e for e in os.listdir(src_fonts)
+                 if os.path.isfile(os.path.join(src_fonts, e))
+                 and e.lower().endswith(_FONT_EXTS)]
+        if not names:
+            log("[字体] 源文件夹里没有字体文件（.ttf/.otf 等）")
+            return 0
+        bdir = _original_backup_dir(target, "字体备份")
+        n = 0
+        imported = []
+        for e in names:
+            sp = os.path.join(src_fonts, e)
+            dp = os.path.join(dst, e)
+            if os.path.exists(dp):
+                _move_to_backup(dp, bdir, log, "字体")
+            shutil.copy2(sp, dp)
+            imported.append(e)
+            n += 1
+        if n:
+            log("[字体] 已从本地导入 " + str(n) + " 个字体文件 → 游戏目录\\Fonts")
+            if imported:
+                _record_custom("fonts", imported)
+            _mark_installed("fonts", log)
+        return n
+    except Exception as ex:
+        log("[字体] 导入失败：" + str(ex))
+        return 0
+
+def choose_dir_dialog(initial_dir="", filter_ext="*.dll"):
+    """选文件夹：复用原生文件对话框（GetOpenFileNameW，已验证可在本程序线程工作），
+    让用户选该文件夹内的任意一个文件，返回其所在目录；取消/失败返回空串。"""
+    try:
+        import ctypes
+        from ctypes import wintypes
+        class OFN(ctypes.Structure):
+            _fields_ = [
+                ("lStructSize", wintypes.DWORD),
+                ("hwndOwner", wintypes.HWND),
+                ("hInstance", wintypes.HINSTANCE),
+                ("lpstrFilter", wintypes.LPCWSTR),
+                ("lpstrCustomFilter", wintypes.LPWSTR),
+                ("nMaxCustFilter", wintypes.DWORD),
+                ("nFilterIndex", wintypes.DWORD),
+                ("lpstrFile", wintypes.LPWSTR),
+                ("nMaxFile", wintypes.DWORD),
+                ("lpstrFileTitle", wintypes.LPWSTR),
+                ("nMaxFileTitle", wintypes.DWORD),
+                ("lpstrInitialDir", wintypes.LPCWSTR),
+                ("lpstrTitle", wintypes.LPCWSTR),
+                ("Flags", wintypes.DWORD),
+                ("nFileOffset", wintypes.WORD),
+                ("nFileExtension", wintypes.WORD),
+                ("lpstrDefExt", wintypes.LPWSTR),
+                ("lCustData", wintypes.LPARAM),
+                ("lpfnHook", wintypes.LPVOID),
+                ("lpTemplateName", wintypes.LPCWSTR),
+            ]
+        buf = ctypes.create_unicode_buffer(260)
+        flt = "导入源文件（任选一个，以其所在文件夹为源）\0*.*\0指定类型\0%s\0" % filter_ext
+        init = initial_dir if (initial_dir and os.path.isdir(initial_dir)) else None
+        o = OFN()
+        o.lStructSize = ctypes.sizeof(OFN)
+        o.hwndOwner = None
+        o.lpstrFilter = flt
+        o.nFilterIndex = 1
+        o.lpstrFile = ctypes.cast(buf, wintypes.LPWSTR)
+        o.nMaxFile = 260
+        o.lpstrInitialDir = init
+        o.lpstrTitle = "请选择该文件夹内的任意一个文件（以其所在文件夹作为导入源）"
+        o.Flags = 0x1000 | 0x800 | 0x4 | 0x8
+        if ctypes.windll.comdlg32.GetOpenFileNameW(ctypes.byref(o)):
+            p = buf.value
+            if p and os.path.isfile(p):
+                return os.path.dirname(p)
+    except Exception:
+        pass
+    return ""
+
+
+# ================= 3.20 加密保存游戏账号/密码（机器绑定）=================
+# 密钥由本机硬件指纹派生（系统盘卷序列号 + 计算机名 + 固定盐），机器绑定：
+# 本机打开即自动解密；换电脑/重装系统后密文不可解，需重新输入。明文绝不落盘。
+
+try:
+    from cryptography.fernet import Fernet
+    from cryptography.hazmat.primitives.kdf.hkdf import HKDF
+    from cryptography.hazmat.primitives import hashes
+    _CRYPTO_OK = True
+except Exception:
+    _CRYPTO_OK = False
+
+_APP_ACCOUNT_SALT = b"WowAssist-account-salt-v1"
+
+def _machine_secret():
+    parts = []
+    try:
+        import ctypes
+        sn = ctypes.c_ulong()
+        ctypes.windll.kernel32.GetVolumeInformationW(ctypes.c_wchar_p("C:\\"), None, 0,
+                ctypes.byref(sn), None, None, None, 0)
+        if sn.value:
+            parts.append(str(sn.value))
+    except Exception:
+        pass
+    try:
+        import socket
+        parts.append(socket.gethostname())
+    except Exception:
+        pass
+    return ("|".join(parts) if parts else "fallback").encode("utf-8")
+
+def _account_key():
+    import base64
+    secret = _machine_secret()
+    hk = HKDF(algorithm=hashes.SHA256(), length=32, salt=_APP_ACCOUNT_SALT,
+              info=b"wowassist-account")
+    return base64.urlsafe_b64encode(hk.derive(secret))
+
+def _encrypt_account(data):
+    f = Fernet(_account_key())
+    return f.encrypt(json.dumps(data, ensure_ascii=False).encode("utf-8")).decode("utf-8")
+
+def _decrypt_account(cipher):
+    f = Fernet(_account_key())
+    return json.loads(f.decrypt(cipher.encode("utf-8")).decode("utf-8"))
+
+def _save_account(user, pwd, remember):
+    cfg = load_config()
+    if remember and (user or pwd):
+        try:
+            cfg["account"] = {"cipher": _encrypt_account({"u": user or "", "p": pwd or ""}),
+                              "ts": time.time()}
+        except Exception:
+            cfg.pop("account", None)
+    else:
+        cfg.pop("account", None)
+    save_config(cfg)
+
+def _load_account():
+    cfg = load_config()
+    acc = cfg.get("account")
+    if not acc or not acc.get("cipher"):
+        return {"has": False, "user": "", "pwd": ""}
+    if not _CRYPTO_OK:
+        return {"has": True, "user": "", "pwd": "", "locked": True}
+    try:
+        d = _decrypt_account(acc["cipher"])
+        return {"has": True, "user": d.get("u", ""), "pwd": d.get("p", "")}
+    except Exception:
+        return {"has": True, "user": "", "pwd": "", "locked": True}
+
+
 def main():
     _init_dpi_awareness()   # 必须最先执行：任何弹窗/文件框之前声明 DPI 感知
     _ensure_hidden_console()
@@ -4787,6 +5298,8 @@ def main():
     _install_console_handler()
     # 启动后台跑一次缓存 GC：清理长期(默认30天)未使用的下载缓存，不影响已装内容。
     threading.Thread(target=cache_gc, daemon=True).start()
+    # 启动后台检查一次新版本（不阻塞；结果由 UI 轮询 /api/app_update_status 展示）
+    threading.Thread(target=_bg_app_update_check, daemon=True).start()
     print(f"WowAssist 已启动: {url}  (关闭窗口即退出；已安装的模组/插件/字体与缓存都会保留)")
     # HTTP 服务常驻后台线程；主线程尝试原生窗口模式（exe 默认），
     # 窗口创建失败则回退浏览器打开（脚本/bat 模式体验不变）

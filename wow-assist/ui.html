@@ -119,6 +119,24 @@ th{color:var(--sub);font-weight:600;font-size:12px}
           <button class="btn" id="h-open" title="打开游戏所在文件夹，并定位到主程序">打开</button>
         </div>
         <div id="s-msg" style="margin-top:10px;font-size:13px;color:var(--sub)"></div>
+        <div id="h-update" style="display:none;margin-top:14px;padding:12px 14px;border-radius:10px;background:rgba(63,185,95,.12);border:1px solid rgba(63,185,95,.4);font-size:13px;line-height:1.7">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+            <div><b style="color:#7ee2a0" id="h-update-t">发现新版本</b> <span id="h-update-req" style="color:var(--warn)"></span></div>
+            <div style="display:flex;gap:8px">
+              <button class="btn sm primary" id="h-update-now">立即更新</button>
+              <button class="btn sm" id="h-update-skip">跳过此版本</button>
+            </div>
+          </div>
+          <div id="h-update-notes" style="margin-top:6px;color:var(--sub);white-space:pre-line"></div>
+          <div id="h-update-prog" style="display:none;margin-top:8px">
+            <div style="height:8px;background:var(--card2);border-radius:4px;overflow:hidden"><div id="h-update-bar" style="height:100%;width:0;background:#3fb95f;transition:.2s"></div></div>
+            <div id="h-update-msg" style="margin-top:4px;font-size:12px;color:var(--sub)"></div>
+          </div>
+        </div>
+        <div style="margin-top:10px;display:flex;align-items:center;gap:10px">
+          <button class="btn sm" id="h-check-update">检查更新</button>
+          <span id="h-check-update-msg" style="font-size:12px;color:var(--sub)"></span>
+        </div>
         <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center">
           <button class="btn primary" id="h-check" title="自动下载资源并装入模组/插件/字体，全部就绪后才能启动游戏">🔧 配置组件</button>
           <button class="btn blue" id="h-launch" disabled title="请先点「配置组件」，全部完成后才能启动">▶ 启动游戏</button>
@@ -147,6 +165,28 @@ th{color:var(--sub);font-weight:600;font-size:12px}
         <div class="kv" style="align-items:flex-start"><span class="k" style="white-space:nowrap">连线地址</span><span id="s-realm" style="white-space:pre-line;line-height:1.9">—</span></div>
         <p class="pill" style="margin-top:8px">realmlist 实时读取客户端里的 realmlist.wtf；切换服务器需手动改该文件。</p>
       </div>
+      <div class="card grow" style="max-width:460px;margin-top:12px">
+        <h3 style="margin-top:0">游戏账号（加密保存）</h3>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="width:64px;color:var(--sub);font-size:14px">账号</span>
+            <input id="acc-user" placeholder="游戏账号" style="flex:1">
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="width:64px;color:var(--sub);font-size:14px">密码</span>
+            <input id="acc-pwd" type="password" placeholder="游戏密码" style="flex:1">
+          </div>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--txt);font-size:13px;margin:0">
+            <input type="checkbox" id="acc-remember" style="width:16px;height:16px;accent-color:#3fb95f;cursor:pointer">
+            记住密码（密钥由本机硬件指纹派生，仅本机可解密；换电脑需重新输入）
+          </label>
+        </div>
+        <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <button class="btn primary sm" id="acc-save">保存</button>
+          <button class="btn sm" id="acc-clear">清除</button>
+          <span id="acc-msg" style="font-size:12px;color:var(--sub)"></span>
+        </div>
+      </div>
     </section>
 
     <!-- 插件 -->
@@ -157,6 +197,7 @@ th{color:var(--sub);font-weight:600;font-size:12px}
         <button class="btn danger sm" id="a-removeall">移除插件</button>
         <button class="btn sm" id="a-open">打开目录</button>
         <button class="btn sm" id="a-refresh">刷新</button>
+        <button class="btn sm" id="a-import">导入本地</button>
         <span id="a-apply-msg" style="font-size:12px;color:var(--sub)"></span>
       </div>
       <div class="card" style="margin-top:10px">
@@ -178,6 +219,7 @@ th{color:var(--sub);font-weight:600;font-size:12px}
         <button class="btn danger sm" id="dll-remove">移除模组</button>
         <button class="btn sm" id="dll-open">打开目录</button>
         <button class="btn sm" id="dll-refresh">刷新</button>
+        <button class="btn sm" id="dll-import">导入本地</button>
         <span id="dll-apply-msg" style="font-size:12px;color:var(--sub)"></span>
       </div>
       <div class="card" style="margin-top:12px">
@@ -198,6 +240,7 @@ th{color:var(--sub);font-weight:600;font-size:12px}
         <button class="btn danger sm" id="f-remove">移除字体</button>
         <button class="btn sm" id="f-open">打开目录</button>
         <button class="btn sm" id="f-refresh">刷新</button>
+        <button class="btn sm" id="f-import">导入本地</button>
         <span id="f-apply-msg" style="font-size:12px;color:var(--sub)"></span>
       </div>
       <div class="card">
@@ -270,6 +313,28 @@ th{color:var(--sub);font-weight:600;font-size:12px}
         </div>
         <div id="lz-mf-status" style="margin-top:8px;font-size:12px;color:var(--sub)"></div>
       </div>
+      <div class="card" style="margin-top:12px;max-width:880px">
+        <h3 style="margin-top:0">应用更新（自动检测新版本）</h3>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--txt);font-size:14px;margin:0 0 10px">
+          <input type="checkbox" id="au-on" style="width:18px;height:18px;padding:0;accent-color:#3fb95f;cursor:pointer">
+          启用启动后自动检查更新
+        </label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input id="au-fd-url" placeholder="蓝奏云 exe 专区文件夹分享链接（wow-assist 文件夹）" style="flex:1;min-width:260px">
+          <input id="au-fd-pwd" placeholder="提取码" style="width:110px">
+          <button class="btn primary sm" id="au-fd-save">保存</button>
+        </div>
+        <div id="au-fd-status" style="margin-top:8px;font-size:12px;color:var(--sub)"></div>
+        <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <button class="btn blue" id="au-check">检查更新</button>
+          <span id="au-check-msg" style="font-size:12px;color:var(--sub)"></span>
+        </div>
+        <div id="au-prog" style="display:none;margin-top:12px">
+          <div style="height:8px;background:var(--card2);border-radius:4px;overflow:hidden"><div id="au-bar" style="height:100%;width:0;background:#3fb95f;transition:.2s"></div></div>
+          <div id="au-msg" style="margin-top:4px;font-size:12px;color:var(--sub)"></div>
+        </div>
+        <p class="pill" style="margin-top:10px">更新源 = 你专门放 exe 的蓝奏云文件夹（wow-assist 文件夹）。该文件夹里需放 <b>release_manifest.json</b>（版本/说明/exe 文件名+md5）与最新 <b>wowassist-v*.exe</b>。发现新版本会下载并自动替换自身、重启。</p>
+      </div>
     </section>
 
 
@@ -285,6 +350,12 @@ th{color:var(--sub);font-weight:600;font-size:12px}
         </div>
       </div>
       <div class="card grow" style="max-width:720px">
+        <div class="kv"><span class="k">v3.20 ｜ 自动更新 + 本地导入 + 加密账号（原规划 3.18–3.20）</span><span class="tag">待发布</span></div>
+        <div class="cl-detail">
+          <div><span class="ct ct-add">新增</span>应用自动更新：启动时后台检查新版本，发现更新在首页提示并支持「立即更新」；更新源为蓝奏云 exe 专区文件夹里的 release_manifest.json + 最新 exe，下载后校验 md5、自动替换自身并重启（详见「下载」页「应用更新」卡片）</div>
+          <div><span class="ct ct-add">新增</span>用户自行导入本地模组/插件/字体：模组/插件/字体三页各新增「导入本地」，选文件夹即可把自有模组/插件/字体装入客户端；导入项记入 install_state，可被「移除」/「清理还原」识别与清理，不污染资源包</div>
+          <div><span class="ct ct-add">新增</span>加密保存游戏账号/密码（服务器页）：密钥由本机硬件指纹派生（机器绑定），明文绝不落盘；勾选「记住密码」后本机打开自动填充，换电脑/重装系统需重新输入</div>
+        </div>
         <div class="kv"><span class="k">v3.16 ｜ 2026-10-31 ｜ 备份夹清理修复 + 移除确认文案统一</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
           <div><span class="ct ct-fix">修复</span>移除模组/插件/字体（含「清理还原」）后，旧模型遗留的带时间戳备份夹（如 模组备份_20261031_005524）不再残留：恢复客户端原有内容后该夹一并删除</div>
@@ -488,7 +559,7 @@ th{color:var(--sub);font-weight:600;font-size:12px}
 
 <script>
 const $ = s => document.querySelector(s);
-const state = { targets:[], current:"", addons:[], applied:false, exe:"", ver:"" };
+const state = { targets:[], current:"", addons:[], applied:false, exe:"", ver:"", app_ver:"" };
 // 不做 beforeunload 拦截：exe 模式点 X 会由后端自动还原并退出；
 // 点「退出工具」后端还原完自动关闭 exe，都不该再弹"是否离开网站"。
 
@@ -528,10 +599,10 @@ function nav(p){
   $('#'+p).classList.add('show');
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active', b.dataset.p===p));
   if(p==='home') loadHome();
-  if(p==='servers') loadTargets();
+  if(p==='servers'){ loadTargets(); loadAccount(); }
   if(p==='addons'){ loadAddons(); loadAddonSel(); }
   if(p==='dll') loadMods();
-  if(p==='download') loadLanzou();
+  if(p==='download'){ loadLanzou(); loadAppUpdateCfg(); }
   if(p==='fonts') loadFonts();
 }
 document.querySelectorAll('#nav button').forEach(b=> b.onclick = ()=>nav(b.dataset.p));
@@ -547,6 +618,7 @@ function realmHost(raw){
 async function loadTargets(){
   const d = await api('/api/targets');
   state.targets = d.targets||[];
+  state.app_ver = d.app_ver || state.app_ver;
   state.current = d.current||"";
   state.exe = d.exe||"";
   state.ver = d.ver||"";
@@ -584,7 +656,9 @@ async function loadHome(){
   const ad = await api('/api/addons?target='+encodeURIComponent(state.current||''));
   state.addons = ad.addons||[];
   $('#h-addons').textContent = (ad.addons? ad.addons.length : 0) + ' 个';
+  $('#about-ver').textContent = (state.app_ver || '3.20');
   refreshSession();
+  refreshAppUpdate();
 }
 // 显示操作历史（选路径/启动/清理还原等记录），选完路径立即展示，不用等点「配置组件」
 async function showHist(){
@@ -1247,6 +1321,131 @@ $('#lz-dr-clear').onclick = async ()=>{
   $('#lz-dr-text').value = '';
   await api('/api/lanzou_config', {kind:'direct', text:''});
   toast('已清空直链，改用蓝奏云文件夹'); loadLanzou();
+};
+
+// ============ 3.18 应用自动更新：首页横幅 + 检查/跳过 ============
+let _auTimer = null;
+async function refreshAppUpdate(){
+  let s; try{ s = await api('/api/app_update_status'); }catch(e){ return; }
+  const banner = $('#h-update');
+  if(!banner) return;
+  if(s.available){
+    banner.style.display = 'block';
+    $('#h-update-t').textContent = '发现新版本 v' + s.latest + '（当前 v' + (state.app_ver||s.current) + '）';
+    $('#h-update-req').textContent = s.required ? '（重要更新，建议立即升级）' : '';
+    $('#h-update-notes').textContent = s.notes || '';
+  } else {
+    banner.style.display = 'none';
+  }
+  if(s.downloading){
+    $('#h-update-prog').style.display = 'block';
+    $('#h-update-bar').style.width = (s.pct||0)+'%';
+    $('#h-update-msg').textContent = '正在下载更新 '+(s.pct||0)+'%';
+  } else {
+    $('#h-update-prog').style.display = 'none';
+  }
+}
+$('#h-check-update').onclick = async ()=>{
+  $('#h-check-update-msg').textContent = '检查中…';
+  const s = await api('/api/app_update_check', {});
+  if(s.err){ $('#h-check-update-msg').textContent = s.err; }
+  else if(s.available){ $('#h-check-update-msg').textContent = '发现新版本 v'+s.latest; }
+  else if(s.configured){ $('#h-check-update-msg').textContent = '已是最新（v'+(s.latest||s.current)+'）'; }
+  else { $('#h-check-update-msg').textContent = '未配置更新源（见「下载」页）'; }
+  refreshAppUpdate();
+};
+$('#h-update-now').onclick = async ()=>{
+  const s = await api('/api/app_update_status');
+  if(!(await askConfirm('下载并安装新版本（v'+(s.latest||'')+'）？程序将自动替换并重启。','更新确认'))) return;
+  const r = await api('/api/app_update_apply', {});
+  toast(r.msg || '已开始更新');
+  if(_auTimer) clearInterval(_auTimer);
+  _auTimer = setInterval(async ()=>{
+    await refreshAppUpdate();
+    const st = await api('/api/app_update_status');
+    if(!st.downloading){
+      clearInterval(_auTimer); _auTimer=null;
+      if(!st.available) toast('已是最新版本');
+    }
+  }, 1000);
+};
+$('#h-update-skip').onclick = async ()=>{
+  const s = await api('/api/app_update_status');
+  await api('/api/app_update_config', {skipped: s.latest||''});
+  $('#h-update').style.display = 'none';
+  toast('已跳过 v'+(s.latest||'')+'，下次发布再提醒');
+};
+
+// ============ 3.19 用户自行导入本地模组/插件/字体 ============
+async function importLocal(kind){
+  if(!state.current){ alert('请先在「首页」设置游戏路径'); return; }
+  const filter = kind==='mods' ? '*.dll' : (kind==='addons' ? '*.toc' : '*.ttf;*.otf');
+  const r = await api('/api/choose_dir', {filter});
+  if(!r || !r.ok || !r.path){ if(r && r.msg) toast(r.msg); return; }
+  let res;
+  if(kind==='mods') res = await api('/api/mod_import', {target:state.current, src:r.path});
+  else if(kind==='addons') res = await api('/api/addons_import', {target:state.current, src:r.path});
+  else res = await api('/api/fonts_import_local', {target:state.current, src:r.path});
+  const logTxt = (res.log||[]).join('\n')+'\n'+(res.summary||'');
+  if(kind==='mods'){ showLog('#dll-log', logTxt); }
+  else if(kind==='addons'){ const m=$('#a-apply-msg'); if(m) m.textContent = res.summary||''; }
+  else { showLog('#f-log', logTxt); }
+  toast(res.summary || (res.ok?'导入完成':'导入失败'));
+  if(kind==='mods') loadMods();
+  else if(kind==='addons'){ loadAddons(); loadAddonSel(); }
+  else loadFonts();
+  loadHome();
+}
+$('#dll-import').onclick = ()=> importLocal('mods');
+$('#a-import').onclick = ()=> importLocal('addons');
+$('#f-import').onclick = ()=> importLocal('fonts');
+
+// ============ 3.18 更新源配置（下载页「应用更新」卡片） ============
+async function loadAppUpdateCfg(){
+  const s = await api('/api/app_update_status');
+  const on = $('#au-on'); if(on) on.checked = !!s.enabled;
+  const fd = $('#au-fd-url'); if(fd){ fd.placeholder = s.configured ? '已配置更新源（如需更换再填写）' : '蓝奏云 exe 专区文件夹分享链接（wow-assist 文件夹）'; }
+  $('#au-fd-status').textContent = s.configured
+    ? ('更新源已配置；当前 v'+(s.current||'')+(s.latest?('，最新 v'+s.latest):'')+(s.err?' · '+s.err:''))
+    : '未配置更新源（请填写上方蓝奏云文件夹分享链接）';
+}
+$('#au-on').addEventListener('change', async ()=>{
+  await api('/api/app_update_config', {enabled: $('#au-on').checked});
+  toast('自动更新已'+($('#au-on').checked?'启用':'关闭'));
+});
+$('#au-fd-save').onclick = async ()=>{
+  const r = await api('/api/app_update_config', {folder_url:($('#au-fd-url').value||'').trim(), folder_pwd:($('#au-fd-pwd').value||'').trim()});
+  if(r.ok){ toast('更新源已保存'); loadAppUpdateCfg(); }
+};
+$('#au-check').onclick = async ()=>{
+  $('#au-check-msg').textContent = '检查中…';
+  const s = await api('/api/app_update_check', {});
+  if(s.err){ $('#au-check-msg').textContent = s.err; }
+  else if(s.available){ $('#au-check-msg').textContent = '发现新版本 v'+s.latest+'，可在首页「立即更新」'; }
+  else if(s.configured){ $('#au-check-msg').textContent = '已是最新（v'+(s.latest||s.current)+'）'; }
+  else { $('#au-check-msg').textContent = '未配置更新源'; }
+  loadAppUpdateCfg();
+};
+
+// ============ 3.20 加密保存游戏账号/密码 ============
+async function loadAccount(){
+  const a = await api('/api/account_get');
+  $('#acc-user').value = a.user || '';
+  $('#acc-pwd').value = a.pwd || '';
+  $('#acc-remember').checked = !!a.has && !a.locked;
+  $('#acc-msg').textContent = a.locked ? '本机密钥不可用（换电脑/重装系统），密文无法解密，请重新输入并保存'
+    : (a.has ? '已保存（本机自动填充）' : '未保存');
+}
+$('#acc-save').onclick = async ()=>{
+  const r = await api('/api/account_save', {user:($('#acc-user').value||''), pwd:($('#acc-pwd').value||''), remember: !!$('#acc-remember').checked});
+  $('#acc-msg').textContent = r.ok ? '已保存（仅本机可解密）' : '保存失败';
+  toast(r.ok?'账号已加密保存':'保存失败');
+};
+$('#acc-clear').onclick = async ()=>{
+  await api('/api/account_clear', {});
+  $('#acc-user').value=''; $('#acc-pwd').value=''; $('#acc-remember').checked=false;
+  $('#acc-msg').textContent='已清除';
+  toast('已清除保存的账号');
 };
 
 loadHome();   // 启动即填充首页四个字段（此前只调 loadTargets 只填路径框，其余显示"—"）

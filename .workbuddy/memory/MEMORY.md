@@ -62,6 +62,6 @@
 
 ## 用户环境与当前状态
 - 水豚乐园 `apac.capycraft.io`；客户端 `D:/game/twmoa_1181`(乌龟服1.18；1920x1080 125%缩放)。
-- 最新 exe=**v3.12**（改名版：WowAssist / wow-assist 目录 / wowassist-v3.12.exe / AppData\wowassist / wowassist_*.zip），已部署两处（源码目录 + `D:/game/twmoa_1181/wowassist.exe`）；HTTP 冒烟通过（两接口 200、数据目录已迁移）。**分发已就绪：原分享链接 b01i5y3r7c/9p81 列表首项即 `wowassist-v3.12.exe`**。
+- 最新 exe=**v3.20**（WowAssist / wow-assist 目录 / wowassist-v3.20.exe / AppData\wowassist / wowassist_*.zip），已构建部署到 `D:/game/twmoa_1181/wowassist.exe`（MD5 701cc08ccc52ba76bb050739b36053a3）。本版新增 **3.18 应用自动更新**（读 wow-assist 文件夹 release_manifest.json，下载→md5 校验→bat 自替换重启）、**3.19 本地导入模组/插件/字体**（install_state.custom 记录，能被移除/清理还原清理）、**3.20 加密保存账号（机器绑定，cryptography Fernet+HKDF，明文零落盘）**。**分发已就绪：原资源分享链接 b01i5y3r7c/9p81 列表首项即 `wowassist-v3.20.exe`**。
 - ✅ **真实游戏端到端验证已由用户完成**（2026-10-26 19:00 确认）。
-- 待办：①**「wow-assist」蓝奏云文件夹的对外分享链接待作者在网页手动生成**（拿到链接+提取码后需更新 `addon_helper.py` 默认 folder 配置与文档）；②上传 manifest.json 启用增量更新；③可选迁腾讯云COS；④蓝奏云密码曾明文出现在历史对话，凭据一律不写入 git 追踪文件。
+- ⏳ 待用户动作：①**「wow-assist」蓝奏云文件夹对外分享链接待作者在网页手动生成**（该链接同时是 3.18 自动更新源；生成后上传 `wowassist-v3.20.exe` + `release_manifest.json` 并填入 app_update 配置）；②可选迁腾讯云COS；③蓝奏云密码曾明文出现在历史对话，凭据一律不写入 git 追踪文件。
