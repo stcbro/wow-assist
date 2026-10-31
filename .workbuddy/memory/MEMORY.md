@@ -64,12 +64,13 @@
 
 ## 用户环境与当前状态
 - 水豚乐园 `apac.capycraft.io`；客户端 `D:/game/twmoa_1181`(乌龟服1.18；1920x1080 125%缩放)。
-- 最新 exe=**v3.22**（WowAssist / wow-assist 目录 / wowassist-v3.22.exe / AppData\wowassist / wowassist_*.zip），游戏根 `D:/game/twmoa_1181/wowassist.exe` 仍是 v3.20 待部署（用户未要求手替）。**v3.22 已二次构建并原地覆盖上传（2026-10-31）：MD5=`cb67cd606616a8703348317b9d8ce3e4`、size=17049840**（第 1 次构建的 v3.22 在 lanzou 修复前，已弃用）。已含 **3.18 应用自动更新**（读 wow-assist 文件夹 release_manifest.txt，下载→md5 校验→bat 自替换重启）、**3.19 本地导入模组/插件/字体**、**3.20 加密保存账号（机器绑定，cryptography Fernet+HKDF，明文零落盘）**。
+- 最新 exe=**v3.23**（2026-11-01 构建，项目目录唯一 exe；隔离验证 app_ver=3.23 PASS；**尚未上传蓝奏云，待用户真机验证**）。v3.22 已在蓝奏云与用户游戏根（用户已手替并测试过）。v3.23 新增：**账号自动填充根治**（见下）、配置组件日志按用户格式精简、启动 toast/进度统一「游戏正在启动……」、ui.html 更新日志补 v3.21 段+v3.20/3.22 日期。⚠️ 打包后 exe 首次启动可能因 onefile 解压+杀毒扫描超 30s，验证脚本给足 60s。
+- **⭐ 账号自动填充机制（2026-11-01 逆向确认，勿回退 Imports/-account 方案）**：乌龟服 1.18 客户端（主客户端与参考 cn2 客户端 WoW.exe 二进制完全相同）内置账号记忆 = **WTF/Config.wtf 的 `SET accountName "账号 密码;"`**（分号结尾；仅 "账号" 则只填账号栏；登录成功后客户端自行改写该行）。`Imports/accountName.txt` 只是参考客户端（lexara 版）入口之一，cVar 才是生效层；命令行 -account/-password 对本客户端无效。实现：`_write_account_cvar/_clear_account_cvar`，启动游戏时写入、未记住时清除。⚠️ 密码明文会进游戏 Config.wtf（客户端机制使然）；WowAssist 自身存储仍 Fernet 加密。**发版必须同步写 ui.html 更新日志（用户要求及时跟进）。**
 - ⚠️ **自动更新曾彻底卡死（已修复 2026-10-31）**：根因 = 蓝奏云改版后下载直链/签名藏在 `<iframe src="/fn?...">` 内，旧 `lanzou_core._encrypted_once` 只扫主页面 → `get_direct_link` 100% 返 `PostsignNotFound` → v3.20 用户点「立即更新」既取不到 manifest/exe 直链、UI 也无错误提示（误以为"已是最新"）。修复：让 `_encrypted_once` 复用 `_resolve_download_page` 跟随 iframe，并把含 `wp_sign` 的 AJAX marker 经 `_ajax_download(password=密码)` 走通；`_apply_app_update` 所有失败路径写 `_APP_UPDATE['err']` 复位 `downloading`；新增 `_APP_UPDATE['applying']` 守卫（路由层管理），UI 轮询等整个更新操作结束再收尾。**⚠️ 关键：v3.20 自带的 lanzou_core 同样坏，v3.20 无法自我更新到 v3.22——用户必须手动把游戏根 exe 换成 v3.22 后才能用上修复后的自动更新。**
 - ✅ **真实游戏端到端验证已由用户完成**（2026-10-26 19:00 确认）。
 - ✅ **更新源已上线**：蓝奏云「wow-assist」文件夹分享 `https://sycc.lanzoum.com/b01i5y8pmf` 提取码 `1acw`（同时是 3.18 自动更新源），已上传 `wowassist-v3.22.exe` + `release_manifest.txt`（**保留历史版本 exe，不再 prune**）。`app_update` 默认源已硬编码为该链接/码。⚠️ **蓝奏云静默拒收 `.json`**（客户端 100% 但服务端不落盘）→ 分发清单必须用 `release_manifest.txt`（内容仍是 JSON）；app 读 manifest 优先 `.txt` 兼容 `.json`，且 manifest 不可读时回退扫描 `wowassist-v*.exe` 文件名推断版本（跳过 md5）。
-- ⏳ 待用户动作：①**手动把游戏根 `D:/game/twmoa_1181/wowassist.exe` 换成新 v3.22 再测自动更新**（v3.20 自带 lanzou_core 已坏，无法自我更新到 v3.22）；②真机 GUI 端到端验证三特性 + 自动更新横幅（沙盒无显示器无法验）；③可选迁腾讯云COS；④蓝奏云凭据一律只走运行时环境变量/缓存登录态（temp/lz_state.json 不含密码），不写入 git 追踪文件、不写入历史对话之外任何地方。
-- **版本号**：3.17（UI 背景重设计）已决定跳过；3.18/3.19/3.20/3.21/3.22 均已发。最新 **v3.22** = 源码清理落地 + 蓝奏云上传不再删老版本（prune 默认 False）。
+- ⏳ 待用户动作：①**真机验证 v3.23**（手动把游戏根 `D:/game/twmoa_1181/wowassist.exe` 换成 v3.23：测登录界面自动填充 + 配置组件日志新格式 + 「游戏正在启动……」）；②验证通过后上传蓝奏云「wow-assist」文件夹 + 更新 release_manifest.txt；③可选迁腾讯云COS；④蓝奏云凭据一律只走运行时环境变量/缓存登录态（temp/lz_state.json 不含密码），不写入 git 追踪文件、不写入历史对话之外任何地方。
+- **版本号**：3.17 跳过；3.18/3.19/3.20/3.21/3.22 均已发（3.21=账号注入初版+字体说明思源黑体+启动文案；3.22=自动更新修复+源码清理）。最新 **v3.23** = 账号自动填充根治（Config.wtf cVar）+ 配置日志精简 + 启动文案统一（待发布）。
 
 ## 待办与暂缓项（用户拍板：先不改，记着以后改）
 - **exe 图标待换**：当前 `capy.ico`（`打包exe.bat` 的 `--icon capy.ico` 写死引用；`ui.html` 亦引用作 favicon）。用户 2026-10-31 决定先不换，以后改；风格未定（候选：水豚卡通吉祥物 / WA 字母标志 / 水豚+游戏科技感）。换图时若改文件名须同步改 bat 与 ui.html 引用。
