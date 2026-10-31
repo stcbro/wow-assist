@@ -32,7 +32,7 @@ from lanzou_core import LanzouClient, DOMAIN_RE  # noqa: E402
 PORT = 8766
 
 # 单一版本来源：发版时只改这一行（同步更新 ui.html 更新日志、以及打包后的文件名版本号）
-APP_VERSION = "3.22"
+APP_VERSION = "3.23"
 # 打包成 exe 后：APP_DIR 用 exe 所在目录；未打包（脚本运行）时用脚本所在目录。
 # ui.html 等资源从 PyInstaller 解压目录 _MEIPASS 读。
 if getattr(sys, "frozen", False):
@@ -1504,6 +1504,52 @@ def _inject_after_launch(pid, dlls, log=None, wait_sec=20.0):
             pass
 
 
+_ACCOUNT_CVAR = "SET accountName"
+
+
+def _write_account_cvar(root, user, pwd):
+    """把登录记忆写进 WTF/Config.wtf 的 accountName cVar（乌龟服 1.18 内置账号密码
+    记忆机制，2026-11-01 对参考客户端逆向确认）：值为 "账号 密码;"（分号结尾）时登录
+    界面账号/密码两栏自动填满，只写 "账号" 时仅填账号栏。返回是否写入成功。"""
+    wtf_dir = os.path.join(root, "WTF")
+    cfgp = os.path.join(wtf_dir, "Config.wtf")
+    try:
+        val = (user + " " + pwd + ";") if pwd else user
+        if ('"' in val) or ("\n" in val):   # 含引号/换行会破坏 Config.wtf 语法，放弃
+            return False
+        os.makedirs(wtf_dir, exist_ok=True)
+        old = ""
+        if os.path.isfile(cfgp):
+            with open(cfgp, "r", encoding="utf-8", errors="replace") as f:
+                old = f.read()
+        keep = [l for l in old.splitlines()
+                if not l.strip().lower().startswith(_ACCOUNT_CVAR.lower())]
+        keep.append(_ACCOUNT_CVAR + ' "' + val + '"')
+        with open(cfgp, "w", encoding="utf-8") as f:
+            f.write("\n".join(keep) + ("\n" if keep else ""))
+        return True
+    except Exception:
+        return False
+
+
+def _clear_account_cvar(root):
+    """未记住账号：从 WTF/Config.wtf 移除 SET accountName 行（不在游戏目录留账号痕迹）。"""
+    cfgp = os.path.join(root, "WTF", "Config.wtf")
+    try:
+        if not os.path.isfile(cfgp):
+            return
+        with open(cfgp, "r", encoding="utf-8", errors="replace") as f:
+            old = f.read()
+        lines = old.splitlines()
+        keep = [l for l in lines
+                if not l.strip().lower().startswith(_ACCOUNT_CVAR.lower())]
+        if len(keep) != len(lines):
+            with open(cfgp, "w", encoding="utf-8") as f:
+                f.write("\n".join(keep) + ("\n" if keep else ""))
+    except Exception:
+        pass
+
+
 def launch_game(addons_dir):
     """启动游戏。
     装了模组 → 内置注入器把 VfPatcher.dll / nampower.dll 注入游戏进程，游戏
@@ -1520,12 +1566,12 @@ def launch_game(addons_dir):
     if not exe:
         return False, root
 
-    # —— 3.20 加密账号落地：把账号/密码注入本次启动 ——
-    # ① 命令行 -account/-password（标准 1.12/乌龟服客户端支持，直接自动登录）；
-    # ② 若客户端自带 Imports 账号记忆功能（参考水豚/参考客户端的“账号密码记忆”，
-    #    格式 "账号 密码;"，写 Imports/accountName.txt），两栏都会填上。
-    # 明文密码只在内存里解密，用完即丢；仅当客户端已有 Imports 目录才写该文件，
-    # 避免在无此功能的客户端游戏目录里留下明文密码文件。
+    # —— 加密账号落地：登录界面自动填充 ——
+    # 机制（2026-11-01 对参考客户端逆向确认）：乌龟服 1.18 客户端读 WTF/Config.wtf 的
+    # accountName cVar，值为 "账号 密码;"（分号结尾）时登录界面账号/密码两栏自动填满。
+    # 命令行 -account/-password 对本客户端无效（实测不填），仅保留兼容不影响。
+    # 注意：密码须以明文写进游戏自己的 Config.wtf 客户端才读得到（与参考客户端行为
+    # 一致）；WowAssist 自身存储仍为 Fernet 加密密文，明文只进游戏目录这一处。
     cred_args = []
     try:
         acc = _load_account()
@@ -1535,16 +1581,12 @@ def launch_game(addons_dir):
             cred_args = ["-account", u]
             if pw:
                 cred_args += ["-password", pw]
-                try:
-                    imp_dir = os.path.join(root, "Imports")
-                    if os.path.isdir(imp_dir):
-                        with open(os.path.join(imp_dir, "accountName.txt"),
-                                  "w", encoding="utf-8") as _f:
-                            _f.write(f"{u} {pw};")
-                except Exception:
-                    pass
+            if _write_account_cvar(root, u, pw):
+                _hist("[账号] 已写入登录记忆（WTF/Config.wtf），登录界面将自动填充"
+                      + ("账号与密码" if pw else "账号"))
         else:
-            # 未记住账号 → 清掉客户端里可能残留的记忆文件
+            # 未记住账号 → 清掉客户端里可能残留的账号记忆（Config.wtf cVar 行 + 旧 Imports 文件）
+            _clear_account_cvar(root)
             try:
                 _stale = os.path.join(root, "Imports", "accountName.txt")
                 if os.path.isfile(_stale):
@@ -2961,7 +3003,7 @@ class Handler(BaseHTTPRequestHandler):
         _reset_progress()
         _set_progress(20, "启动", "正在启动游戏…")
         ok, p = launch_game(target)
-        _set_progress(100, "完成", "游戏已启动" if ok else "启动失败", done=True)
+        _set_progress(100, "完成", "游戏正在启动……" if ok else "启动失败", done=True)
         _hist("启动游戏：" + p if ok else "启动游戏失败（" + str(p) + "）")
         return self._send(200, json.dumps(
             {"ok": ok, "exe": p, "dir": client_root_of(target)}, ensure_ascii=False))
@@ -3133,6 +3175,7 @@ def install_fonts(target, font_src, log):
                 log("[备份] 客户端原有（非资源包）字体 " + str(norig)
                     + " 项已备份到 WowAbak\\字体备份_原有（移除字体时恢复）")
         n_skip = 0
+        n_item = 0   # 实际装入的字体项数（目录/文件各记 1）
         for e in sorted(os.listdir(font_src)):
             sp = os.path.join(font_src, e)
             dp = os.path.join(dst, e)
@@ -3142,6 +3185,7 @@ def install_fonts(target, font_src, log):
                     continue
                 shutil.copytree(sp, dp, dirs_exist_ok=True)
                 n += _count_files(sp)
+                n_item += 1
             elif os.path.isfile(sp):
                 if not e.lower().endswith(_FONT_EXTS):
                     continue
@@ -3150,10 +3194,12 @@ def install_fonts(target, font_src, log):
                     continue
                 shutil.copy2(sp, dp)
                 n += 1
-        if n_skip:
-            log("[字体] 按勾选跳过 " + str(n_skip) + " 个未勾选字体（未丢失，重新勾选可装回）")
+                n_item += 1
         if n:
-            log("[字体] 已装入/更新 " + str(n) + " 个字体文件 → 游戏目录\\Fonts")
+            paren = ("（按勾选%d个，跳过未勾选%d个）" % (n_item, n_skip)
+                     if n_skip else "（按勾选）")
+            log("[字体]从「" + os.path.basename(font_src.rstrip("\\/")) + "」装入"
+                + str(n) + "个字体" + paren)
         else:
             log("[字体] 没有需要装入的字体（勾选为空或均已是最新）")
     except Exception as ex:
@@ -3192,9 +3238,10 @@ def remove_fonts(target, log):
     return True
 
 
-def ensure_mods_loaded(target, log):
+def ensure_mods_loaded(target, log, quiet=False):
     """把客户端根已存在的增强模组写进 dlls.txt（客户端 twloader.dll 据此载入），
-    保留原有条目(如 twdiscord.dll)，写前备份原 dlls.txt。返回 (ok, msg)。"""
+    保留原有条目(如 twdiscord.dll)，写前备份原 dlls.txt。返回 (ok, msg)。
+    quiet=True 时不打"已写入 dlls.txt"日志（配置组件流程把它并入模组装入行）。"""
     root = client_root_of(target) if target else ""
     if not root or not os.path.isdir(root):
         return False, "客户端路径无效"
@@ -3216,7 +3263,8 @@ def ensure_mods_loaded(target, log):
         # 不再额外生成带时间戳的模组备份夹。
         pass
     _write_dlls_txt(path, merged)
-    log("[模组] 已写入 dlls.txt：" + ", ".join(present))
+    if not quiet:
+        log("[模组] 已写入 dlls.txt：" + ", ".join(present))
     return True, "ok"
 
 # ================= 持久化安装：一键安装 / 手动清理还原 =================
@@ -3661,6 +3709,7 @@ def apply_overlay(target, mod_src, addon_src, log, font_src=None):
         log("[基线] 已记录初始 dlls.txt")
     status = {}
     istate = cfg.get("install_state", {})
+    mods_summary = None   # 模组装入摘要，等 dlls.txt 写完再合成一行日志
     # 2) 装模组（按模组页勾选；冲突先备份；已装且签名一致则跳过）
     _set_progress(5, "模组", "模组安装中…")
     if mod_src and os.path.isdir(mod_src):
@@ -3703,8 +3752,8 @@ def apply_overlay(target, mod_src, addon_src, log, font_src=None):
             if chosen:
                 log("[模组] 模组加载已内置于本程序，将自动注入 VfPatcher.dll、nampower.dll")
             skipped = len(info["mods"]) - len(chosen)
-            log("[模组] 从「" + os.path.basename(mod_src.rstrip("\\/")) + "」装入 " + str(nmod)
-                + " 个文件（按勾选，跳过 " + str(skipped) + " 个未勾选）")
+            mods_summary = {"src": os.path.basename(mod_src.rstrip("\\/")), "n": nmod,
+                            "checked": len(chosen), "skip": skipped}
             _set_progress(32, "模组", "模组安装完毕，正在写入加载配置…")
             _mark_installed("mods", log)
             status["mods"] = (True, "已安装(%d个)" % nmod)
@@ -3713,7 +3762,12 @@ def apply_overlay(target, mod_src, addon_src, log, font_src=None):
         _set_progress(32, "模组", "无有效模组源，跳过模组")
         status["mods"] = (False, "源无效")
     # 3) 写 dlls.txt 让模组生效（放在插件之前：模组这一步先完整收尾）
-    ensure_mods_loaded(target, log)
+    _dll_ok, _ = ensure_mods_loaded(target, log, quiet=True)
+    if mods_summary:
+        paren = ("（按勾选%d个，跳过未勾选%d个）" % (mods_summary["checked"], mods_summary["skip"])
+                 if mods_summary["skip"] else "（按勾选）")
+        log("[模组]从「" + mods_summary["src"] + "」装入" + str(mods_summary["n"])
+            + "个模组" + paren + ("，写入dlls.txt" if _dll_ok else ""))
     _set_progress(38, "插件", "模组安装完毕，插件安装中…", step="模组")
     # 4) 装插件（冲突先备份；已装且签名一致则跳过）
     nadd = 0
@@ -3769,10 +3823,10 @@ def apply_overlay(target, mod_src, addon_src, log, font_src=None):
                 except Exception as ex:
                     log("[装入失败] " + e + "：" + str(ex))
                 _set_progress(38 + 42 * (i + 1) // max(1, len(dirs)))
-            if n_skip:
-                log("[插件] 按勾选跳过 " + str(n_skip) + " 个未勾选插件")
-            log("[插件] 从「" + os.path.basename(addon_src.rstrip("\\/")) + "」装入 " + str(nadd)
-                + " 个（按勾选）")
+            paren = ("（按勾选%d个，跳过未勾选%d个）" % (len(dirs), n_skip)
+                     if n_skip else "（按勾选）")
+            log("[插件]从「" + os.path.basename(addon_src.rstrip("\\/")) + "」装入"
+                + str(nadd) + "个插件" + paren)
             _set_progress(82, "字体", "插件安装完毕，字体安装中…", step="插件")
             _mark_installed("addons", log)
             status["addons"] = (True, "已安装(%d个)" % nadd)
@@ -3793,7 +3847,7 @@ def apply_overlay(target, mod_src, addon_src, log, font_src=None):
         else:
             nfont = install_fonts(target, font_src, log)
             _mark_installed("fonts", log)
-            status["fonts"] = (True, "已安装(%d文件)" % max(0, nfont))
+            status["fonts"] = (True, "已安装(%d个)" % max(0, nfont))
     else:
         log("[字体] ⚠ 字体源目录无效，跳过：" + str(font_src))
         status["fonts"] = (False, "源无效")
