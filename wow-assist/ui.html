@@ -356,12 +356,18 @@ th{color:var(--sub);font-weight:600;font-size:12px}
           <div><span class="ct ct-imp">改进</span>配置组件日志精简：模组/插件/字体各合并为一行装入摘要（括号内标注按勾选与跳过未勾选的数量，模组行同时标注「写入dlls.txt」，不再单独列 dlls.txt 文件明细行）</div>
           <div><span class="ct ct-imp">改进</span>启动游戏反馈统一为「游戏正在启动……」，不再瞬间显示「已启动」造成误解</div>
         </div>
-        <div class="kv"><span class="k">v3.22 ｜ 自动更新修复（蓝奏云新版页面适配）</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v3.21 ｜ 2026-10-31 ｜ 账号注入 + 字体说明修正 + 启动文案</span><span class="tag">已发布</span></div>
+        <div class="cl-detail">
+          <div><span class="ct ct-add">新增</span>启动游戏时注入已加密保存的账号密码（初版方案：命令行 -account/-password + 客户端 Imports 目录存在时写 accountName.txt；该方案对当前客户端未生效，v3.23 已改为 WTF/Config.wtf 机制）</div>
+          <div><span class="ct ct-imp">改进</span>字体页 5 个美化字体说明由方正/文鼎改为思源黑体（Noto Sans SC，SIL OFL 开源可商用）——字体包本体已同步替换，规避字体版权风险</div>
+          <div><span class="ct ct-imp">改进</span>启动按钮/提示显式显示「游戏正在启动……」</div>
+        </div>
+        <div class="kv"><span class="k">v3.22 ｜ 2026-10-31 ｜ 自动更新修复（蓝奏云新版页面适配）</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
           <div><span class="ct ct-fix">修复</span>点「立即更新」长久无反应：蓝奏云分享页改版后直链解析失效，已适配新版页面（旧版本用户需手动换装一次 v3.22，之后的版本可正常自动更新）</div>
           <div><span class="ct ct-fix">修复</span>极端情况下首页「关于」版本号误显示为 3.20 的硬编码回退</div>
         </div>
-        <div class="kv"><span class="k">v3.20 ｜ 自动更新 + 本地导入 + 加密账号（原规划 3.18–3.20）</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v3.20 ｜ 2026-10-31 ｜ 自动更新 + 本地导入 + 加密账号（原规划 3.18–3.20）</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
           <div><span class="ct ct-add">新增</span>应用自动更新：启动时后台检查新版本，发现更新在首页提示并支持「立即更新」；更新源为蓝奏云 exe 专区文件夹里的 release_manifest.txt（蓝奏云拒收 .json，故用 .txt，内容仍是 JSON）+ 最新 exe，下载后校验 md5、自动替换自身并重启（详见「下载」页「应用更新」卡片）</div>
           <div><span class="ct ct-add">新增</span>用户自行导入本地模组/插件/字体：模组/插件/字体三页各新增「导入本地」，选文件夹即可把自有模组/插件/字体装入客户端；导入项记入 install_state，可被「移除」/「清理还原」识别与清理，不污染资源包</div>
