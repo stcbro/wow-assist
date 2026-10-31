@@ -333,7 +333,7 @@ th{color:var(--sub);font-weight:600;font-size:12px}
           <div style="height:8px;background:var(--card2);border-radius:4px;overflow:hidden"><div id="au-bar" style="height:100%;width:0;background:#3fb95f;transition:.2s"></div></div>
           <div id="au-msg" style="margin-top:4px;font-size:12px;color:var(--sub)"></div>
         </div>
-        <p class="pill" style="margin-top:10px">更新源 = 你专门放 exe 的蓝奏云文件夹（wow-assist 文件夹）。该文件夹里需放 <b>release_manifest.json</b>（版本/说明/exe 文件名+md5）与最新 <b>wowassist-v*.exe</b>。发现新版本会下载并自动替换自身、重启。</p>
+        <p class="pill" style="margin-top:10px">更新源 = 你专门放 exe 的蓝奏云文件夹（wow-assist 文件夹）。该文件夹里需放 <b>release_manifest.txt</b>（版本/说明/exe 文件名+md5；蓝奏云拒收 .json，故用 .txt，内容仍是 JSON）与最新 <b>wowassist-v*.exe</b>。发现新版本会下载并自动替换自身、重启。</p>
       </div>
     </section>
 
@@ -352,7 +352,7 @@ th{color:var(--sub);font-weight:600;font-size:12px}
       <div class="card grow" style="max-width:720px">
         <div class="kv"><span class="k">v3.20 ｜ 自动更新 + 本地导入 + 加密账号（原规划 3.18–3.20）</span><span class="tag">待发布</span></div>
         <div class="cl-detail">
-          <div><span class="ct ct-add">新增</span>应用自动更新：启动时后台检查新版本，发现更新在首页提示并支持「立即更新」；更新源为蓝奏云 exe 专区文件夹里的 release_manifest.json + 最新 exe，下载后校验 md5、自动替换自身并重启（详见「下载」页「应用更新」卡片）</div>
+          <div><span class="ct ct-add">新增</span>应用自动更新：启动时后台检查新版本，发现更新在首页提示并支持「立即更新」；更新源为蓝奏云 exe 专区文件夹里的 release_manifest.txt（蓝奏云拒收 .json，故用 .txt，内容仍是 JSON）+ 最新 exe，下载后校验 md5、自动替换自身并重启（详见「下载」页「应用更新」卡片）</div>
           <div><span class="ct ct-add">新增</span>用户自行导入本地模组/插件/字体：模组/插件/字体三页各新增「导入本地」，选文件夹即可把自有模组/插件/字体装入客户端；导入项记入 install_state，可被「移除」/「清理还原」识别与清理，不污染资源包</div>
           <div><span class="ct ct-add">新增</span>加密保存游戏账号/密码（服务器页）：密钥由本机硬件指纹派生（机器绑定），明文绝不落盘；勾选「记住密码」后本机打开自动填充，换电脑/重装系统需重新输入</div>
         </div>

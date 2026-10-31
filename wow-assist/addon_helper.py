@@ -4836,7 +4836,9 @@ def _version_newer(latest, current):
     return _parse_version(latest) > _parse_version(current)
 
 def _fetch_release_manifest(au):
-    """从更新源文件夹取 release_manifest.json 并解析。返回 (dict|None, err)。"""
+    """从更新源文件夹取 release_manifest（优先 .txt，蓝奏云拒收 .json）并解析。
+    若 manifest 取不到/下载失败，则退回从 wowassist-v*.exe 文件名推断最新版本，
+    保证自动更新在 manifest 不可读时仍能工作（仅跳过 md5 校验）。返回 (dict|None, err)。"""
     url = (au.get("folder_url") or "").strip()
     pwd = (au.get("folder_pwd") or "").strip()
     if not url:
@@ -4847,27 +4849,42 @@ def _fetch_release_manifest(au):
         st, files = c.get_folder_files(url, pwd)
         if st != "Success" or not files:
             return None, "更新源文件夹解析失败（链接/提取码或网络）"
-        mf_file = None
-        for f in files:
-            if (f.get("name") or "") == "release_manifest.json":
-                mf_file = f
-                break
-        if not mf_file:
-            return None, "更新源文件夹里没有 release_manifest.json"
-        st2, link = c.get_direct_link(mf_file.get("url", ""), pwd)
-        if st2 != "Success" or not link:
-            return None, "release_manifest.json 直链解析失败"
-        req = urllib.request.Request(link, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(req, timeout=20) as r:
-            data = json.loads(r.read().decode("utf-8"))
-        exe_info = data.get("exe") or {}
-        if not exe_info.get("name"):
-            # manifest 没给 exe 文件名 → 自动取文件夹里最新的 wowassist-v*.exe
+
+        def _pick_exe():
             for f in files:
                 nm = (f.get("name") or "")
                 if re.match(r"^wowassist-v[\d.]+\.exe$", nm, re.I):
-                    exe_info = {"name": nm, "md5": "", "size": 0}
+                    return {"name": nm, "md5": "", "size": 0}
+            return None
+
+        # 优先 release_manifest.txt（蓝奏云拒收 .json，客户端 100% 但服务端不落盘），
+        # 兼容旧 .json（若某环境允许）。取到后下载并解析；任何失败都退回 exe 名推断。
+        data = None
+        for nm in ("release_manifest.txt", "release_manifest.json"):
+            mf_file = next((f for f in files if (f.get("name") or "") == nm), None)
+            if not mf_file:
+                continue
+            st2, link = c.get_direct_link(mf_file.get("url", ""), pwd)
+            if st2 != "Success" or not link:
+                continue
+            try:
+                req = urllib.request.Request(link, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(req, timeout=20) as r:
+                    data = json.loads(r.read().decode("utf-8"))
+                if data and str(data.get("version") or ""):
                     break
+            except Exception:
+                data = None
+        if not data or not str(data.get("version") or ""):
+            exe_info = _pick_exe()
+            if not exe_info:
+                return None, "更新源文件夹里既没有 release_manifest 也没有 wowassist-v*.exe"
+            m = re.match(r"wowassist-v([\d.]+)\.exe", exe_info["name"], re.I)
+            data = {"version": m.group(1) if m else "",
+                    "notes": "", "required": False, "exe": exe_info}
+        exe_info = data.get("exe") or {}
+        if not exe_info.get("name"):
+            exe_info = _pick_exe() or exe_info
             data["exe"] = exe_info
         return data, ""
     except Exception as e:
