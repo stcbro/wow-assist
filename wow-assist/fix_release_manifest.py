@@ -37,7 +37,7 @@ def main():
     if not edge:
         print("[错误] 找不到 Edge/Chrome"); return 3
 
-    user, pwd = ul.get_creds(None)
+    user, pwd = ul.get_creds(ul.DEFAULT_STATE)
     from playwright.sync_api import sync_playwright
     state_path = ul.DEFAULT_STATE
     with sync_playwright() as p:
