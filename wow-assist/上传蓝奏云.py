@@ -14,7 +14,9 @@ WowAssist —— 蓝奏云一键上传（自动带版本号）
 常用参数：
     --file "wowassist-v3.12.exe"   指定要上传的文件（默认自动取项目目录里最新的「wowassist-vX.YZ.exe」）
     --folder wow-assist             目标文件夹名（默认「wow-assist」）
-    --prune                        上传成功后，删除该文件夹里其它旧版「wowassist-v*.exe」（只保留最新）
+    --prune                        上传成功后，删除该文件夹里其它旧版「wowassist-v*.exe」（默认关闭；
+                                    用户要求保留所有历史版本，故默认不再删老版本）
+    --no-prune                     显式关闭清理（默认行为，保留全部副本）
     --share                        上传后尝试读取该文件夹的分享链接与提取码
     --state 路径                   登录态缓存文件（默认 temp/lz_state.json，可重复使用免登录）
     --no-state                     不使用/不保存登录态
@@ -252,15 +254,29 @@ def upload_file(page, fr, path, folder):
             print("    [上传] 已点击『开始上传』")
     except Exception:
         pass
-    # 等上传进度/完成提示
+    # 等上传真正完成：以「刷新后列表里出现该文件名」为权威判据，
+    # 不再依赖页面里任意 "100%" 文案（易误判，导致没真等上传就判失败）。
+    uploaded = False
     for t in range(150):
-        page.wait_for_timeout(2000)
+        page.wait_for_timeout(3000)
+        # 优先看文件列表里是否已出现该文件（最可靠）
+        try:
+            fr_now = get_files_frame(page) or fr
+            rows = list_rows(fr_now)
+            if any(fname in (r.get("txt") or "") for r in rows):
+                print(f"    [上传] 列表里已出现 {fname} (~{t*3}s)")
+                uploaded = True
+                break
+        except Exception:
+            pass
+        # 兜底：出现明确的成功文案
         try:
             c = fr.content()
         except Exception:
             c = ""
-        if re.search(r"100\s*%", c) or "上传成功" in c or "上传完成" in c:
-            print(f"    [上传] 上传完成提示出现 (~{t*2}s)")
+        if "上传成功" in c or "上传完成" in c:
+            print(f"    [上传] 出现成功文案 (~{t*3}s)")
+            uploaded = True
             break
     page.wait_for_timeout(2500)
     # 刷新列表确认真实存在
@@ -400,10 +416,10 @@ def main():
     ap = argparse.ArgumentParser(description="蓝奏云一键上传（带版本号）")
     ap.add_argument("--file", default=None, help="要上传的 exe（默认取最新带版本号产物）")
     ap.add_argument("--folder", default="wow-assist", help="目标文件夹名")
-    ap.add_argument("--prune", action="store_true", help="删除同目录其它旧版本号文件（默认开启）")
+    ap.add_argument("--prune", action="store_true", help="删除同目录其它旧版本号文件（默认关闭：保留所有历史版本）")
     ap.add_argument("--no-prune", dest="prune", action="store_false",
-                    help="关闭自动清理旧版本（保留所有副本）")
-    ap.set_defaults(prune=True)
+                    help="关闭自动清理旧版本（保留所有副本，默认行为）")
+    ap.set_defaults(prune=False)
     ap.add_argument("--share", action="store_true", help="尝试读取分享链接")
     ap.add_argument("--skip-upload", action="store_true", help="只做分享链接/清理，不重复上传")
     ap.add_argument("--state", default=DEFAULT_STATE, help="登录态缓存文件")

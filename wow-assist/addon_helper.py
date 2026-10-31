@@ -32,7 +32,7 @@ from lanzou_core import LanzouClient, DOMAIN_RE  # noqa: E402
 PORT = 8766
 
 # 单一版本来源：发版时只改这一行（同步更新 ui.html 更新日志、以及打包后的文件名版本号）
-APP_VERSION = "3.21"
+APP_VERSION = "3.22"
 # 打包成 exe 后：APP_DIR 用 exe 所在目录；未打包（脚本运行）时用脚本所在目录。
 # ui.html 等资源从 PyInstaller 解压目录 _MEIPASS 读。
 if getattr(sys, "frozen", False):

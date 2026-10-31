@@ -72,7 +72,7 @@ echo.
 echo [上传] 正在上传到蓝奏云 ...
 set "PYTHONPATH="
 rem exe 只上传到专用文件夹「wow-assist」（资源包另有其文件夹，不混放）
-"%PY%" 上传蓝奏云.py --folder "wow-assist" --prune
+"%PY%" 上传蓝奏云.py --folder "wow-assist" --no-prune
 rem 资源包有更新时，单独执行（产物在 D:\WorkBuddy\发布\蓝奏云资源包）：
 rem     "%PY%" 上传资源包.py --folder "wow-resources"
 echo [上传] 完成
