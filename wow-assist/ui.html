@@ -166,26 +166,8 @@ th{color:var(--sub);font-weight:600;font-size:12px}
         <p class="pill" style="margin-top:8px">realmlist 实时读取客户端里的 realmlist.wtf；切换服务器需手动改该文件。</p>
       </div>
       <div class="card grow" style="max-width:460px;margin-top:12px">
-        <h3 style="margin-top:0">游戏账号（加密保存）</h3>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div style="display:flex;align-items:center;gap:10px">
-            <span style="width:64px;color:var(--sub);font-size:14px">账号</span>
-            <input id="acc-user" placeholder="游戏账号" style="flex:1">
-          </div>
-          <div style="display:flex;align-items:center;gap:10px">
-            <span style="width:64px;color:var(--sub);font-size:14px">密码</span>
-            <input id="acc-pwd" type="password" placeholder="游戏密码" style="flex:1">
-          </div>
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--txt);font-size:13px;margin:0">
-            <input type="checkbox" id="acc-remember" style="width:16px;height:16px;accent-color:#3fb95f;cursor:pointer">
-            记住密码（密钥由本机硬件指纹派生，仅本机可解密；换电脑需重新输入）
-          </label>
-        </div>
-        <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-          <button class="btn primary sm" id="acc-save">保存</button>
-          <button class="btn sm" id="acc-clear">清除</button>
-          <span id="acc-msg" style="font-size:12px;color:var(--sub)"></span>
-        </div>
+        <h3 style="margin-top:0">游戏账号</h3>
+        <p class="pill" style="margin-top:0">账号密码请在<b>游戏登录界面</b>输入：勾选客户端自带的「记住帐号名」后，账号会由客户端自己记住，下次启动自动带出；密码出于安全考虑每次输入。本工具不保存、不自动填充账号密码。</p>
       </div>
     </section>
 
@@ -350,11 +332,13 @@ th{color:var(--sub);font-weight:600;font-size:12px}
         </div>
       </div>
       <div class="card grow" style="max-width:720px">
-        <div class="kv"><span class="k">v3.23 ｜ 登录自动填充 + 配置日志精简</span><span class="tag">待发布</span></div>
+        <div class="kv"><span class="k">v3.23 ｜ 配置日志精简 + 日志显示修复 + 账号改用客户端记录</span><span class="tag">待发布</span></div>
         <div class="cl-detail">
-          <div><span class="ct ct-fix">修复</span>已保存的账号密码在游戏登录界面未自动填入：改按客户端内置账号记忆机制，启动游戏时把账号密码写入游戏目录 WTF/Config.wtf（accountName），登录界面账号/密码两栏自动填充；取消「记住密码」后启动游戏自动清除该记忆</div>
           <div><span class="ct ct-imp">改进</span>配置组件日志精简：模组/插件/字体各合并为一行装入摘要（括号内标注按勾选与跳过未勾选的数量，模组行同时标注「写入dlls.txt」，不再单独列 dlls.txt 文件明细行）</div>
           <div><span class="ct ct-imp">改进</span>启动游戏反馈统一为「游戏正在启动……」，不再瞬间显示「已启动」造成误解</div>
+          <div><span class="ct ct-fix">修复</span>配置组件完成后日志区按最终进度整体重绘：[插件]/[字体] 等最后写入的行不再因轮询间隙而丢失显示</div>
+          <div><span class="ct ct-fix">修复</span>操作明细日志不再被下一个操作清空：新操作开始前，上一轮（如清理还原）的明细自动滚入持久化历史，日志区按时间完整保留（最新在最下）</div>
+          <div><span class="ct ct-chg">变更</span>移除游戏账号加密保存与自动填充：实测该客户端只会把记忆值整段塞进账号框、无法可靠填密码——改为玩家在游戏登录界面自行输入，勾选客户端自带「记住帐号名」由客户端记录；此前写入的 "账号 密码;" 记忆会在启动游戏时自动修复为纯账号名</div>
         </div>
         <div class="kv"><span class="k">v3.21 ｜ 2026-10-31 ｜ 账号注入 + 字体说明修正 + 启动文案</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
@@ -616,7 +600,7 @@ function nav(p){
   $('#'+p).classList.add('show');
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active', b.dataset.p===p));
   if(p==='home') loadHome();
-  if(p==='servers'){ loadTargets(); loadAccount(); }
+  if(p==='servers'){ loadTargets(); }
   if(p==='addons'){ loadAddons(); loadAddonSel(); }
   if(p==='dll') loadMods();
   if(p==='download'){ loadLanzou(); loadAppUpdateCfg(); }
@@ -771,20 +755,24 @@ $('#h-check').onclick = async ()=>{
   }, 250);
   const r = await api('/api/precheck', {target:state.current});
   clearInterval(timer);
-  renderProgress(await api('/api/progress'));
+  const pf = await api('/api/progress');
+  renderProgress(pf);
   btn.disabled = false; btn.textContent = old;
   let statusStr = '';
   if(r.status){
     const labs = {mods:'模组', addons:'插件', fonts:'字体'};
     statusStr = Object.keys(labs).map(k=> labs[k]+'：'+(r.status[k]? r.status[k][1] : '—')).join('，');
   }
-  // 结果行追加到日志区末尾（先状态后结论），不覆盖已滚动的历史记录；
-  // 各步骤日志已随轮询带时间戳逐行显示过，这里不重复 r.log
+  // 完成后按最终进度整体重绘日志区：轮询 250ms 一次，最后几百毫秒内追加的
+  // [插件]/[字体] 等行可能没赶上任何一次轮询——用最终快照重绘，一行不丢；
+  // 结果行（状态+结论）接在末尾
   const logEl2 = $('#h-play-log');
-  if(logEl2 && (statusStr || r.summary)){
+  const lines2 = (pf.hist||[]).concat(pf.log||[]);
+  if(logEl2 && (lines2.length || statusStr || r.summary)){
     logEl2.style.display = 'block';
-    logEl2.textContent += (logEl2.textContent ? '\n' : '')
-      + (statusStr || '') + ((statusStr && r.summary) ? '\n' : '') + (r.summary || '');
+    let txt = lines2.join('\n');
+    if(statusStr || r.summary) txt += (txt?'\n':'') + (statusStr||'') + ((statusStr && r.summary)?'\n':'') + (r.summary||'');
+    logEl2.textContent = txt;
     logEl2.scrollTop = logEl2.scrollHeight;
   }
   check_ok = !!r.ok;
@@ -1446,26 +1434,7 @@ $('#au-check').onclick = async ()=>{
   loadAppUpdateCfg();
 };
 
-// ============ 3.20 加密保存游戏账号/密码 ============
-async function loadAccount(){
-  const a = await api('/api/account_get');
-  $('#acc-user').value = a.user || '';
-  $('#acc-pwd').value = a.pwd || '';
-  $('#acc-remember').checked = !!a.has && !a.locked;
-  $('#acc-msg').textContent = a.locked ? '本机密钥不可用（换电脑/重装系统），密文无法解密，请重新输入并保存'
-    : (a.has ? '已保存（本机自动填充）' : '未保存');
-}
-$('#acc-save').onclick = async ()=>{
-  const r = await api('/api/account_save', {user:($('#acc-user').value||''), pwd:($('#acc-pwd').value||''), remember: !!$('#acc-remember').checked});
-  $('#acc-msg').textContent = r.ok ? '已保存（仅本机可解密）' : '保存失败';
-  toast(r.ok?'账号已加密保存':'保存失败');
-};
-$('#acc-clear').onclick = async ()=>{
-  await api('/api/account_clear', {});
-  $('#acc-user').value=''; $('#acc-pwd').value=''; $('#acc-remember').checked=false;
-  $('#acc-msg').textContent='已清除';
-  toast('已清除保存的账号');
-};
+// ============ 游戏账号：改用客户端自带「记住帐号名」，本工具不再保存/填充 ============
 
 loadHome();   // 启动即填充首页四个字段（此前只调 loadTargets 只填路径框，其余显示"—"）
 </script>

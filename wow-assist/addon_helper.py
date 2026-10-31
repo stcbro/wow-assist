@@ -1507,45 +1507,35 @@ def _inject_after_launch(pid, dlls, log=None, wait_sec=20.0):
 _ACCOUNT_CVAR = "SET accountName"
 
 
-def _write_account_cvar(root, user, pwd):
-    """把登录记忆写进 WTF/Config.wtf 的 accountName cVar（乌龟服 1.18 内置账号密码
-    记忆机制，2026-11-01 对参考客户端逆向确认）：值为 "账号 密码;"（分号结尾）时登录
-    界面账号/密码两栏自动填满，只写 "账号" 时仅填账号栏。返回是否写入成功。"""
-    wtf_dir = os.path.join(root, "WTF")
-    cfgp = os.path.join(wtf_dir, "Config.wtf")
-    try:
-        val = (user + " " + pwd + ";") if pwd else user
-        if ('"' in val) or ("\n" in val):   # 含引号/换行会破坏 Config.wtf 语法，放弃
-            return False
-        os.makedirs(wtf_dir, exist_ok=True)
-        old = ""
-        if os.path.isfile(cfgp):
-            with open(cfgp, "r", encoding="utf-8", errors="replace") as f:
-                old = f.read()
-        keep = [l for l in old.splitlines()
-                if not l.strip().lower().startswith(_ACCOUNT_CVAR.lower())]
-        keep.append(_ACCOUNT_CVAR + ' "' + val + '"')
-        with open(cfgp, "w", encoding="utf-8") as f:
-            f.write("\n".join(keep) + ("\n" if keep else ""))
-        return True
-    except Exception:
-        return False
-
-
-def _clear_account_cvar(root):
-    """未记住账号：从 WTF/Config.wtf 移除 SET accountName 行（不在游戏目录留账号痕迹）。"""
+def _repair_account_cvar(root):
+    """一次性修复 v3.23 旧方案写入的登录记忆：此前的思路是把 "账号 密码;" 写进
+    WTF/Config.wtf 的 accountName cVar，实测该客户端只会把整个值塞进账号框
+    （不会拆出密码），反而污染账号栏。这里把带空格+分号的旧值还原为纯账号名
+    （与客户端自带「记住帐号名」保存的格式一致）；已是纯账号名则不动。"""
     cfgp = os.path.join(root, "WTF", "Config.wtf")
     try:
         if not os.path.isfile(cfgp):
             return
         with open(cfgp, "r", encoding="utf-8", errors="replace") as f:
             old = f.read()
-        lines = old.splitlines()
-        keep = [l for l in lines
-                if not l.strip().lower().startswith(_ACCOUNT_CVAR.lower())]
-        if len(keep) != len(lines):
+        changed = False
+        out = []
+        for l in old.splitlines():
+            s = l.strip()
+            if s.lower().startswith(_ACCOUNT_CVAR.lower()) and '"' in s:
+                try:
+                    val = s.split('"', 2)[1]
+                except Exception:
+                    out.append(l)
+                    continue
+                if val.endswith(";") and " " in val:   # 旧方案格式 "账号 密码;" → 只留账号
+                    acc = val.rstrip(";").split(" ", 1)[0]
+                    l = _ACCOUNT_CVAR + ' "' + acc + '"'
+                    changed = True
+            out.append(l)
+        if changed:
             with open(cfgp, "w", encoding="utf-8") as f:
-                f.write("\n".join(keep) + ("\n" if keep else ""))
+                f.write("\n".join(out) + ("\n" if out else ""))
     except Exception:
         pass
 
@@ -1566,44 +1556,21 @@ def launch_game(addons_dir):
     if not exe:
         return False, root
 
-    # —— 加密账号落地：登录界面自动填充 ——
-    # 机制（2026-11-01 对参考客户端逆向确认）：乌龟服 1.18 客户端读 WTF/Config.wtf 的
-    # accountName cVar，值为 "账号 密码;"（分号结尾）时登录界面账号/密码两栏自动填满。
-    # 命令行 -account/-password 对本客户端无效（实测不填），仅保留兼容不影响。
-    # 注意：密码须以明文写进游戏自己的 Config.wtf 客户端才读得到（与参考客户端行为
-    # 一致）；WowAssist 自身存储仍为 Fernet 加密密文，明文只进游戏目录这一处。
-    cred_args = []
+    # —— 账号：改用客户端自带「记住帐号名」，本工具不再保存/自动填充（2026-11-01 用户定）。
+    # 仅做一次性修复：把 v3.23 旧方案写进 Config.wtf 的 "账号 密码;" 值还原为纯账号名。
     try:
-        acc = _load_account()
-        if acc.get("has") and acc.get("user"):
-            u = acc["user"]
-            pw = acc.get("pwd") or ""
-            cred_args = ["-account", u]
-            if pw:
-                cred_args += ["-password", pw]
-            if _write_account_cvar(root, u, pw):
-                _hist("[账号] 已写入登录记忆（WTF/Config.wtf），登录界面将自动填充"
-                      + ("账号与密码" if pw else "账号"))
-        else:
-            # 未记住账号 → 清掉客户端里可能残留的账号记忆（Config.wtf cVar 行 + 旧 Imports 文件）
-            _clear_account_cvar(root)
-            try:
-                _stale = os.path.join(root, "Imports", "accountName.txt")
-                if os.path.isfile(_stale):
-                    os.remove(_stale)
-            except Exception:
-                pass
+        _repair_account_cvar(root)
     except Exception:
-        cred_args = []
+        pass
 
     inject = [os.path.join(root, n) for n in INJECT_DLLS]
     inject = [p for p in inject if os.path.isfile(p)]
     if not inject or sys.platform != "win32":
         try:
-            _popen_hidden([exe] + cred_args, cwd=root)
+            _popen_hidden([exe], cwd=root)
         except Exception:
             try:
-                _popen_hidden([exe] + cred_args)
+                _popen_hidden([exe])
             except Exception:
                 pass
         return True, exe
@@ -1614,10 +1581,8 @@ def launch_game(addons_dir):
     si.cb = ctypes.sizeof(si)
     pi = _PROCESS_INFORMATION()
     # CREATE_NO_WINDOW：对 WoW.exe 这类 GUI 程序无影响，只防控制台类程序弹黑窗。
-    # 命令行需含 exe 路径作首 token；账号/密码可能含空格，统一加引号。
+    # 命令行需含 exe 路径作首 token，统一加引号。
     cmdline = '"' + exe + '"'
-    for _a in cred_args:
-        cmdline += ' "' + _a + '"'
     if k.CreateProcessW(None, cmdline, None, None, False, 0x08000000, None, root,
                         ctypes.byref(si), ctypes.byref(pi)):
         pid = pi.dwProcessId
@@ -1631,10 +1596,10 @@ def launch_game(addons_dir):
         return True, exe
     # 兜底：CreateProcess 失败就退回子进程封装，保证游戏一定能开
     try:
-        _popen_hidden([exe] + cred_args, cwd=root)
+        _popen_hidden([exe], cwd=root)
     except Exception:
         try:
-            _popen_hidden([exe] + cred_args)
+            _popen_hidden([exe])
         except Exception:
             pass
     return True, exe
@@ -2121,8 +2086,6 @@ class Handler(BaseHTTPRequestHandler):
                  "ver": _game_version(current), "app_ver": APP_VERSION}, ensure_ascii=False))
         if self.path == "/api/app_update_status":
             return self._send(200, json.dumps(dict(_APP_UPDATE), ensure_ascii=False))
-        if self.path == "/api/account_get":
-            return self._send(200, json.dumps(_load_account(), ensure_ascii=False))
         if self.path.startswith("/api/addons_catalog"):
             # 插件目录（来自蓝奏云缓存包）：下载了但未装入的插件也列出来，标"未安装"
             d = _kind_dst("addons")
@@ -2852,13 +2815,6 @@ class Handler(BaseHTTPRequestHandler):
             n = import_fonts_local(src, t, _log)
             return self._send(200, {"ok": n > 0, "log": log_lines,
                                     "summary": ("已从本地导入 %d 个字体" % n) if n else "未导入任何字体，请看日志"})
-        if self.path == "/api/account_save":
-            _save_account(str(payload.get("user", "")), str(payload.get("pwd", "")),
-                         bool(payload.get("remember", False)))
-            return self._send(200, {"ok": True})
-        if self.path == "/api/account_clear":
-            _save_account("", "", False)
-            return self._send(200, {"ok": True})
         self._send(404, {"error": "not found"})
 
     def _api_open(self, payload):
@@ -3482,8 +3438,16 @@ def _hist(msg):
 
 def _reset_progress():
     with _progress_lock:
+        prev_log = list(_progress.get("log") or [])
         _progress.update({"pct": 0, "stage": "", "msg": "正在准备…",
                           "done": False, "steps": [], "log": []})
+    # 上一轮操作的明细日志滚入持久化历史（按发生时间排在新的开始标记之前），
+    # 否则点「配置组件」会把「清理还原」等上一次操作的记录整个清掉
+    if prev_log:
+        with _HIST_LOCK:
+            _HIST.extend(prev_log)
+            if len(_HIST) > 2000:
+                del _HIST[:len(_HIST) - 2000]
 
 
 def _set_progress(pct=None, stage=None, msg=None, done=None, step=None, log=None):
@@ -5107,77 +5071,11 @@ def choose_dir_dialog(initial_dir="", filter_ext="*.dll"):
     return ""
 
 
-# ================= 3.20 加密保存游戏账号/密码（机器绑定）=================
-# 密钥由本机硬件指纹派生（系统盘卷序列号 + 计算机名 + 固定盐），机器绑定：
-# 本机打开即自动解密；换电脑/重装系统后密文不可解，需重新输入。明文绝不落盘。
-
-try:
-    from cryptography.fernet import Fernet
-    from cryptography.hazmat.primitives.kdf.hkdf import HKDF
-    from cryptography.hazmat.primitives import hashes
-    _CRYPTO_OK = True
-except Exception:
-    _CRYPTO_OK = False
-
-_APP_ACCOUNT_SALT = b"WowAssist-account-salt-v1"
-
-def _machine_secret():
-    parts = []
-    try:
-        import ctypes
-        sn = ctypes.c_ulong()
-        ctypes.windll.kernel32.GetVolumeInformationW(ctypes.c_wchar_p("C:\\"), None, 0,
-                ctypes.byref(sn), None, None, None, 0)
-        if sn.value:
-            parts.append(str(sn.value))
-    except Exception:
-        pass
-    try:
-        import socket
-        parts.append(socket.gethostname())
-    except Exception:
-        pass
-    return ("|".join(parts) if parts else "fallback").encode("utf-8")
-
-def _account_key():
-    import base64
-    secret = _machine_secret()
-    hk = HKDF(algorithm=hashes.SHA256(), length=32, salt=_APP_ACCOUNT_SALT,
-              info=b"wowassist-account")
-    return base64.urlsafe_b64encode(hk.derive(secret))
-
-def _encrypt_account(data):
-    f = Fernet(_account_key())
-    return f.encrypt(json.dumps(data, ensure_ascii=False).encode("utf-8")).decode("utf-8")
-
-def _decrypt_account(cipher):
-    f = Fernet(_account_key())
-    return json.loads(f.decrypt(cipher.encode("utf-8")).decode("utf-8"))
-
-def _save_account(user, pwd, remember):
-    cfg = load_config()
-    if remember and (user or pwd):
-        try:
-            cfg["account"] = {"cipher": _encrypt_account({"u": user or "", "p": pwd or ""}),
-                              "ts": time.time()}
-        except Exception:
-            cfg.pop("account", None)
-    else:
-        cfg.pop("account", None)
-    save_config(cfg)
-
-def _load_account():
-    cfg = load_config()
-    acc = cfg.get("account")
-    if not acc or not acc.get("cipher"):
-        return {"has": False, "user": "", "pwd": ""}
-    if not _CRYPTO_OK:
-        return {"has": True, "user": "", "pwd": "", "locked": True}
-    try:
-        d = _decrypt_account(acc["cipher"])
-        return {"has": True, "user": d.get("u", ""), "pwd": d.get("p", "")}
-    except Exception:
-        return {"has": True, "user": "", "pwd": "", "locked": True}
+# ================= 游戏账号功能已移除（2026-11-01 用户决定）=================
+# v3.20 曾做「加密保存账号/密码」、v3.23 曾做「写 Config.wtf accountName 自动填充」，
+# 实测该客户端只会把记忆值整段塞进账号框（不拆密码），无法可靠自动填充。
+# 最终方案：玩家在游戏登录界面自行输入，勾选客户端自带「记住帐号名」；
+# 本工具仅保留 _repair_account_cvar() 一次性修复旧方案写入的 "账号 密码;" 值。
 
 
 def main():
