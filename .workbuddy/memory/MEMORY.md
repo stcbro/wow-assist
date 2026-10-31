@@ -31,6 +31,7 @@
 - **`打包exe.bat` 已串联上传**：打包清理 dist/build 后，若存在 `LZ_USER`+`LZ_PW` 则自动上传到「wow-assist」（`--no-prune`，保留历史版本；exe 永不传 wow-resources 铁律）；未设置则打印提示并跳过。
 - **`验证分发链接.py`**：无登录打开分享链接+提取码，列出文件并检查 exe 是否存在/是否重复并存。
 - **`上传资源包.py`（v3.12 新增）**：批量上传资源包 zip + 上传清单到分发文件夹，并删除旧命名（`魔兽助手_*.zip`）文件。参数 `--src/--folder/--keep-old/--only-clean`。
+- **`replace_v322.py`（2026-10-31 新增）**：**定向覆盖同名版本**用——复用 `上传蓝奏云.py` 的浏览器原语，只删「同名旧 v3.22.exe」与「旧 release_manifest.txt」后重传，**不动其它历史版本 exe（如 v3.21）**。`--prune` 会误删历史版本，故同版本重传必须用本脚本而非 `上传蓝奏云.py --prune`。
 - **`build_font_pack.py` / `upload_font_pack.py`（2026-10-31 新增）**：字体包单独重建/替换上传。build_font_pack 从 `.wbdata/resources/Fonts/`(已是思源黑体) 重建 `wowassist_字体.zip`(Fonts/ 前缀) 到 `D:/WorkBuddy/发布/蓝奏云资源包/`；upload_font_pack 进蓝奏云「wow-resources」删旧包(同名并存)再传新包并校验副本数=1。二者仅动字体卷，不碰模组/插件包。
 - ⚠️ **上传成功判定铁律**：不能用「DOM 里出现文件名」（webuploader 待上传队列本来就有文件名，会误判）——必须等 `100%`/上传完成提示后**刷新列表**核对文件真的在。此坑曾导致漏传 3 个文件。
 - **蓝奏云 Web 操作要点（踩坑记录）**：浏览器**直连**（沙盒代理对该站 `ERR_PROXY_CONNECTION_FAILED`）；用系统 Edge，Playwright 须传 **Windows 路径** `C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe`（写 `/c/...` 会解析成 `\c\...` 找不到）；登录页要先访问 `www.lanzou.com` 再点「登录」进 `up.woozooo.com/account.php?action=login`（直接跳 accounts 页会因缺 formhash 失败）；文件管理在 `mydisk.php` 的 **iframe**（url 含 `item=files`）内操作；文件夹行 = `div.f_tb`（id 形如 `f326653283`），`a.f_selb` 弹菜单（下载/删除文件），**`a.f_sela` 才是分享/属性面板**（外链分享地址/自定义外链/密码设置/修改资料/短网址），面板里短网址/自定义外链的 AJAX 常年"获取中..."读不到值，**别用自动点击去取分享链接，易误触删除**。
@@ -63,10 +64,11 @@
 
 ## 用户环境与当前状态
 - 水豚乐园 `apac.capycraft.io`；客户端 `D:/game/twmoa_1181`(乌龟服1.18；1920x1080 125%缩放)。
-- 最新 exe=**v3.22**（WowAssist / wow-assist 目录 / wowassist-v3.22.exe / AppData\wowassist / wowassist_*.zip），游戏根 `D:/game/twmoa_1181/wowassist.exe` 仍是 v3.20 待部署（用户未要求）；v3.22 的 MD5 为 bfd5c4158351352db0fba501ff0fe64c、size 17049062。已含 **3.18 应用自动更新**（读 wow-assist 文件夹 release_manifest.json，下载→md5 校验→bat 自替换重启）、**3.19 本地导入模组/插件/字体**（install_state.custom 记录，能被移除/清理还原清理）、**3.20 加密保存账号（机器绑定，cryptography Fernet+HKDF，明文零落盘）**。**分发已就绪：原资源分享链接 b01i5y3r7c/9p81 列表首项即 `wowassist-v3.22.exe`**。
+- 最新 exe=**v3.22**（WowAssist / wow-assist 目录 / wowassist-v3.22.exe / AppData\wowassist / wowassist_*.zip），游戏根 `D:/game/twmoa_1181/wowassist.exe` 仍是 v3.20 待部署（用户未要求手替）。**v3.22 已二次构建并原地覆盖上传（2026-10-31）：MD5=`cb67cd606616a8703348317b9d8ce3e4`、size=17049840**（第 1 次构建的 v3.22 在 lanzou 修复前，已弃用）。已含 **3.18 应用自动更新**（读 wow-assist 文件夹 release_manifest.txt，下载→md5 校验→bat 自替换重启）、**3.19 本地导入模组/插件/字体**、**3.20 加密保存账号（机器绑定，cryptography Fernet+HKDF，明文零落盘）**。
+- ⚠️ **自动更新曾彻底卡死（已修复 2026-10-31）**：根因 = 蓝奏云改版后下载直链/签名藏在 `<iframe src="/fn?...">` 内，旧 `lanzou_core._encrypted_once` 只扫主页面 → `get_direct_link` 100% 返 `PostsignNotFound` → v3.20 用户点「立即更新」既取不到 manifest/exe 直链、UI 也无错误提示（误以为"已是最新"）。修复：让 `_encrypted_once` 复用 `_resolve_download_page` 跟随 iframe，并把含 `wp_sign` 的 AJAX marker 经 `_ajax_download(password=密码)` 走通；`_apply_app_update` 所有失败路径写 `_APP_UPDATE['err']` 复位 `downloading`；新增 `_APP_UPDATE['applying']` 守卫（路由层管理），UI 轮询等整个更新操作结束再收尾。**⚠️ 关键：v3.20 自带的 lanzou_core 同样坏，v3.20 无法自我更新到 v3.22——用户必须手动把游戏根 exe 换成 v3.22 后才能用上修复后的自动更新。**
 - ✅ **真实游戏端到端验证已由用户完成**（2026-10-26 19:00 确认）。
 - ✅ **更新源已上线**：蓝奏云「wow-assist」文件夹分享 `https://sycc.lanzoum.com/b01i5y8pmf` 提取码 `1acw`（同时是 3.18 自动更新源），已上传 `wowassist-v3.22.exe` + `release_manifest.txt`（**保留历史版本 exe，不再 prune**）。`app_update` 默认源已硬编码为该链接/码。⚠️ **蓝奏云静默拒收 `.json`**（客户端 100% 但服务端不落盘）→ 分发清单必须用 `release_manifest.txt`（内容仍是 JSON）；app 读 manifest 优先 `.txt` 兼容 `.json`，且 manifest 不可读时回退扫描 `wowassist-v*.exe` 文件名推断版本（跳过 md5）。
-- ⏳ 待用户动作：①真机 GUI 端到端验证三特性 + 自动更新横幅（沙盒无显示器无法验）；②可选迁腾讯云COS；③蓝奏云凭据一律只走运行时环境变量/缓存登录态（temp/lz_state.json 不含密码），不写入 git 追踪文件、不写入历史对话之外任何地方。
+- ⏳ 待用户动作：①**手动把游戏根 `D:/game/twmoa_1181/wowassist.exe` 换成新 v3.22 再测自动更新**（v3.20 自带 lanzou_core 已坏，无法自我更新到 v3.22）；②真机 GUI 端到端验证三特性 + 自动更新横幅（沙盒无显示器无法验）；③可选迁腾讯云COS；④蓝奏云凭据一律只走运行时环境变量/缓存登录态（temp/lz_state.json 不含密码），不写入 git 追踪文件、不写入历史对话之外任何地方。
 - **版本号**：3.17（UI 背景重设计）已决定跳过；3.18/3.19/3.20/3.21/3.22 均已发。最新 **v3.22** = 源码清理落地 + 蓝奏云上传不再删老版本（prune 默认 False）。
 
 ## 待办与暂缓项（用户拍板：先不改，记着以后改）
