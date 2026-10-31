@@ -165,10 +165,6 @@ th{color:var(--sub);font-weight:600;font-size:12px}
         <div class="kv" style="align-items:flex-start"><span class="k" style="white-space:nowrap">连线地址</span><span id="s-realm" style="white-space:pre-line;line-height:1.9">—</span></div>
         <p class="pill" style="margin-top:8px">realmlist 实时读取客户端里的 realmlist.wtf；切换服务器需手动改该文件。</p>
       </div>
-      <div class="card grow" style="max-width:460px;margin-top:12px">
-        <h3 style="margin-top:0">游戏账号</h3>
-        <p class="pill" style="margin-top:0">账号密码请在<b>游戏登录界面</b>输入：勾选客户端自带的「记住帐号名」后，账号会由客户端自己记住，下次启动自动带出；密码出于安全考虑每次输入。本工具不保存、不自动填充账号密码。</p>
-      </div>
     </section>
 
     <!-- 插件 -->
@@ -336,26 +332,17 @@ th{color:var(--sub);font-weight:600;font-size:12px}
         <div class="cl-detail">
           <div><span class="ct ct-imp">改进</span>配置组件日志精简：模组/插件/字体各合并为一行装入摘要（括号内标注按勾选与跳过未勾选的数量，模组行同时标注「写入dlls.txt」，不再单独列 dlls.txt 文件明细行）</div>
           <div><span class="ct ct-imp">改进</span>启动游戏反馈统一为「游戏正在启动……」，不再瞬间显示「已启动」造成误解</div>
+          <div><span class="ct ct-imp">改进</span>首页日志区改为最新记录排在最上面（时间倒序），「配置组件完成」等结论行置顶显示</div>
           <div><span class="ct ct-fix">修复</span>配置组件完成后日志区按最终进度整体重绘：[插件]/[字体] 等最后写入的行不再因轮询间隙而丢失显示</div>
           <div><span class="ct ct-fix">修复</span>操作明细日志不再被下一个操作清空：新操作开始前，上一轮（如清理还原）的明细自动滚入持久化历史，日志区按时间完整保留（最新在最下）</div>
           <div><span class="ct ct-chg">变更</span>移除游戏账号加密保存与自动填充：实测该客户端只会把记忆值整段塞进账号框、无法可靠填密码——改为玩家在游戏登录界面自行输入，勾选客户端自带「记住帐号名」由客户端记录；此前写入的 "账号 密码;" 记忆会在启动游戏时自动修复为纯账号名</div>
         </div>
-        <div class="kv"><span class="k">v3.21 ｜ 2026-10-31 ｜ 账号注入 + 字体说明修正 + 启动文案</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v3.20–3.22 ｜ 2026-10-31 ｜ 应用自动更新 + 本地导入</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
-          <div><span class="ct ct-add">新增</span>启动游戏时注入已加密保存的账号密码（初版方案：命令行 -account/-password + 客户端 Imports 目录存在时写 accountName.txt；该方案对当前客户端未生效，v3.23 已改为 WTF/Config.wtf 机制）</div>
-          <div><span class="ct ct-imp">改进</span>字体页 5 个美化字体说明由方正/文鼎改为思源黑体（Noto Sans SC，SIL OFL 开源可商用）——字体包本体已同步替换，规避字体版权风险</div>
-          <div><span class="ct ct-imp">改进</span>启动按钮/提示显式显示「游戏正在启动……」</div>
-        </div>
-        <div class="kv"><span class="k">v3.22 ｜ 2026-10-31 ｜ 自动更新修复（蓝奏云新版页面适配）</span><span class="tag">已发布</span></div>
-        <div class="cl-detail">
-          <div><span class="ct ct-fix">修复</span>点「立即更新」长久无反应：蓝奏云分享页改版后直链解析失效，已适配新版页面（旧版本用户需手动换装一次 v3.22，之后的版本可正常自动更新）</div>
-          <div><span class="ct ct-fix">修复</span>极端情况下首页「关于」版本号误显示为 3.20 的硬编码回退</div>
-        </div>
-        <div class="kv"><span class="k">v3.20 ｜ 2026-10-31 ｜ 自动更新 + 本地导入 + 加密账号（原规划 3.18–3.20）</span><span class="tag">已发布</span></div>
-        <div class="cl-detail">
-          <div><span class="ct ct-add">新增</span>应用自动更新：启动时后台检查新版本，发现更新在首页提示并支持「立即更新」；更新源为蓝奏云 exe 专区文件夹里的 release_manifest.txt（蓝奏云拒收 .json，故用 .txt，内容仍是 JSON）+ 最新 exe，下载后校验 md5、自动替换自身并重启（详见「下载」页「应用更新」卡片）</div>
-          <div><span class="ct ct-add">新增</span>用户自行导入本地模组/插件/字体：模组/插件/字体三页各新增「导入本地」，选文件夹即可把自有模组/插件/字体装入客户端；导入项记入 install_state，可被「移除」/「清理还原」识别与清理，不污染资源包</div>
-          <div><span class="ct ct-add">新增</span>加密保存游戏账号/密码（服务器页）：密钥由本机硬件指纹派生（机器绑定），本工具内不明文落盘；勾选「记住密码」后启动游戏自动填充（按客户端内置账号记忆机制写入游戏 WTF/Config.wtf），换电脑/重装系统需重新输入</div>
+          <div><span class="ct ct-add">新增</span>应用自动更新：启动时后台检查新版本，发现更新在首页提示并支持「立即更新」；更新源为蓝奏云 exe 专区文件夹（release_manifest.txt + 最新 exe），下载后校验 md5、自动替换自身并重启（详见「下载」页「应用更新」卡片）</div>
+          <div><span class="ct ct-add">新增</span>用户自行导入本地模组/插件/字体：三页各新增「导入本地」，选文件夹即可把自有内容装入客户端；导入项可被「移除」/「清理还原」识别与清理，不污染资源包</div>
+          <div><span class="ct ct-fix">修复</span>点「立即更新」长久无反应：适配蓝奏云新版分享页的直链解析（旧版本用户需手动换装一次，之后的版本可正常自动更新）</div>
+          <div><span class="ct ct-chg">变更</span>字体包整体替换为思源黑体（Noto Sans SC，SIL OFL 开源可商用），字体页说明同步更新，规避字体版权风险</div>
         </div>
         <div class="kv"><span class="k">v3.16 ｜ 2026-10-31 ｜ 备份夹清理修复 + 移除确认文案统一</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
@@ -668,8 +655,8 @@ async function showHist(){
   const lines = p.hist || [];
   if(el && lines.length){
     el.style.display = 'block';
-    el.textContent = lines.join('\n');
-    el.scrollTop = el.scrollHeight;
+    el.textContent = lines.slice().reverse().join('\n');   // 最新在最上面
+    el.scrollTop = 0;
   }
 }
 // 【设置】弹出文件选择框选 WoW.exe：选中即确定游戏根目录（程序内自动归一），并记录历史
@@ -740,14 +727,15 @@ $('#h-check').onclick = async ()=>{
   const timer = setInterval(async ()=>{
     const p = await api('/api/progress');
     renderProgress(p);
-    // 日志区 = 操作历史（配置组件/启动游戏/清理还原等记录）+ 当次日志，随进度逐行显示
+    // 日志区 = 操作历史（配置组件/启动游戏/清理还原等记录）+ 当次日志；
+    // 显示顺序：最新在最上面（时间倒序）
     if(logEl){
       const lines = (p.hist||[]).concat(p.log||[]);
       if(lines.length && lines.length !== prevLogN){
         prevLogN = lines.length;
         logEl.style.display = 'block';
-        logEl.textContent = lines.join('\n');
-        logEl.scrollTop = logEl.scrollHeight;
+        logEl.textContent = lines.slice().reverse().join('\n');
+        logEl.scrollTop = 0;
       }
     }
     const n = (p.steps||[]).length;
@@ -758,26 +746,21 @@ $('#h-check').onclick = async ()=>{
   const pf = await api('/api/progress');
   renderProgress(pf);
   btn.disabled = false; btn.textContent = old;
-  let statusStr = '';
-  if(r.status){
-    const labs = {mods:'模组', addons:'插件', fonts:'字体'};
-    statusStr = Object.keys(labs).map(k=> labs[k]+'：'+(r.status[k]? r.status[k][1] : '—')).join('，');
-  }
   // 完成后按最终进度整体重绘日志区：轮询 250ms 一次，最后几百毫秒内追加的
   // [插件]/[字体] 等行可能没赶上任何一次轮询——用最终快照重绘，一行不丢；
-  // 结果行（状态+结论）接在末尾
+  // 显示顺序：最新在最上面，结论行（配置组件完成…）排最顶
   const logEl2 = $('#h-play-log');
   const lines2 = (pf.hist||[]).concat(pf.log||[]);
-  if(logEl2 && (lines2.length || statusStr || r.summary)){
+  if(logEl2 && (lines2.length || r.summary)){
     logEl2.style.display = 'block';
-    let txt = lines2.join('\n');
-    if(statusStr || r.summary) txt += (txt?'\n':'') + (statusStr||'') + ((statusStr && r.summary)?'\n':'') + (r.summary||'');
+    let txt = (r.summary || '');
+    if(lines2.length) txt += (txt?'\n':'') + lines2.slice().reverse().join('\n');
     logEl2.textContent = txt;
-    logEl2.scrollTop = logEl2.scrollHeight;
+    logEl2.scrollTop = 0;
   }
   check_ok = !!r.ok;
   setLaunchEnabled(check_ok);
-  toast((r.summary || (r.ok ? '配置组件完成' : '配置未通过')) + (statusStr? ('；'+statusStr) : ''));
+  toast(r.summary || (r.ok ? '配置组件完成' : '配置未通过'));
   loadHome();   // 已装插件数量等首页信息即时刷新（配置组件刚装完插件）
   refreshSession();
 };
@@ -866,12 +849,12 @@ $('#h-exit').onclick = async ()=>{
     const logEl = $('#h-play-log');
     if(logEl){
       const lines = (p.hist||[]).concat(p.log||[]);
-      if(lines.length){ logEl.style.display='block'; logEl.textContent = lines.join('\n'); logEl.scrollTop = logEl.scrollHeight; }
+      if(lines.length){ logEl.style.display='block'; logEl.textContent = lines.slice().reverse().join('\n'); logEl.scrollTop = 0; }
     }
     if(p.done && !finished){
       finished = true; clearInterval(progTimer);
       refreshSession();
-      toast('清理还原完成，客户端已恢复初始状态（原有文件在 插件备份 里）');
+      toast('清理还原完成，客户端已恢复初始状态');
     }
   }, 300);
   refreshSession();
