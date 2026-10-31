@@ -31,6 +31,7 @@
 - **`打包exe.bat` 已串联上传**：打包清理 dist/build 后，若存在 `LZ_USER`+`LZ_PW` 则自动上传到「wow-assist」和「wow-resources」两个文件夹（各带 `--prune`）；未设置则打印提示并跳过。
 - **`验证分发链接.py`**：无登录打开分享链接+提取码，列出文件并检查 exe 是否存在/是否重复并存。
 - **`上传资源包.py`（v3.12 新增）**：批量上传资源包 zip + 上传清单到分发文件夹，并删除旧命名（`魔兽助手_*.zip`）文件。参数 `--src/--folder/--keep-old/--only-clean`。
+- **`build_font_pack.py` / `upload_font_pack.py`（2026-10-31 新增）**：字体包单独重建/替换上传。build_font_pack 从 `.wbdata/resources/Fonts/`(已是思源黑体) 重建 `wowassist_字体.zip`(Fonts/ 前缀) 到 `D:/WorkBuddy/发布/蓝奏云资源包/`；upload_font_pack 进蓝奏云「wow-resources」删旧包(同名并存)再传新包并校验副本数=1。二者仅动字体卷，不碰模组/插件包。
 - ⚠️ **上传成功判定铁律**：不能用「DOM 里出现文件名」（webuploader 待上传队列本来就有文件名，会误判）——必须等 `100%`/上传完成提示后**刷新列表**核对文件真的在。此坑曾导致漏传 3 个文件。
 - **蓝奏云 Web 操作要点（踩坑记录）**：浏览器**直连**（沙盒代理对该站 `ERR_PROXY_CONNECTION_FAILED`）；用系统 Edge，Playwright 须传 **Windows 路径** `C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe`（写 `/c/...` 会解析成 `\c\...` 找不到）；登录页要先访问 `www.lanzou.com` 再点「登录」进 `up.woozooo.com/account.php?action=login`（直接跳 accounts 页会因缺 formhash 失败）；文件管理在 `mydisk.php` 的 **iframe**（url 含 `item=files`）内操作；文件夹行 = `div.f_tb`（id 形如 `f326653283`），`a.f_selb` 弹菜单（下载/删除文件），**`a.f_sela` 才是分享/属性面板**（外链分享地址/自定义外链/密码设置/修改资料/短网址），面板里短网址/自定义外链的 AJAX 常年"获取中..."读不到值，**别用自动点击去取分享链接，易误触删除**。
 - **蓝奏云同名文件不覆盖、会并存**：每次上传同名 exe 都会多出一份，**必须 `--prune`**（保留 DOM 顺序第一个=最新，删其余）。且**上传后列表是异步刷新的**，清理前须强制刷新列表，否则读到旧列表会漏删。
@@ -70,5 +71,5 @@
 
 ## 待办与暂缓项（用户拍板：先不改，记着以后改）
 - **exe 图标待换**：当前 `capy.ico`（`打包exe.bat` 的 `--icon capy.ico` 写死引用；`ui.html` 亦引用作 favicon）。用户 2026-10-31 决定先不换，以后改；风格未定（候选：水豚卡通吉祥物 / WA 字母标志 / 水豚+游戏科技感）。换图时若改文件名须同步改 bat 与 ui.html 引用。
-- **字体包侵权待替换**：`wowassist_字体.zip`（本地镜像 `.wbdata/resources/Fonts/`）内 9 个文件经读内嵌名字段确认 = 方正粗圆 M03（FZCuYuan-M03，© Founder，商业）×7 + 文鼎 LingHei（Noncommercial，非商业）×2，均不可自由再分发；`ARIALN/FRIZQT/MORPHEUS/SKURRI` 槽位里装的也不是暴雪原字体而是方正粗圆。⚠️ 仅「字体包」侵权，**exe 本身干净**（UI 用系统字体，未打包任何字体文件进 exe）。用户 2026-10-31 决定先不下架/不改，记着以后改。建议替换方案：思源黑体/Noto Sans CJK SC（SIL OFL，可商用可再分发）按 WoW 槽位重打包上传「wow-resources」；伤害数字槽 SKURRI 建议保留客户端原字体。
-- **release_manifest.txt 已本地修正**：md5 改为 `fb091c403af7123c9958ef3fc1e7ab2a`、size `17077118`（对应实际部署的 v3.20 exe）；旧 md5 会导致 3.18/3.19 用户自动更新时下载后 md5 校验失败被拒。待上传到蓝奏云「wow-assist」文件夹生效。
+- **字体包侵权已替换（2026-10-31 完成）**：原 `wowassist_字体.zip` 内 9 个文件 = 方正粗圆 M03(商业)×7 + 文鼎 LingHei(非商业)×2，分发即侵权。已按用户"按你的建议用思源黑体"用 **思源黑体/Noto Sans SC（SIL OFL，可商用可再分发）** 替换：本地镜像 `.wbdata/resources/Fonts/` 9 个槽位文件全部就地换成思源黑体 Regular(wght 400, TrueType) + 保留 `.ok` 标记；`build_font_pack.py` 重建 `wowassist_字体.zip`(54.2MB, Fonts/ 前缀)；`upload_font_pack.py` 登录蓝奏云「wow-resources」删旧侵权包(37.1MB)并上传新包，校验副本数=1（已上线）。⚠️ 9 槽位皆同思源黑体（含 SKURRI 伤害数字槽，未保留客户端原字体——因暴雪原字体亦不可再分发，统一思源黑体最干净）。exe 本身始终干净。
+- **release_manifest.txt 已修正并上线（2026-10-31）**：md5 改为 `fb091c403af7123c9958ef3fc1e7ab2a`、size `17077118`（对应实际部署的 v3.20 exe）；旧 md5 会导致 3.18/3.19 用户自动更新 md5 校验失败被拒。`fix_release_manifest.py` 已删旧副本并上传修正版到蓝奏云「wow-assist」文件夹，校验副本数=1。
