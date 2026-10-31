@@ -144,17 +144,6 @@ def _ensure_resources():
         return None
 
 
-def _builtin_sources():
-    """内置资源源路径（打包版）。返回 (模组包, 插件AddOns, Fonts)；无内嵌资源时回退 config。"""
-    r = _ensure_resources()
-    if r:
-        return (os.path.join(r, "模组包"),
-                os.path.join(r, "插件包", "AddOns"),
-                os.path.join(r, "Fonts"))
-    cfg = load_config()
-    return (cfg.get("mod_src") or "", cfg.get("addon_src") or "", cfg.get("font_src") or "")
-
-
 def _portable_detect():
     """启动第一步自检（用户要求）：双击 exe 后最先检查 exe 同级目录有没有 WoW.exe，
     以此判断 exe 是否被放在了魔兽游戏根目录。命中返回游戏根目录，否则返回 ""。
@@ -445,9 +434,7 @@ def _lanzou_state():
         if ff:
             folder["files"] = [{"name": f.get("name", ""), "size": f.get("size", "")}
                                for f in ff]
-    with _progress_lock if "_progress_lock" in globals() else _DL_STATE_LOCK():
-        pass
-    # manifest 增量对比（配置了 manifest 链接或 folder 里有 manifest.json 才显示）
+    # manifest 增量对比（配置了 manifest 链接或 folder 里有 manifest.txt 才显示）
     diff = None
     if (load_config().get("manifest", {}) or {}).get("url") or _folder_files():
         try:
@@ -465,15 +452,6 @@ def _lanzou_state():
             "cache_lastused": load_config().get("cache_lastused", {}),
             "manifest": load_config().get("manifest", {}) or {},
             "folder": folder, "direct": direct}
-
-
-class _DL_STATE_LOCK:
-    """占位（_DL_STATE 读写都在 GIL 下单次操作，无需重锁；保留接口备用）。"""
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *a):
-        return False
 
 
 def _download_file(url, dest, idx, total, kind):
@@ -590,7 +568,7 @@ def _builtin_sources_with_cache():
 
 
 # ---------- manifest 清单驱动的单插件增量更新 ----------
-# manifest.json（也放蓝奏云，程序启动时拉取对比）：
+# manifest.txt（也放蓝奏云，程序启动时拉取对比；蓝奏云拒收 .json 故用 .txt）：
 # {"version":"8.8","plugins":{"插件名":{"file":"x.zip","url":"..","pwd":"..","size":n,"md5":".."}}}
 # 本地缓存记录每插件已装版本（缓存目录 .versions.json），只下载有变化的。
 _MANIFEST_CACHE = {"data": None, "ts": 0.0}
@@ -624,7 +602,7 @@ def _save_versions(v):
 
 def _fetch_manifest():
     """拉取并缓存 manifest（10 分钟内不重复拉）。返回 dict 或 None。
-    来源：config.manifest.url 优先；否则 folder 里的 manifest.json。"""
+    来源：config.manifest.url 优先；否则 folder 里的 manifest.txt（.json 仅作历史兼容）。"""
     now = time.time()
     if _MANIFEST_CACHE["data"] and now - _MANIFEST_CACHE["ts"] < 600:
         return _MANIFEST_CACHE["data"]
@@ -636,9 +614,15 @@ def _fetch_manifest():
         files = _folder_files()
         if files:
             for f in files:
-                if f.get("name") == "manifest.json":
+                nm = f.get("name") or ""
+                if nm == "manifest.txt":
                     url, pwd = f.get("url", ""), ""
                     break
+            else:
+                for f in files:
+                    if (f.get("name") or "") == "manifest.json":
+                        url, pwd = f.get("url", ""), ""
+                        break
     if not url:
         return None
     try:
@@ -970,9 +954,6 @@ def find_addons_dirs():
                         addons = os.path.join(iface, s)
                         if os.path.isdir(addons) and addons not in found:
                             found.append(addons)
-            # 有 Interface 但没找到 AddOns 也算候选客户端（可手动选）
-            if os.path.isdir(iface) and iface not in [f.rsplit(os.sep, 2)[0] for f in found]:
-                pass
         if "addons" in lower and os.path.basename(path).lower() == "interface":
             addons = os.path.join(path, lower["addons"])
             if os.path.isdir(addons) and addons not in found:
@@ -1293,12 +1274,6 @@ def backups_base(addons_dir):
 # 容错：即便注入失败也不致命，游戏已正常启动，twloader 会按 dlls.txt 兜底加载
 #       其余模组（仅计时器修复可能偏晚），所以这里只记日志、不阻断启动。
 INJECT_DLLS = ("VfPatcher.dll", "nampower.dll")
-
-
-def _mods_installed(root):
-    """游戏根是否已装入模组 DLL（决定是否需要加载器启动）。"""
-    return bool(root) and any(os.path.isfile(os.path.join(root, n))
-                              for n in MOD_DLL_ORDER)
 
 
 _WIN32 = {}
@@ -1841,21 +1816,11 @@ def uninstall_one(addons_dir, name, log):
         return False, str(ex)
 
 
-def install_local_zip(zip_path, addons_dir, log):
-    """安装本地压缩包（自动识别是不是插件包）"""
-    if not os.path.isfile(zip_path):
-        log(f"[失败] 找不到文件 {zip_path}")
-        return 0, []
-    log(f"[安装] 使用本地包 {os.path.basename(zip_path)}")
-    return install_from_gitee_zip(zip_path, addons_dir, log)
-
-
 def find_local_packages():
     """找本机已有的插件包压缩包（游戏目录 + 下载目录）"""
     found = []
     import glob
-    for pat in (r"D:/game/黑猫基础功插件包_*.zip",
-                os.path.join(DOWNLOAD_DIR, "*.zip"),
+    for pat in (os.path.join(DOWNLOAD_DIR, "*.zip"),
                 os.path.join(DOWNLOAD_DIR, "*.rar"),
                 os.path.join(DOWNLOAD_DIR, "*.7z")):
         for p in glob.glob(pat):
@@ -2508,31 +2473,6 @@ class Handler(BaseHTTPRequestHandler):
                 _record_custom("addons", details)
             return self._send(200, {"ok": n > 0, "count": n, "log": log_lines,
                                     "summary": ("已整体替换，装入 " + str(n) + " 个插件") if n else "未装入任何插件，请看日志"})
-        if self.path == "/api/session_apply":
-            t = _to_addons(payload.get("target", ""))
-            _bm, _ba, _bf, _from = _builtin_sources_with_cache()
-
-            def _vs(p, fb):
-                """UI 传来的源路径仅在真实存在时才采用，否则一律回退缓存源。
-                （历史 bug：UI 输入框里的无效本地路径会覆盖已就绪的缓存 → 『资源仍不可用』）"""
-                return p if (p and os.path.isdir(p)) else fb
-            mod_src = _vs(payload.get("mod_src", ""), _bm)
-            addon_src = _vs(payload.get("addon_src", ""), _ba)
-            font_src = _vs(payload.get("font_src", ""), _bf)
-            log_lines = []
-
-            def _log(m):
-                log_lines.append(m)
-            try:
-                ok, summary, _st = apply_overlay(t, mod_src, addon_src, _log, font_src)
-            except Exception as ex:
-                ok, summary = False, "安装流程异常：" + repr(ex)
-                _log("[错误] " + summary)
-                _set_progress(0, done=True, msg=summary)
-            if ok:
-                _persist_target(t)
-            return self._send(200, {"ok": ok, "log": log_lines, "summary": summary,
-                                    "src_from": _from})
         if self.path == "/api/quick_play":
             # 首页「启动游戏」合并流程：装模组→装插件→装字体→启动游戏（带进度）
             t_root = _to_root(payload.get("target", ""))
@@ -2644,7 +2584,7 @@ class Handler(BaseHTTPRequestHandler):
             ok, exe = launch_game(t)
             if ok:
                 _set_progress(100, done=True, msg="游戏已启动，尽情玩耍吧", step="启动")
-                summary = "游戏已启动（退出工具时会自动结束游戏并还原客户端）"
+                summary = "游戏已启动（退出工具时不会自动还原，已装组件与缓存都会保留）"
             else:
                 _set_progress(100, done=True, msg="启动失败，请检查客户端路径")
                 summary = "启动失败：" + str(exe)
@@ -2821,16 +2761,8 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, {"ok": True, "log": log_lines,
                                     "summary": ("已移除 %d 个模组文件" % n) if n
                                     else "没有已装入的模组"})
-        if self.path == "/api/session_revert":
-            t = _to_addons(payload.get("target", ""))
-            log_lines = []
-
-            def _log(m):
-                log_lines.append(m)
-            ok, summary = revert_overlay(t, _log)
-            return self._send(200, {"ok": ok, "log": log_lines, "summary": summary})
         if self.path == "/api/exit":
-            self._send(200, {"ok": True, "msg": "正在退出并还原客户端…"})
+            self._send(200, {"ok": True, "msg": "正在退出…（已安装的组件与缓存都会保留）"})
 
             def _go():
                 time.sleep(0.4)
@@ -3093,12 +3025,6 @@ class Handler(BaseHTTPRequestHandler):
 
 
 
-def list_dlls(target):
-    root = client_root_of(target) if target else ""
-    if not root or not os.path.isdir(root):
-        return []
-    return sorted(f for f in os.listdir(root) if f.lower().endswith(".dll"))
-
 # 核心引擎 DLL：禁用会导致游戏无法启动，模组页锁定不可改
 CORE_DLLS = {
     "sdl.dll", "fmod.dll", "fmod_event.dll", "dbghelp.dll", "ijl15.dll",
@@ -3147,8 +3073,8 @@ FONT_INFO = {
     "fzbwjw.ttf":   "思源黑体（Noto Sans SC）：任务书卷、信件类文字（美化）",
     "fzjzjw.ttf":   "思源黑体（Noto Sans SC）：界面通用中文字体（美化）",
     "fzlbjw.ttf":   "思源黑体（Noto Sans SC）：标题、书卷类文字（美化）",
-    "fzxhjw.ttf":   "思源黑体（Noto Sans SC）：聊天与界面小字（美化）",
-    "fzxhlw.ttf":   "思源黑体（Noto Sans SC）：聊天与界面小字（美化）",
+    "fzxhjw.ttf":   "思源黑体（Noto Sans SC·细黑）：聊天与界面小字（美化）",
+    "fzxhlw.ttf":   "思源黑体（Noto Sans SC·等线）：聊天与界面小字（美化）",
 }
 
 
@@ -3590,20 +3516,6 @@ def _safe_install_file(src, dst, backup_dir, log, label=""):
         return False
 
 
-def _safe_install_tree(src, dst, backup_dir, log, label=""):
-    """安全装入目录：目标已存在 → 先整体备份再覆盖；不存在则直接复制。"""
-    if not os.path.isdir(src):
-        return False
-    if os.path.exists(dst):
-        _move_to_backup(dst, backup_dir, log, label)
-    try:
-        shutil.copytree(src, dst, dirs_exist_ok=True)
-        return True
-    except Exception as ex:
-        log("[装入失败] " + os.path.basename(dst) + "：" + str(ex))
-        return False
-
-
 def _kind_sig(kind):
     """某类资源的安装签名：缓存 .ok 内容 + 影响安装的关键选择/版本。
     签名变化（重下载/改勾选/插件更新）即视为需重新安装。"""
@@ -3908,27 +3820,6 @@ def _overlay_present(target):
     return False
 
 
-def _session_installed_strong(target):
-    """强判定：模组/插件是否真的装上了（用于『跳过安装直接启动』与首页状态）。
-    只认硬证据：AddOns 里有非自带插件目录，或根目录有模组 DLL/加载器。
-    字体文件夹单独存在不算——否则只在字体页装过字体的用户会被误判为
-    『模组+插件+字体已安装』，点启动游戏直接跳过安装（2026-10-25 实测踩坑）。"""
-    if not target:
-        return False
-    addons = normalize_addons_path(target, create=False)
-    if addons and os.path.isdir(addons):
-        for e in os.listdir(addons):
-            if e.startswith(SESSION_BASELINE_PREFIX) or e.startswith("_"):
-                continue
-            if os.path.isdir(os.path.join(addons, e)):
-                return True
-    root = client_root_of(target)
-    for name in MOD_DLL_ORDER + ["VanillaFixes.exe"]:
-        if os.path.isfile(os.path.join(root, name)):
-            return True
-    return False
-
-
 def _install_flags(target):
     """三项安装状态自检（供首页与启动前检查）：模组/插件/字体是否都真实在盘上。
     返回 (mods, addons, fonts)。全部为 True 才算『已安装』、才允许启动游戏。"""
@@ -3982,58 +3873,8 @@ def _popen_hidden(cmd, **kw):
     return subprocess.Popen(cmd, **kw)
 
 
-def _restore_all_overlays(log):
-    """在候选游戏目录里找装有会话覆盖层的，逐个还原。
-    候选优先用 config.target(用户设置) + _guess_target_from_exe(便携放游戏根)（秒级）；
-    只有两者都无效（完全不知道游戏在哪）才全盘扫描 find_addons_dirs 兜底（较慢）。
-    不依赖 config.target 这一个易失字段——只要某目录有残留就还原，
-    彻底避免『config 没存路径 → 退出不还原』。返回 (已还原列表, 候选列表)。"""
-    fast = []
-    try:
-        # config.target 存的是游戏根目录 → 转成 AddOns 目录再判断
-        saved = _to_addons(load_config().get("target", ""))
-        if saved and os.path.isdir(saved):
-            fast.append(saved)
-    except Exception:
-        pass
-    try:
-        g = _guess_target_from_exe()
-        if g and g not in fast:
-            fast.append(g)
-    except Exception:
-        pass
-    # 快路径：用户已明确游戏目录（设过 / 便携放游戏根）→ 只检查这些，不扫全盘
-    if fast:
-        restored = []
-        for c in fast:
-            try:
-                if _overlay_present(c):
-                    ok, summary = revert_overlay(c, log)
-                    restored.append((c, summary))
-            except Exception as ex:
-                log("[异常] 还原 " + str(c) + " 出错：" + repr(ex))
-        return restored, fast
-    # 兜底：完全没线索，才全盘扫描发现的客户端（较慢，仅此一种情况）
-    cands = []
-    try:
-        for d in find_addons_dirs():
-            if d not in cands:
-                cands.append(d)
-    except Exception:
-        pass
-    restored = []
-    for c in cands:
-        try:
-            if _overlay_present(c):
-                ok, summary = revert_overlay(c, log)
-                restored.append((c, summary))
-        except Exception as ex:
-            log("[异常] 还原 " + str(c) + " 出错：" + repr(ex))
-    return restored, cands
-
-
 def _persist_target(t):
-    """install/session_apply/quick_play 成功后把用到的游戏路径写回 config，
+    """install/quick_play 成功后把用到的游戏路径写回 config，
     作为 _teardown 的兜底（UI 用内存里的路径安装、未必持久化过）。
     config.target 统一存游戏根目录（与 WoW.exe 同级）。"""
     try:
@@ -4131,7 +3972,7 @@ _CONSOLE_CB = None
 
 
 def _install_console_handler():
-    """Windows：捕获关闭控制台窗口(X)/关机/注销/Ctrl+C/Ctrl+Break，退出前还原客户端。"""
+    """Windows：捕获关闭控制台窗口(X)/关机/注销/Ctrl+C/Ctrl+Break；持久化模型下退出不再还原客户端。"""
     global _CONSOLE_CB
     if sys.platform != "win32":
         return
@@ -4304,22 +4145,6 @@ def apply_mod_selection(target, src, log):
         return True, "未勾选任何模组：已装的模组已移除，dlls.txt 已恢复"
     return True, "模组选择已应用：装入 %d 个、移除 %d 个，共勾选 %d 个" % (n_inst, n_rem, len(chosen))
 
-
-def list_mods(target):
-    root = client_root_of(target) if target else ""
-    if not root or not os.path.isdir(root):
-        return []
-    out = []
-    for f in sorted(os.listdir(root)):
-        fl = f.lower()
-        if fl.endswith(".dll"):
-            out.append({"name": f, "enabled": True, "core": fl in CORE_DLLS,
-                        "group": "SUNI" if fl in SUNI_MODS else ""})
-        elif ".dll" in fl and fl.endswith(".disabled"):
-            base = f[:-len(".disabled")]
-            out.append({"name": f, "enabled": False, "core": base.lower() in CORE_DLLS,
-                        "group": "SUNI" if base.lower() in SUNI_MODS else ""})
-    return out
 
 def mod_import_package(target, src):
     """从本地模组包文件夹把 DLL 拷进客户端根目录（覆盖前自动备份）。
@@ -4577,7 +4402,7 @@ def _log_wv(msg):
 
 def _run_window(url):
     """原生桌面窗口模式（pywebview）：把界面装进软件窗口，无浏览器痕迹。
-    点窗口 X → 弹确认 → 退出并还原客户端；取消则继续使用。
+    点窗口 X → 弹确认 → 退出（持久化模型，不还原客户端）；取消则继续使用。
     返回 True=窗口模式正常走完；False=创建失败（调用方回退浏览器模式）。
     任何失败分支都写诊断日志到 run.log，不再静默。"""
     # 缺 WebView2 运行时 → 原生窗口必失败，直接让 main 回退浏览器（并提示）
@@ -4658,7 +4483,7 @@ def _run_window(url):
     # ===== 最小化到托盘（桌面右下角通知区）=====
     # 用 WinForms NotifyIcon（pythonnet，pywebview 在 Windows 上已自带，无需新依赖）：
     # 点「—」最小化时窗口自动藏进托盘；左键点托盘图标恢复主界面；
-    # 右键托盘菜单：显示主界面 / 退出（退出走还原客户端流程）。
+    # 右键托盘菜单：显示主界面 / 退出（持久化模型，退出不再还原客户端）。
     tray = {"ni": None, "hidden": False, "form": None, "ready": False}
 
     def _tray_set_visible(visible, why=""):
@@ -4830,7 +4655,7 @@ def _run_window(url):
 
 # ================= 3.18 自动更新（app 自更新）=================
 # 更新源 = 用户填的蓝奏云「exe 专区」文件夹（wow-assist 文件夹）。该文件夹里放
-# release_manifest.json（版本/说明/exe 文件名+md5）与最新 wowassist-v*.exe。
+    # release_manifest.txt（版本/说明/exe 文件名+md5）与最新 wowassist-v*.exe。
 # 启动时后台检查一次；用户也可手动「检查更新」。发现新版则下载并替换自身、重启。
 
 _APP_UPDATE = {
@@ -4844,7 +4669,7 @@ def _app_update_cfg():
     cfg = load_config()
     au = cfg.get("app_update", {}) or {}
     au.setdefault("enabled", True)
-    # 默认更新源：蓝奏云「wow-assist」文件夹（只放 exe + release_manifest.json）。
+    # 默认更新源：蓝奏云「wow-assist」文件夹（只放 exe + release_manifest.txt）。
     # 用户可在「下载」页自行修改；已显式填过的值不会被覆盖。
     au.setdefault("folder_url", "https://sycc.lanzoum.com/b01i5y8pmf")
     au.setdefault("folder_pwd", "1acw")
@@ -5343,7 +5168,7 @@ def main():
                 ("，已为你把它的窗口调到前台（任务栏也能找到）。" if _focused
                  else "（任务栏可找到它的窗口，可能被最小化或被其他窗口挡住了）。") +
                 "\n\n请直接使用那个窗口；退出请点里面的「退出工具」按钮，"
-                "会自动还原客户端。")
+                "已安装的模组/插件/字体与缓存都会保留，不会自动还原。")
         return
     # 以下只有抢到端口的主实例才做：临时文件清理 + 退出钩子 + 缓存 GC
     _bg_rmtree(os.path.join(TEMP_DIR, "trash"))

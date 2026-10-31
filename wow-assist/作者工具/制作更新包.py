@@ -5,9 +5,9 @@
   2) 新版插件目录（放着最新插件内容的目录，如 吉米插件包v8.8/Interface/AddOns）
 产出（发布\\更新包\\）：
   - 单插件\\*.zip      变化的插件各一个包（zip 内即插件目录内容）
-  - manifest.json      新版完整清单（含每插件 file/size/md5，url 从旧 manifest 继承）
+  - manifest.txt      新版完整清单（含每插件 file/size/md5，url 从旧 manifest 继承）
   - 上传清单.txt       本次要传的文件 + 操作步骤
-更新流程：跑本工具 → 按清单上传变化的 zip → 回填链接 → 上传 manifest.json
+更新流程：跑本工具 → 按清单上传变化的 zip → 回填链接 → 上传 manifest.txt
 """
 import os, sys, json, zipfile, hashlib, time
 
@@ -56,7 +56,7 @@ def main():
         print("目录不存在:", new_dir)
         return
     old_dir = ADDONS or input("旧版插件目录（首次可直接回车=全量）: ").strip().strip('"')
-    old_mf_path = OLD_MANIFEST or input("旧 manifest.json 路径（首次可回车）: ").strip().strip('"')
+    old_mf_path = OLD_MANIFEST or input("旧 manifest.txt 路径（首次可回车）: ").strip().strip('"')
     old_mf = {}
     if old_mf_path and os.path.isfile(old_mf_path):
         with open(old_mf_path, "r", encoding="utf-8") as f:
@@ -115,7 +115,7 @@ def main():
           or time.strftime("%Y%m%d"),
           "updated": time.strftime("%Y-%m-%d %H:%M:%S"),
           "plugins": new_plugins}
-    with open(os.path.join(OUT, "manifest.json"), "w", encoding="utf-8") as f:
+    with open(os.path.join(OUT, "manifest.txt"), "w", encoding="utf-8") as f:
         json.dump(mf, f, ensure_ascii=False, indent=1)
 
     # 上传清单
@@ -125,20 +125,20 @@ def main():
     for i, n in enumerate(changed, 1):
         e = new_plugins[n]
         lines.append("□ 单插件\\%s.zip  (%.1fMB)" % (n, e["size"] / 1048576))
-    lines += ["□ manifest.json（必须最后传）", "",
+    lines += ["□ manifest.txt（必须最后传）", "",
               "操作步骤：",
               "1. 把上面所有 zip 上传到蓝奏云，每个创建分享链接+提取码",
               "2. 链接回填：运行 回填链接.bat，按提示粘贴每个文件的链接和提取码",
-              "   （脚本会自动写进 manifest.json）",
-              "3. 把回填后的 manifest.json 上传到蓝奏云，覆盖旧清单",
-              "4. 把新 manifest.json 的分享链接+提取码，配置到WowAssist「下载」页",
+              "   （脚本会自动写进 manifest.txt）",
+              "3. 把回填后的 manifest.txt 上传到蓝奏云，覆盖旧清单",
+              "4. 把新 manifest.txt 的分享链接+提取码，配置到WowAssist「下载」页",
               "",
               "老用户重启WowAssist即自动增量更新（只下变化的插件）。"]
     with open(os.path.join(OUT, "上传清单.txt"), "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
 
     print("\n完成！产出目录: " + OUT)
-    print("变化插件 %d 个，新增 manifest.json，详见 上传清单.txt" % len(changed))
+    print("变化插件 %d 个，新增 manifest.txt，详见 上传清单.txt" % len(changed))
     print("用时 %.0f 秒" % (time.time() - t0))
     input("\n回车退出…")
 
