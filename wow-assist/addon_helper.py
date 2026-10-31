@@ -4805,8 +4805,10 @@ def _app_update_cfg():
     cfg = load_config()
     au = cfg.get("app_update", {}) or {}
     au.setdefault("enabled", True)
-    au.setdefault("folder_url", "")
-    au.setdefault("folder_pwd", "")
+    # 默认更新源：蓝奏云「wow-assist」文件夹（只放 exe + release_manifest.json）。
+    # 用户可在「下载」页自行修改；已显式填过的值不会被覆盖。
+    au.setdefault("folder_url", "https://sycc.lanzoum.com/b01i5y8pmf")
+    au.setdefault("folder_pwd", "1acw")
     au.setdefault("channel", "stable")
     au.setdefault("skipped", "")
     return au
