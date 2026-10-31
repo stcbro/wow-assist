@@ -2783,7 +2783,13 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/api/app_update_check":
             return self._send(200, json.dumps(_check_app_update(), ensure_ascii=False))
         if self.path == "/api/app_update_apply":
-            threading.Thread(target=_apply_app_update, daemon=True).start()
+            _APP_UPDATE["applying"] = True
+            def _go_apply():
+                try:
+                    _apply_app_update()
+                finally:
+                    _APP_UPDATE["applying"] = False
+            threading.Thread(target=_go_apply, daemon=True).start()
             return self._send(200, {"ok": True, "msg": "已开始下载更新，完成后自动重启"})
         if self.path == "/api/choose_dir":
             _flt = str(payload.get("filter", "*.dll") or "*.dll")
@@ -4662,7 +4668,7 @@ _APP_UPDATE = {
     "checked": False, "available": False, "current": APP_VERSION,
     "latest": "", "notes": "", "required": False, "enabled": True,
     "configured": False, "exe_name": "", "exe_md5": "", "exe_size": 0,
-    "err": "", "downloading": False, "pct": 0,
+    "err": "", "downloading": False, "pct": 0, "applying": False,
 }
 
 def _app_update_cfg():
@@ -4795,7 +4801,9 @@ def _bg_app_update_check():
 
 def _apply_app_update():
     """下载最新 exe → 校验 md5 → 写更新批处理 → 启动并退出当前进程。
-    仅打包(frozen)模式替换自身；脚本模式只下载不替换。返回 (ok, msg)。"""
+    仅打包(frozen)模式替换自身；脚本模式只下载不替换。返回 (ok, msg)。
+    所有失败路径都会写 _APP_UPDATE["err"] 并复位 downloading，避免 UI 卡死无提示。"""
+    _APP_UPDATE["err"] = ""
     au = _app_update_cfg()
     data, err = _fetch_release_manifest(au)
     if err or not data:
@@ -4805,7 +4813,8 @@ def _apply_app_update():
     exe_name = exe_info.get("name", "")
     exe_md5 = exe_info.get("md5", "")
     if not exe_name:
-        return False, "manifest 未指定 exe 文件名"
+        _APP_UPDATE["err"] = "manifest 未指定 exe 文件名"
+        return False, _APP_UPDATE["err"]
     from lanzou_core import LanzouClient
     c = LanzouClient(timeout=30)
     st, files = c.get_folder_files((au.get("folder_url") or "").strip(),
@@ -4817,19 +4826,24 @@ def _apply_app_update():
                 exe_file = f
                 break
     if not exe_file:
-        return False, "更新源文件夹里找不到 " + exe_name
+        _APP_UPDATE["err"] = "更新源文件夹里找不到 " + exe_name
+        return False, _APP_UPDATE["err"]
     st2, link = c.get_direct_link(exe_file.get("url", ""), (au.get("folder_pwd") or "").strip())
     if st2 != "Success" or not link:
-        return False, "新版本 exe 直链解析失败"
+        _APP_UPDATE["err"] = "新版本 exe 直链解析失败（" + str(st2) + "）"
+        return False, _APP_UPDATE["err"]
     _APP_UPDATE["downloading"] = True
     _APP_UPDATE["pct"] = 0
+    _APP_UPDATE["err"] = ""
     dest = os.path.join(TEMP_DIR, "wowassist_update.exe")
     try:
         def _cb(done, total):
             _APP_UPDATE["pct"] = int(done * 100 / total) if total else 0
         got = download_file(link, TEMP_DIR, _cb)
         if not got:
-            return False, "下载新版本失败"
+            _APP_UPDATE["downloading"] = False
+            _APP_UPDATE["err"] = "下载新版本失败"
+            return False, _APP_UPDATE["err"]
         if os.path.abspath(got) != os.path.abspath(dest):
             if os.path.exists(dest):
                 os.remove(dest)
@@ -4841,18 +4855,22 @@ def _apply_app_update():
                 for chunk in iter(lambda: f.read(1048576), b""):
                     h.update(chunk)
             if h.hexdigest().lower() != exe_md5.lower():
-                return False, "新版本 md5 校验不一致，已取消更新"
+                _APP_UPDATE["downloading"] = False
+                _APP_UPDATE["err"] = "新版本 md5 校验不一致，已取消更新"
+                return False, _APP_UPDATE["err"]
     except Exception as e:
-        return False, "下载/校验失败：" + str(e)
-    finally:
         _APP_UPDATE["downloading"] = False
+        _APP_UPDATE["err"] = "下载/校验失败：" + str(e)
+        return False, _APP_UPDATE["err"]
+    _APP_UPDATE["downloading"] = False
     if not getattr(sys, "frozen", False):
         return True, "脚本模式已完成下载（路径 " + dest + "），跳过替换自身"
     try:
         _launch_update_bat(dest)
         return True, "更新已下载，正在重启完成更新…"
     except Exception as e:
-        return False, "启动更新失败：" + str(e)
+        _APP_UPDATE["err"] = "启动更新失败：" + str(e)
+        return False, _APP_UPDATE["err"]
 
 def _launch_update_bat(new_exe):
     """写批处理：备份旧 exe → 覆盖新 exe → 重新启动 → 自删。当前进程随后退出。"""

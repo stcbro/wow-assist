@@ -13,8 +13,10 @@ lanzou_core.py — 蓝奏云直链解析核心库（纯标准库实现）
   4. 拼 dom + /file/ + url 得中间链接，GET 不跟随重定向 → Location 即最终直链
 
 加密链接流程:
-  1. GET 分享页 → 提取 data:{sign:...} 与 ajaxm 路径
-  2. POST ajaxm.php (action=downprocess, p=密码) → 同上
+  1. GET 分享页 → _resolve_download_page 跟 iframe(/fn?...) 或传统 mh 跳转页
+     （sign 与 ajaxm 都在解析后的页面里；新版 iframe 走 AJAX marker）
+  2. 含 wp_sign 的 iframe → _ajax_download 带 p=密码；否则 POST ajaxm.php
+     (action=downprocess, p=密码) → 同上
 """
 import base64
 import gzip
@@ -328,8 +330,8 @@ class LanzouClient:
         ajaxdata = ajaxdata_m.group(1) if ajaxdata_m else "rewn"
         return f"AJAX|{sign.group(1)}|{ajax_m.group(1)}|{ajaxdata}|{iframe_url}"
 
-    def _ajax_download(self, marker):
-        """POST ajaxm.php 拿中间链接"""
+    def _ajax_download(self, marker, password=None):
+        """POST ajaxm.php 拿中间链接。password 非空时（带密码的文件夹）一并提交。"""
         _, sign, ajax_path, ajaxdata, referer = marker.split("|")
         base = "{0.scheme}://{0.netloc}".format(urllib.parse.urlsplit(referer))
         ajax_url = ajax_path if ajax_path.startswith("http") else base + "/" + ajax_path.lstrip("/")
@@ -339,7 +341,7 @@ class LanzouClient:
         self._set_cookie(netloc, "pc_ad1=1")
         self._set_cookie(netloc, "codelen=1")
 
-        data = urllib.parse.urlencode({
+        data = {
             "action": "downprocess",
             "websignkey": ajaxdata,
             "signs": ajaxdata,
@@ -347,8 +349,11 @@ class LanzouClient:
             "websign": "2",
             "kd": "1",
             "ves": "1",
-        }).encode()
-        body = self._request(ajax_url, data=data, referer=referer, ajax=True)
+        }
+        if password:
+            data["p"] = password
+        body = self._request(ajax_url, data=urllib.parse.urlencode(data).encode(),
+                             referer=referer, ajax=True)
         if not body or not body.lstrip().startswith("{"):
             self._log(f"[AJAX] 响应异常: {str(body)[:120]}")
             return None
@@ -441,26 +446,41 @@ class LanzouClient:
         return ERROR, None
 
     def _encrypted_once(self, url, password):
-        # 1) 页面（跟传统跳转）
+        # 1) 主页面
         html = self._request(url)
         if html is None:
             return HTML_NOT_FOUND, None
-        m = re.search(r'<div class="mh"><a href="([^"]+)"', html)
-        if m:
-            html = self._request(urllib.parse.urljoin(url, m.group(1)), referer=url) or html
 
-        # 2) 提取 sign（data:{sign:...}，支持变量引用）
-        sign = self._extract_sign(html)
+        # 2) 解析真正含 sign/ajax 的下载页：
+        #    新版把下载内容塞进 <iframe src="/fn?...">，sign 与 ajaxm 都在 iframe 内；
+        #    旧版是 <div class="mh"> 跳转页。复用 _resolve_download_page 的解析逻辑。
+        dl = self._resolve_download_page(html, url) or html
+
+        # 3) 若解析出 AJAX marker（新版 iframe，内含 wp_sign），走 ajax 下载并带上密码
+        if isinstance(dl, str) and dl.startswith("AJAX|"):
+            link = self._ajax_download(dl, password=password)
+            if not link:
+                return INTERMEDIATE_NOT_FOUND, None
+            return self._resolve_redirect(link)
+
+        # 4) 传统 / 兜底：从页面提取 sign + ajax 路径，POST 密码
+        #    （注意：先跟传统 mh 跳转页，可能才是真正含 sign 的页面）
+        if not dl or '<div class="mh"><a href="' in dl:
+            m = re.search(r'<div class="mh"><a href="([^"]+)"', dl or html)
+            if m:
+                dl = self._request(urllib.parse.urljoin(url, m.group(1)), referer=url) or dl or html
+
+        sign = self._extract_sign(dl)
         if not sign:
             return POSTSIGN_NOT_FOUND, None
 
-        # 3) ajax 路径
-        ajax_m = re.search(r"(?:https?://[^/\s\"']+)?/?(ajax(?:m|file)\.php\?file=\d+)", html, re.I)
+        # 5) ajax 路径
+        ajax_m = re.search(r"(?:https?://[^/\s\"']+)?/?(ajax(?:m|file)\.php\?file=\d+)", dl, re.I)
         ajax_path = ajax_m.group(1) if ajax_m else "ajaxm.php"
         base = "{0.scheme}://{0.netloc}".format(urllib.parse.urlsplit(url))
         ajax_url = ajax_path if ajax_path.startswith("http") else base + "/" + ajax_path
 
-        # 4) POST 密码
+        # 6) POST 密码
         data = urllib.parse.urlencode({
             "action": "downprocess", "sign": sign, "kd": "1", "p": password,
         }).encode()
@@ -478,7 +498,7 @@ class LanzouClient:
             return (POSTSIGN_NOT_FOUND, None) if ("密码" in inf or "访问" in inf or "错误" in inf) \
                 else (INTERMEDIATE_NOT_FOUND, None)
 
-        # 5) 中间链接
+        # 7) 中间链接
         dom, u = j.get("dom"), j.get("url", "")
         if u.startswith("?"):
             inter = f"{dom}/file/{u}"

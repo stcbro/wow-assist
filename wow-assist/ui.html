@@ -1363,10 +1363,12 @@ $('#h-update-now').onclick = async ()=>{
   _auTimer = setInterval(async ()=>{
     await refreshAppUpdate();
     const st = await api('/api/app_update_status');
-    if(!st.downloading){
-      clearInterval(_auTimer); _auTimer=null;
-      if(!st.available) toast('已是最新版本');
-    }
+    // 整个更新操作（含解析直链、下载、校验）期间 applying 一直为 true，
+    // 必须等它复位再收尾，否则直链解析慢时会被误判为“已是最新”而提前结束。
+    if(st.applying) return;
+    clearInterval(_auTimer); _auTimer=null;
+    if(st.err) toast(st.err);
+    else if(!st.available) toast('已是最新版本');
   }, 1000);
 };
 $('#h-update-skip').onclick = async ()=>{
