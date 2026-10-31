@@ -62,8 +62,13 @@
 
 ## 用户环境与当前状态
 - 水豚乐园 `apac.capycraft.io`；客户端 `D:/game/twmoa_1181`(乌龟服1.18；1920x1080 125%缩放)。
-- 最新 exe=**v3.20**（WowAssist / wow-assist 目录 / wowassist-v3.20.exe / AppData\wowassist / wowassist_*.zip），已构建部署到 `D:/game/twmoa_1181/wowassist.exe`（MD5 701cc08ccc52ba76bb050739b36053a3）。本版新增 **3.18 应用自动更新**（读 wow-assist 文件夹 release_manifest.json，下载→md5 校验→bat 自替换重启）、**3.19 本地导入模组/插件/字体**（install_state.custom 记录，能被移除/清理还原清理）、**3.20 加密保存账号（机器绑定，cryptography Fernet+HKDF，明文零落盘）**。**分发已就绪：原资源分享链接 b01i5y3r7c/9p81 列表首项即 `wowassist-v3.20.exe`**。
+- 最新 exe=**v3.20**（WowAssist / wow-assist 目录 / wowassist-v3.20.exe / AppData\wowassist / wowassist_*.zip），已构建部署到 `D:/game/twmoa_1181/wowassist.exe`（MD5 fb091c403af7123c9958ef3fc1e7ab2a）。本版新增 **3.18 应用自动更新**（读 wow-assist 文件夹 release_manifest.json，下载→md5 校验→bat 自替换重启）、**3.19 本地导入模组/插件/字体**（install_state.custom 记录，能被移除/清理还原清理）、**3.20 加密保存账号（机器绑定，cryptography Fernet+HKDF，明文零落盘）**。**分发已就绪：原资源分享链接 b01i5y3r7c/9p81 列表首项即 `wowassist-v3.20.exe`**。
 - ✅ **真实游戏端到端验证已由用户完成**（2026-10-26 19:00 确认）。
 - ✅ **更新源已上线**：蓝奏云「wow-assist」文件夹分享 `https://sycc.lanzoum.com/b01i5y8pmf` 提取码 `1acw`（同时是 3.18 自动更新源），已上传 `wowassist-v3.20.exe` + `release_manifest.txt`（旧 v3.14 已 prune）。`app_update` 默认源已硬编码为该链接/码。⚠️ **蓝奏云静默拒收 `.json`**（客户端 100% 但服务端不落盘）→ 分发清单必须用 `release_manifest.txt`（内容仍是 JSON）；app 读 manifest 优先 `.txt` 兼容 `.json`，且 manifest 不可读时回退扫描 `wowassist-v*.exe` 文件名推断版本（跳过 md5）。
 - ⏳ 待用户动作：①真机 GUI 端到端验证三特性 + 自动更新横幅（沙盒无显示器无法验）；②可选迁腾讯云COS；③蓝奏云凭据一律只走运行时环境变量/缓存登录态（temp/lz_state.json 不含密码），不写入 git 追踪文件、不写入历史对话之外任何地方。
 - **版本号**：3.17（UI 背景重设计）已决定跳过，以后作为 **3.21**；3.18/3.19/3.20 已发不可插入。
+
+## 待办与暂缓项（用户拍板：先不改，记着以后改）
+- **exe 图标待换**：当前 `capy.ico`（`打包exe.bat` 的 `--icon capy.ico` 写死引用；`ui.html` 亦引用作 favicon）。用户 2026-10-31 决定先不换，以后改；风格未定（候选：水豚卡通吉祥物 / WA 字母标志 / 水豚+游戏科技感）。换图时若改文件名须同步改 bat 与 ui.html 引用。
+- **字体包侵权待替换**：`wowassist_字体.zip`（本地镜像 `.wbdata/resources/Fonts/`）内 9 个文件经读内嵌名字段确认 = 方正粗圆 M03（FZCuYuan-M03，© Founder，商业）×7 + 文鼎 LingHei（Noncommercial，非商业）×2，均不可自由再分发；`ARIALN/FRIZQT/MORPHEUS/SKURRI` 槽位里装的也不是暴雪原字体而是方正粗圆。⚠️ 仅「字体包」侵权，**exe 本身干净**（UI 用系统字体，未打包任何字体文件进 exe）。用户 2026-10-31 决定先不下架/不改，记着以后改。建议替换方案：思源黑体/Noto Sans CJK SC（SIL OFL，可商用可再分发）按 WoW 槽位重打包上传「wow-resources」；伤害数字槽 SKURRI 建议保留客户端原字体。
+- **release_manifest.txt 已本地修正**：md5 改为 `fb091c403af7123c9958ef3fc1e7ab2a`、size `17077118`（对应实际部署的 v3.20 exe）；旧 md5 会导致 3.18/3.19 用户自动更新时下载后 md5 校验失败被拒。待上传到蓝奏云「wow-assist」文件夹生效。
