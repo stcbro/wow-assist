@@ -55,11 +55,10 @@
 - 沙盒代理(127.0.0.1:54554)对 lanzoum 间歇 502，网络复现不可靠。
 
 ## 版本控制与交接（2026-10-26 起）
-- **⭐ 云备份已上线（2026-10-26 23:15）**：Gitee 私有仓库 **https://gitee.com/stcbro/wow-assist**（账号 `stcbro`，私有）。master 全历史已推送；远程 URL 内嵌私人令牌存于 `.git/config`（push 免凭据；令牌可吊销重发，重发后 `git remote set-url origin https://stcbro:<新令牌>@gitee.com/stcbro/wow-assist.git`）。**每次实质改动后应 git push 同步**。新电脑接续 = clone 该仓 + 按交接文档 §9 装依赖/改路径。
+- **⭐ 云备份已上线（2026-10-26 23:15）**：Gitee 私有仓库 **https://gitee.com/stcbro/wow-assist**（账号 `stcbro`，私有）。master 全历史已推送；远程 URL 内嵌私人令牌存于 `.git/config`（push 免凭据；令牌可吊销重发，重发后 `git remote set-url origin https://stcbro:<新令牌>@gitee.com/stcbro/wow-assist.git`）。**每次实质改动后应 git push 同步**。新电脑接续 = clone 该仓 + 按 `.workbuddy/memory` 里的环境要点装依赖/改路径。
 - **凭据安全**：文档/记忆/历史提交中的蓝奏云账号密码明文已全部脱敏（git filter-repo 擦除过历史）；今后凭据一律只走环境变量或登录态缓存，不写入 git 追踪文件。
 - **项目已 `git init`**（仓库在 `D:/WorkBuddy/wow-assist`，此前完全无版本控制）。`.gitignore` 排除 `.wbdata/`(528MB 本地资源镜像)/`temp/`/`dist`/`build`/`*.exe`/`*.spec`；源码+脚本+UI+**`.workbuddy/memory`** 全部入库。首次提交 `b4306c5`（v3.11 交接基线）。
-- **`开发交接文档.md`（项目根）= 换电脑/换账号接续的权威说明书**：目录地图、环境重建（含依赖版本+本机特有路径清单）、四层架构、37 个 API 端点表、UI 规范、发版流水线、蓝奏云资产真相、**24 条踩坑清单**、接续 checklist、回归验证方法、未完成事项、关键行号速查。
-- **`wowassist-交接包-20261026.zip`（项目根）**：换机直接带走=源码+脚本+exe+AI记忆+文档。重新生成用 `python 生成交接包.py`。
+- **历史交接产物已删（2026-11-01，提交 4696da3）**：`开发交接文档.md`、`更新日志重排版草稿.md`、`生成交接包.py`、`wowassist-交接包-20261026.zip` 均已从工作区与 Gitee 删除（用户拍板）。**git 历史仍可找回**（如 `git show b4306c5:开发交接文档.md`）；交接要点已沉淀在本 MEMORY.md 与各日志。项目根现只剩 `wow-assist/`（源码）与 `LanzouTool/`（蓝奏云工具目录，用途未清点，用户未提删）。
 - ⚠️ 新电脑第一件事：拷整个项目根目录（**含 `.workbuddy/memory`**），并 `git clone`/拷贝 `.git`。
 
 ## 用户环境与当前状态
