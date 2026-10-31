@@ -656,7 +656,7 @@ async function loadHome(){
   const ad = await api('/api/addons?target='+encodeURIComponent(state.current||''));
   state.addons = ad.addons||[];
   $('#h-addons').textContent = (ad.addons? ad.addons.length : 0) + ' 个';
-  $('#about-ver').textContent = (state.app_ver || '3.20');
+  $('#about-ver').textContent = state.app_ver ? 'v'+state.app_ver : '—';
   refreshSession();
   refreshAppUpdate();
 }
