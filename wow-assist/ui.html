@@ -269,9 +269,9 @@ details[open]>summary .pill,details[open]>summary{color:var(--txt)}
           <div id="lz-dl-msg" style="margin-top:6px;font-size:12px;color:var(--sub)"></div>
         </div>
       </div>
-      <!-- 高级设置：更新源配置（作者/排障用，一般用户不碰，默认收起） -->
+      <!-- 高级设置：更新源配置（作者维护用，已默认收起——普通用户不碰，作者需要时展开） -->
       <details class="card grow" style="max-width:880px;margin-top:12px">
-        <summary style="cursor:pointer;font-size:14px;font-weight:600;color:var(--sub)">▸ 高级设置（更新源配置，一般不用改）</summary>
+        <summary style="cursor:pointer;font-size:14px;font-weight:600;color:var(--sub)">▸ 高级设置（更新源配置 · 作者维护用，一般玩家无需打开）</summary>
         <div style="margin-top:12px">
           <h3 style="margin-top:0">资源地址 <span style="font-weight:400;font-size:12px">— 资源包从哪个蓝奏云文件夹下载（内置默认可用）</span></h3>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -303,21 +303,25 @@ details[open]>summary .pill,details[open]>summary{color:var(--txt)}
           </div>
           <div id="lz-mf-status" style="margin-top:8px;font-size:12px;color:var(--sub)"></div>
         </div>
-      </details>
-      <!-- 应用更新：自动检查新版本（默认收起） -->
-      <details class="card grow" style="max-width:880px;margin-top:12px">
-        <summary style="cursor:pointer;font-size:14px;font-weight:600;color:var(--sub)">▸ 应用更新（自动检查新版本）</summary>
-        <div style="margin-top:12px">
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--txt);font-size:14px;margin:0 0 10px">
-            <input type="checkbox" id="au-on" style="width:18px;height:18px;padding:0;accent-color:#3fb95f;cursor:pointer">
-            启用启动后自动检查更新
-          </label>
+        <div style="margin-top:16px;border-top:1px dashed var(--line);padding-top:12px">
+          <h3 style="margin-top:0">应用更新源 <span style="font-weight:400;font-size:12px">— 新版本 exe 从哪个蓝奏云文件夹检查（作者维护用，一般不用动）</span></h3>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
             <input id="au-fd-url" placeholder="蓝奏云 exe 专区文件夹分享链接（wow-assist 文件夹）" style="flex:1;min-width:260px">
             <input id="au-fd-pwd" placeholder="提取码" style="width:110px">
             <button class="btn primary sm" id="au-fd-save">保存</button>
           </div>
           <div id="au-fd-status" style="margin-top:8px;font-size:12px;color:var(--sub)"></div>
+        </div>
+      </details>
+      <!-- 应用更新：对玩家有用（自动提醒新版本），保持开启即可；作者用的更新源配置在「高级设置」里 -->
+      <details class="card grow" style="max-width:880px;margin-top:12px" open>
+        <summary style="cursor:pointer;font-size:14px;font-weight:600;color:var(--sub)">▸ 应用更新（新版本自动提醒，建议保持开启）</summary>
+        <div style="margin-top:12px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--txt);font-size:14px;margin:0 0 4px">
+            <input type="checkbox" id="au-on" style="width:18px;height:18px;padding:0;accent-color:#3fb95f;cursor:pointer">
+            启用启动后自动检查更新
+          </label>
+          <p class="pill" style="margin:0 0 10px">发现新版本会在首页提示并可一键更新，自动下载、校验、替换、重启，全程无需手动操作。</p>
           <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
             <button class="btn blue" id="au-check">检查更新</button>
             <span id="au-check-msg" style="font-size:12px;color:var(--sub)"></span>
@@ -326,7 +330,6 @@ details[open]>summary .pill,details[open]>summary{color:var(--txt)}
             <div style="height:8px;background:var(--card2);border-radius:4px;overflow:hidden"><div id="au-bar" style="height:100%;width:0;background:#3fb95f;transition:.2s"></div></div>
             <div id="au-msg" style="margin-top:4px;font-size:12px;color:var(--sub)"></div>
           </div>
-          <p class="pill" style="margin-top:10px">发现新版本会自动下载并替换本程序、重启，全程无需手动操作。</p>
         </div>
       </details>
     </section>
@@ -356,7 +359,7 @@ details[open]>summary .pill,details[open]>summary{color:var(--txt)}
           <div><span class="ct ct-fix">修复</span>操作明细日志不再被下一个操作清空：新操作开始前，上一轮（如清理还原）的明细自动滚入持久化历史，日志区按时间完整保留（最新在最下）</div>
           <div><span class="ct ct-chg">变更</span>移除游戏账号加密保存与自动填充：实测该客户端只会把记忆值整段塞进账号框、无法可靠填密码——改为玩家在游戏登录界面自行输入，勾选客户端自带「记住帐号名」由客户端记录；此前写入的 "账号 密码;" 记忆会在启动游戏时自动修复为纯账号名</div>
         </div>
-        <div class="kv"><span class="k">v3.20–3.22 ｜ 2026-10-31 ｜ 应用自动更新 + 本地导入</span><span class="tag">已发布</span></div>
+        <div class="kv"><span class="k">v3.22 ｜ 2026-10-31 ｜ 应用自动更新 + 本地导入</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
           <div><span class="ct ct-add">新增</span>应用自动更新：启动时后台检查新版本，发现更新在首页提示并支持「立即更新」；更新源为蓝奏云 exe 专区文件夹（release_manifest.txt + 最新 exe），下载后校验 md5、自动替换自身并重启（详见「下载」页「应用更新」卡片）</div>
           <div><span class="ct ct-add">新增</span>用户自行导入本地模组/插件/字体：三页各新增「导入本地」，选文件夹即可把自有内容装入客户端；导入项可被「移除」/「清理还原」识别与清理，不污染资源包</div>
