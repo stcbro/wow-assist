@@ -3074,11 +3074,11 @@ FONT_INFO = {
     "ariblk.ttf":   "粗体标题字体：面板标题、等级数字等加粗文字",
     "babsaml__.ttf":"备用正文字体：部分旧界面文字",
     "bbsimsun.ttf": "中文宋体：繁中界面备用字体",
-    "fzbwjw.ttf":   "思源黑体（Noto Sans SC）：任务书卷、信件类文字（美化）",
-    "fzjzjw.ttf":   "思源黑体（Noto Sans SC）：界面通用中文字体（美化）",
-    "fzlbjw.ttf":   "思源黑体（Noto Sans SC）：标题、书卷类文字（美化）",
-    "fzxhjw.ttf":   "思源黑体（Noto Sans SC·细黑）：聊天与界面小字（美化）",
-    "fzxhlw.ttf":   "思源黑体（Noto Sans SC·等线）：聊天与界面小字（美化）",
+    "fzbwjw.ttf":   "任务书卷、信件类文字（美化）",
+    "fzjzjw.ttf":   "界面通用中文字体（美化）",
+    "fzlbjw.ttf":   "标题、书卷类文字（美化）",
+    "fzxhjw.ttf":   "聊天与界面小字（美化）",
+    "fzxhlw.ttf":   "聊天与界面小字（美化）",
 }
 
 

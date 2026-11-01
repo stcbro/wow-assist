@@ -205,6 +205,9 @@ details[open]>summary .pill,details[open]>summary{color:var(--txt)}
         <button class="btn danger sm" id="dll-remove" style="margin-left:auto">移除模组</button>
         <span id="dll-apply-msg" style="font-size:12px;color:var(--sub)"></span>
       </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0 0">
+        <span style="font-size:12px;color:var(--sub)">勾选后点上方「装入模组」生效；取消勾选后再点击「装入模组」，已装的会移除。</span>
+      </div>
       <div class="card" style="margin-top:12px">
         <table id="dll-table">
           <thead><tr><th style="width:42px"><input type="checkbox" id="dll-all" title="全选 / 全不选"></th><th>模组</th><th style="width:90px">状态</th></tr></thead>
@@ -226,6 +229,9 @@ details[open]>summary .pill,details[open]>summary{color:var(--txt)}
         <!-- v3.24：危险「移除」右置弱化 -->
         <button class="btn danger sm" id="f-remove" style="margin-left:auto">移除字体</button>
         <span id="f-apply-msg" style="font-size:12px;color:var(--sub)"></span>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:10px 0 0">
+        <span style="font-size:12px;color:var(--sub)">勾选后点上方「装入字体」生效；取消勾选后再点击「装入字体」，已装的会移除。</span>
       </div>
       <div class="card">
         <table id="f-table">
@@ -612,7 +618,12 @@ details[open]>summary .pill,details[open]>summary{color:var(--txt)}
       </details>
       <details class="card" style="max-width:720px">
         <summary style="cursor:pointer;font-size:14px;font-weight:600;color:var(--sub)">▸ 免责声明</summary>
-        <div style="font-size:12px;line-height:2;margin-top:10px;color:var(--sub)">本工具（WowAssist）为个人自研的学习交流作品，与水豚乐园官方无任何关联；仅供玩家免费学习交流，请勿倒卖、冒充官方或用于任何商业用途。本工具涉及的模组、插件、字体等资源均收集整理自互联网公开渠道，仅供学习研究，版权归原作者所有。如果本平台提供的资源内容侵犯了您的合法权利，请联系 <b style="color:var(--txt)">290507373@qq.com</b>，经核实后将第一时间处理相关内容。使用本工具产生的一切后果由使用者自行承担。</div>
+        <div style="font-size:12px;line-height:2.1;margin-top:10px;color:var(--sub)">
+          <div>1. 本工具（WowAssist）为个人自研的学习交流作品，与水豚乐园官方无任何关联；仅供玩家免费学习交流，请勿倒卖、冒充官方或用于任何商业用途。</div>
+          <div>2. 本工具涉及的模组、插件、字体等资源均收集整理自互联网公开渠道，版权归原作者所有。</div>
+          <div>3. 使用本工具产生的一切后果由使用者自行承担。</div>
+          <div>4. 如有问题，请联系 <b style="color:var(--txt)">290507373@qq.com</b>。</div>
+        </div>
       </details>
     </section>
   </main>
