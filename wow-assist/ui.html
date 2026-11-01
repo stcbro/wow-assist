@@ -17,7 +17,7 @@ body{background:var(--bg);color:var(--txt);font-family:-apple-system,"Segoe UI",
 .side{width:200px;background:var(--side);border-right:1px solid var(--line);padding:18px 12px;display:flex;flex-direction:column;gap:4px}
 .brand{font-size:17px;font-weight:700;padding:6px 10px 14px;display:flex;align-items:center;gap:8px}
 .brand .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
-.nav{display:flex;flex-direction:column;gap:3px}
+.nav{flex:1;display:flex;flex-direction:column;gap:3px}
 .nav button{background:transparent;border:0;color:var(--sub);text-align:left;padding:12px 16px;border-radius:10px;cursor:pointer;font-size:15px;letter-spacing:.5px;transition:.15s}
 .nav button:hover{background:var(--card);color:var(--txt)}
 .nav button.active{background:var(--card2);color:#fff;font-weight:600}
@@ -102,6 +102,7 @@ details[open]>summary .pill,details[open]>summary{color:var(--txt)}
       <button data-p="fonts">🔤 字体</button>
       <button data-p="download">⬇️ 下载</button>
       <button data-p="changelog">📋 更新日志</button>
+      <button data-p="guide" style="margin-top:auto">📖 使用说明</button>
     </div>
     <div class="foot">本地辅助工具 · 自研<br>不依赖任何官方服务<br>© 2026 Bro.Cui · 保留所有权利</div>
   </aside>
@@ -340,6 +341,7 @@ details[open]>summary .pill,details[open]>summary{color:var(--txt)}
       <div class="card grow" id="cl-card" style="max-width:720px;margin-bottom:12px">
         <div class="kv"><span class="k">v3.24 ｜ 2026-11-01 ｜ 界面全面优化：下载页重组 + 插件筛选 + 布局瘦身</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
+          <div><span class="ct ct-add">新增</span>侧栏最底部新增「使用说明」页：与项目 README 同源的上手指南（这是什么 / 快速上手 5 步 / 界面导览 / 功能特性一览），忘了怎么用随时回来查</div>
           <div><span class="ct ct-imp">改进</span>下载页重组：「一键下载全部资源」提到页面第一行；模组/插件/字体改为一行一资源的紧凑表（含状态/分卷/最近使用）；缓存设置与「资源地址/备用直链/更新清单」全部收进默认收起的折叠区，删掉实现机制说明文案</div>
           <div><span class="ct ct-add">新增</span>插件页搜索框 + 分类/状态筛选：150 个插件可按名称/中文名搜索、按分类（职业/界面/增强/商业…）和安装状态过滤，不必再肉眼滚动</div>
           <div><span class="ct ct-imp">改进</span>「服务器」页并入首页信息行，侧栏导航 7 项减为 6 项；更新日志页「关于」收进底部折叠，日志按版本折叠、最近 2 版默认展开</div>
@@ -568,8 +570,49 @@ details[open]>summary .pill,details[open]>summary{color:var(--txt)}
         <div style="font-size:13px;line-height:2;margin-top:10px">
           简单好用又省心的<b>香草旧世魔兽游戏助手</b>。<br>
           版本 <b id="about-ver">—</b>　作者 <b>Bro.Cui</b><br>
-          <span style="color:var(--sub);font-size:12px">© 2026 Bro.Cui · 原创自研作品，仅供玩家免费学习交流，请勿倒卖、冒充官方或用于商业用途。</span>
+          <span style="color:var(--sub);font-size:12px">© 2026 Bro.Cui · 原创自研作品，仅供玩家免费学习交流，请勿倒卖、冒充官方或用于商业用途。<br>模组/插件/字体来源于网络，插件资源包默认使用吉米插件包 v8.7（有删减），版权归原作者所有；如有侵权，请联系 dbsyman@126.com，我们将第一时间删除。</span>
         </div>
+      </details>
+    </section>
+
+    <!-- 使用说明（v3.24b 新增，内容与项目 README 同源）：放在侧栏最底部 -->
+    <section class="page" id="guide">
+      <h2>使用说明</h2>
+      <div class="card grow" style="max-width:720px;margin-bottom:12px">
+        <h3 style="margin-top:0">这是什么</h3>
+        <div style="font-size:14px;line-height:1.9">为<b>水豚乐园</b>（apac.capycraft.io）玩家打造的一站式客户端助手：模组、插件、字体的下载、安装、管理，以及启动游戏，全部在一个界面完成。<b style="color:var(--accent)">双击即用，无需安装任何环境。</b></div>
+        <h3>快速上手（5 步）</h3>
+        <div style="font-size:14px;line-height:2.1">
+          <div><b style="color:var(--accent)">1.</b> 双击 <b>wowassist.exe</b>（<b>放在游戏根目录</b>——与 WoW.exe 同级的文件夹，程序会自动识别游戏路径；放别处也可以，首次打开点「设置」选择 WoW.exe）</div>
+          <div><b style="color:var(--accent)">2.</b> 首页确认游戏路径与服务器信息</div>
+          <div><b style="color:var(--accent)">3.</b> 点「🔧 配置组件」→ 等待 资源/模组/插件/字体 全部 <b style="color:var(--accent)">✓</b></div>
+          <div><b style="color:var(--accent)">4.</b> 点「▶ 启动游戏」，登录界面输入账号密码（勾选客户端自带「记住帐号名」）</div>
+          <div><b style="color:var(--accent)">5.</b> 想恢复干净客户端？点「⏻ 清理还原」</div>
+        </div>
+        <h3>各页面是干什么的</h3>
+        <div style="font-size:14px;line-height:2">
+          <div class="kv"><span class="k" style="white-space:nowrap">🏠 首页</span><span style="flex:1;text-align:right;color:var(--sub)">能不能开打了？（路径 / 状态 / 配置 / 启动 / 日志）</span></div>
+          <div class="kv"><span class="k" style="white-space:nowrap">🧩 模组 / 📦 插件 / 🔤 字体</span><span style="flex:1;text-align:right;color:var(--sub)">装哪些？（勾选即保存，可导入本地内容）</span></div>
+          <div class="kv"><span class="k" style="white-space:nowrap">⬇️ 下载</span><span style="flex:1;text-align:right;color:var(--sub)">资源齐不齐、怎么下？（主操作置顶，更新源配置收进高级设置）</span></div>
+          <div class="kv"><span class="k" style="white-space:nowrap">📖 使用说明</span><span style="flex:1;text-align:right;color:var(--sub)">就是本页（忘了怎么用随时回来看）</span></div>
+        </div>
+      </div>
+      <details class="card" style="max-width:720px;margin-bottom:12px">
+        <summary style="cursor:pointer;font-size:14px;font-weight:600;color:var(--sub)">▸ 功能特性一览</summary>
+        <div style="font-size:13px;line-height:2;margin-top:10px;color:var(--sub)">
+          📦 一站式配置：「配置组件」自动完成 资源下载 → 模组安装 → 插件安装 → 字体安装，全部就绪后才能启动游戏，杜绝装一半就进游戏的问题<br>
+          🧩 模组：内置注入器在游戏启动极早期自动加载核心模组 DLL（游戏目录无需额外加载器）；模组勾选管理，写入 dlls.txt 全自动<br>
+          📦 插件：150 个插件勾选管理（支持搜索 + 分类/状态筛选）；库插件与客户端前置锁定必选<br>
+          🔤 字体：思源黑体（Noto Sans SC，SIL OFL 开源可商用）一键装入，含伤害数字槽位<br>
+          ⬇️ 下载：蓝奏云文件夹自动解析，多分卷按序下载解压；支持自定义直链源；缓存 30 天未用自动清理<br>
+          🔄 自动更新：程序启动后台检查新版本，发现更新一键升级（自动下载 → 校验 → 替换重启）<br>
+          🛡️ 幂等与安全：已下载不重下、已安装跳过；安装前原有文件先备份（WowAbak）；「清理还原」一键恢复客户端初始状态<br>
+          🖥️ 桌面体验：单窗口 980×680，最小化收托盘，高 DPI 适配，游戏启动不卡界面
+        </div>
+      </details>
+      <details class="card" style="max-width:720px">
+        <summary style="cursor:pointer;font-size:14px;font-weight:600;color:var(--sub)">▸ 免责声明</summary>
+        <div style="font-size:12px;line-height:2;margin-top:10px;color:var(--sub)">本工具为个人学习作品，与水豚乐园官方无关，仅供玩家免费学习交流，请勿倒卖、冒充官方或用于商业用途。本工具涉及的模组、插件、字体等资源均收集整理于互联网公开渠道，仅供学习研究，版权归原作者所有；插件资源包默认使用「吉米插件包 v8.7（有删减）」。如有侵权，请联系 <b style="color:var(--txt)">dbsyman@126.com</b>，我们将第一时间删除相关内容。使用本工具产生的一切后果由使用者自行承担。</div>
       </details>
     </section>
   </main>
