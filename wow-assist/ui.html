@@ -269,6 +269,24 @@ details[open]>summary .pill,details[open]>summary{color:var(--txt)}
           <div id="lz-dl-msg" style="margin-top:6px;font-size:12px;color:var(--sub)"></div>
         </div>
       </div>
+      <!-- 应用更新（v3.24c：玩家常用的这块提到「高级设置」上面） -->
+      <details class="card grow" style="max-width:880px;margin-top:12px" open>
+        <summary style="cursor:pointer;font-size:14px;font-weight:600;color:var(--sub)">▸ 应用更新（新版本自动提醒，建议保持开启）</summary>
+        <div style="margin-top:12px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--txt);font-size:14px;margin:0 0 10px">
+            <input type="checkbox" id="au-on" style="width:18px;height:18px;padding:0;accent-color:#3fb95f;cursor:pointer">
+            启用启动后自动检查更新
+          </label>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <button class="btn blue" id="au-check">检查更新</button>
+            <span id="au-check-msg" style="font-size:12px;color:var(--sub)"></span>
+          </div>
+          <div id="au-prog" style="display:none;margin-top:12px">
+            <div style="height:8px;background:var(--card2);border-radius:4px;overflow:hidden"><div id="au-bar" style="height:100%;width:0;background:#3fb95f;transition:.2s"></div></div>
+            <div id="au-msg" style="margin-top:4px;font-size:12px;color:var(--sub)"></div>
+          </div>
+        </div>
+      </details>
       <!-- 高级设置：更新源配置（作者维护用，已默认收起——普通用户不碰，作者需要时展开） -->
       <details class="card grow" style="max-width:880px;margin-top:12px">
         <summary style="cursor:pointer;font-size:14px;font-weight:600;color:var(--sub)">▸ 高级设置（更新源配置 · 作者维护用，一般玩家无需打开）</summary>
@@ -311,25 +329,6 @@ details[open]>summary .pill,details[open]>summary{color:var(--txt)}
             <button class="btn primary sm" id="au-fd-save">保存</button>
           </div>
           <div id="au-fd-status" style="margin-top:8px;font-size:12px;color:var(--sub)"></div>
-        </div>
-      </details>
-      <!-- 应用更新：对玩家有用（自动提醒新版本），保持开启即可；作者用的更新源配置在「高级设置」里 -->
-      <details class="card grow" style="max-width:880px;margin-top:12px" open>
-        <summary style="cursor:pointer;font-size:14px;font-weight:600;color:var(--sub)">▸ 应用更新（新版本自动提醒，建议保持开启）</summary>
-        <div style="margin-top:12px">
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--txt);font-size:14px;margin:0 0 4px">
-            <input type="checkbox" id="au-on" style="width:18px;height:18px;padding:0;accent-color:#3fb95f;cursor:pointer">
-            启用启动后自动检查更新
-          </label>
-          <p class="pill" style="margin:0 0 10px">发现新版本会在首页提示并可一键更新，自动下载、校验、替换、重启，全程无需手动操作。</p>
-          <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-            <button class="btn blue" id="au-check">检查更新</button>
-            <span id="au-check-msg" style="font-size:12px;color:var(--sub)"></span>
-          </div>
-          <div id="au-prog" style="display:none;margin-top:12px">
-            <div style="height:8px;background:var(--card2);border-radius:4px;overflow:hidden"><div id="au-bar" style="height:100%;width:0;background:#3fb95f;transition:.2s"></div></div>
-            <div id="au-msg" style="margin-top:4px;font-size:12px;color:var(--sub)"></div>
-          </div>
         </div>
       </details>
     </section>
