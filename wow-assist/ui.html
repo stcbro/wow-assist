@@ -51,6 +51,7 @@ h3{margin:18px 0 10px;font-size:15px;color:var(--sub);font-weight:600}
 .btn.danger-solid{background:#933741;color:#ffd7da;border:0;font-weight:700}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 input,textarea,select{background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:10px;padding:10px 12px;font-size:13px;font-family:inherit;width:100%}
+input:focus,textarea:focus,select:focus{border-color:var(--accent2);outline:none}
 textarea{min-height:84px;resize:vertical}
 label{display:block;color:var(--sub);margin:10px 0 5px;font-size:12px}
 .server{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px;cursor:pointer;width:170px;transition:.15s;position:relative}
@@ -78,6 +79,10 @@ th{color:var(--sub);font-weight:600;font-size:12px}
 .log{background:#0a0c10;border:1px solid var(--line);border-radius:10px;padding:12px;font-family:ui-monospace,Consolas,monospace;font-size:12px;color:#bce3c4;white-space:pre-wrap;max-height:240px;overflow:auto}
 .empty{color:var(--sub);padding:14px 0}
 .pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--sub)}
+/* v3.24：折叠块标题去掉浏览器默认三角（用自绘 ▸/▸） */
+summary{list-style:none}
+summary::-webkit-details-marker{display:none}
+details[open]>summary .pill,details[open]>summary{color:var(--txt)}
 /* 插件列表：单元格不自动换行；过长的插件名/中文名省略号截断（悬停可见完整） */
 #a-list table{width:100%}
 #a-list .a-row td,#a-list thead th{white-space:nowrap}
@@ -91,7 +96,6 @@ th{color:var(--sub);font-weight:600;font-size:12px}
     <div class="brand"><span class="dot"></span>WowAssist <span id="brand-ver" style="font-size:12px;font-weight:400;color:var(--sub)"></span></div>
     <div class="nav" id="nav">
       <button data-p="home" class="active">🏠 首页</button>
-      <button data-p="servers">🌐 服务器</button>
       <button data-p="dll">🧩 模组</button>
       <button data-p="addons">📦 插件</button>
       <button data-p="fonts">🔤 字体</button>
@@ -133,8 +137,8 @@ th{color:var(--sub);font-weight:600;font-size:12px}
             <div id="h-update-msg" style="margin-top:4px;font-size:12px;color:var(--sub)"></div>
           </div>
         </div>
-        <div style="margin-top:10px;display:flex;align-items:center;gap:10px">
-          <button class="btn sm" id="h-check-update">检查更新</button>
+        <!-- v3.24：「检查更新」按钮并入更新横幅——无更新时这里显示一行"已是最新"小字 -->
+        <div style="margin-top:10px">
           <span id="h-check-update-msg" style="font-size:12px;color:var(--sub)"></span>
         </div>
         <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center">
@@ -156,31 +160,33 @@ th{color:var(--sub);font-weight:600;font-size:12px}
       </div>
     </section>
 
-    <!-- 服务器 -->
-    <section class="page" id="servers">
-      <h2>服务器</h2>
-      <div class="card grow" style="max-width:460px">
-        <h3 style="margin-top:0">水豚乐园</h3>
-        <div class="kv"><span class="k">版本</span><span>客户端 1.18</span></div>
-        <div class="kv" style="align-items:flex-start"><span class="k" style="white-space:nowrap">连线地址</span><span id="s-realm" style="white-space:pre-line;line-height:1.9">—</span></div>
-        <p class="pill" style="margin-top:8px">realmlist 实时读取客户端里的 realmlist.wtf；切换服务器需手动改该文件。</p>
-      </div>
-    </section>
+    <!-- 服务器页已并入首页（v3.24）：首页信息行已含 当前服务器/服务器地址 -->
 
     <!-- 插件 -->
     <section class="page" id="addons">
       <h2>插件</h2>
       <div style="margin:0 0 4px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <button class="btn primary sm" id="a-install">装入插件</button>
-        <button class="btn danger sm" id="a-removeall">移除插件</button>
         <button class="btn sm" id="a-open">打开目录</button>
-        <button class="btn sm" id="a-refresh">刷新</button>
         <button class="btn sm" id="a-import">导入本地</button>
+        <!-- v3.24：危险「移除」右置并保持描边弱化，避免误触 -->
+        <button class="btn danger sm" id="a-removeall" style="margin-left:auto">移除插件</button>
         <span id="a-apply-msg" style="font-size:12px;color:var(--sub)"></span>
       </div>
       <div class="card" style="margin-top:10px">
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px">
           <span id="a-sel-msg" style="font-size:12px;color:var(--sub)">勾选后点上方「装入插件」生效；取消勾选后再点击「装入插件」，已装的会移除。</span>
+        </div>
+        <!-- v3.24：150 个插件太多，加搜索 + 分类/状态筛选（纯前端过滤） -->
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+          <input id="a-search" placeholder="🔍 搜索插件名 / 中文名…" style="flex:1;min-width:180px;padding:7px 12px">
+          <select id="a-filter-cat" style="width:130px;padding:7px 10px"><option value="">全部分类</option></select>
+          <select id="a-filter-st" style="width:110px;padding:7px 10px">
+            <option value="">全部状态</option>
+            <option value="installed">已安装</option>
+            <option value="not">未安装</option>
+          </select>
+          <span id="a-filter-count" style="font-size:12px;color:var(--sub)"></span>
         </div>
         <table id="a-sel-table">
           <thead><tr><th style="width:42px"><input type="checkbox" id="a-sel-all" title="全选 / 全不选"></th><th>插件</th><th>分类</th><th style="width:90px">状态</th></tr></thead>
@@ -194,20 +200,21 @@ th{color:var(--sub);font-weight:600;font-size:12px}
       <h2>模组</h2>
       <div style="margin:0 0 4px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <button class="btn primary sm" id="dll-apply">装入模组</button>
-        <button class="btn danger sm" id="dll-remove">移除模组</button>
         <button class="btn sm" id="dll-open">打开目录</button>
-        <button class="btn sm" id="dll-refresh">刷新</button>
         <button class="btn sm" id="dll-import">导入本地</button>
+        <!-- v3.24：危险「移除」右置弱化 -->
+        <button class="btn danger sm" id="dll-remove" style="margin-left:auto">移除模组</button>
         <span id="dll-apply-msg" style="font-size:12px;color:var(--sub)"></span>
       </div>
       <div class="card" style="margin-top:12px">
         <table id="dll-table">
-          <thead><tr><th style="width:42px"><input type="checkbox" id="dll-all" title="全选 / 全不选"></th><th>模组</th><th>类型</th><th>状态</th></tr></thead>
-          <tbody><tr><td colspan="4" class="empty">加载中…</td></tr></tbody>
+          <thead><tr><th style="width:42px"><input type="checkbox" id="dll-all" title="全选 / 全不选"></th><th>模组</th><th style="width:90px">状态</th></tr></thead>
+          <tbody><tr><td colspan="3" class="empty">加载中…</td></tr></tbody>
           <tfoot></tfoot>
         </table>
+        <!-- v3.24：日志区统一放卡片内（与字体页一致） -->
+        <div id="dll-log" class="log" style="margin-top:12px;display:none"></div>
       </div>
-      <div id="dll-log" class="log" style="margin-top:12px;display:none"></div>
     </section>
 
     <!-- 字体 -->
@@ -215,10 +222,10 @@ th{color:var(--sub);font-weight:600;font-size:12px}
       <h2>字体</h2>
       <div style="margin:0 0 10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <button class="btn primary sm" id="f-install">装入字体</button>
-        <button class="btn danger sm" id="f-remove">移除字体</button>
         <button class="btn sm" id="f-open">打开目录</button>
-        <button class="btn sm" id="f-refresh">刷新</button>
         <button class="btn sm" id="f-import">导入本地</button>
+        <!-- v3.24：危险「移除」右置弱化 -->
+        <button class="btn danger sm" id="f-remove" style="margin-left:auto">移除字体</button>
         <span id="f-apply-msg" style="font-size:12px;color:var(--sub)"></span>
       </div>
       <div class="card">
@@ -230,29 +237,33 @@ th{color:var(--sub);font-weight:600;font-size:12px}
       </div>
     </section>
 
-    <!-- 下载 -->
+    <!-- 下载（v3.24 重组：主操作置顶 → 资源表 → 缓存折叠 → 高级设置折叠 → 应用更新折叠） -->
     <section class="page" id="download">
       <h2>下载</h2>
       <div class="card" style="max-width:880px">
-        <h3 style="margin-top:0">资源管理（模组 / 插件 / 字体）</h3>
-        <div id="lz-cards"></div>
-        <div id="lz-cache-dir" style="margin-top:12px;font-size:12px;color:var(--sub)"></div>
-        <div style="margin-top:8px;font-size:14px;color:var(--txt);display:flex;align-items:center;gap:4px;white-space:nowrap">
-          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--txt);font-size:14px;margin:0">
-            <input type="checkbox" id="lz-cache-on" style="width:18px;height:18px;padding:0;accent-color:#3fb95f;cursor:pointer">
-            启用「长期未使用自动清理」
-          </label>
-          <span>超过</span>
-          <input type="number" id="lz-cache-days" min="1" max="365" style="width:70px;height:26px;padding:0 6px;box-sizing:border-box;font-size:14px;color:var(--txt);text-align:center">
-          <span>天未使用则自动删除该资源缓存（默认 30 天）。</span>
-        </div>
-        <div id="lz-cache-lastused" style="margin-top:8px;font-size:12px;color:var(--sub)"></div>
-        <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <!-- 主操作放第一行：用户进这页要做的就是「下载」 -->
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
           <button class="btn primary" id="lz-download-all">⬇ 一键下载全部资源</button>
-          <button class="btn blue" id="lz-sync">🔄 检查插件更新</button>
-          <button class="btn amber" id="lz-cache-save">保存设置</button>
+          <button class="btn blue" id="lz-sync" title="按更新清单只下载有变化的插件分卷，不整包重下">增量更新插件</button>
           <span id="lz-hint" style="font-size:12px;color:var(--sub)"></span>
         </div>
+        <!-- 资源紧凑表：资源 / 状态 / 分卷 / 最近使用 / 操作 一行一资源 -->
+        <div id="lz-cards" style="margin-top:14px"></div>
+        <div id="lz-cache-dir" style="margin-top:12px;font-size:12px;color:var(--sub)"></div>
+        <details style="margin-top:8px">
+          <summary class="pill" style="cursor:pointer;font-size:13px">▸ 缓存自动清理设置（默认开启，30 天未用即清）</summary>
+          <div style="margin-top:10px;font-size:14px;color:var(--txt);display:flex;align-items:center;gap:6px;white-space:nowrap;flex-wrap:wrap">
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--txt);font-size:14px;margin:0">
+              <input type="checkbox" id="lz-cache-on" style="width:18px;height:18px;padding:0;accent-color:#3fb95f;cursor:pointer">
+              启用「长期未使用自动清理」
+            </label>
+            <span>超过</span>
+            <input type="number" id="lz-cache-days" min="1" max="365" style="width:70px;height:26px;padding:0 6px;box-sizing:border-box;font-size:14px;color:var(--txt);text-align:center">
+            <span>天未使用则自动删除该资源缓存（默认 30 天）。</span>
+            <button class="btn sm" id="lz-cache-save">保存设置</button>
+          </div>
+          <div id="lz-cache-lastused" style="margin-top:8px;font-size:12px;color:var(--sub)"></div>
+        </details>
         <div id="lz-progress" style="margin-top:14px;display:none">
           <div style="height:8px;background:var(--card2);border-radius:4px;overflow:hidden">
             <div id="lz-bar" style="height:100%;width:0;background:var(--accent);transition:.2s"></div>
@@ -260,75 +271,83 @@ th{color:var(--sub);font-weight:600;font-size:12px}
           <div id="lz-dl-msg" style="margin-top:6px;font-size:12px;color:var(--sub)"></div>
         </div>
       </div>
-      <div class="card" style="margin-top:12px;max-width:880px">
-        <h3 style="margin-top:0">资源地址</h3>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <input id="lz-fd-url" placeholder="https://xxx.lanzoum.com/b01xxxxx" style="flex:1;min-width:260px">
-          <input id="lz-fd-pwd" placeholder="提取码" style="width:110px">
-          <button class="btn primary sm" id="lz-fd-save">保存并刷新</button>
+      <!-- 高级设置：更新源配置（作者/排障用，一般用户不碰，默认收起） -->
+      <details class="card grow" style="max-width:880px;margin-top:12px">
+        <summary style="cursor:pointer;font-size:14px;font-weight:600;color:var(--sub)">▸ 高级设置（更新源配置，一般不用改）</summary>
+        <div style="margin-top:12px">
+          <h3 style="margin-top:0">资源地址 <span style="font-weight:400;font-size:12px">— 资源包从哪个蓝奏云文件夹下载（内置默认可用）</span></h3>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input id="lz-fd-url" placeholder="https://xxx.lanzoum.com/b01xxxxx" style="flex:1;min-width:260px">
+            <input id="lz-fd-pwd" placeholder="提取码" style="width:110px">
+            <button class="btn primary sm" id="lz-fd-save">保存并刷新</button>
+          </div>
+          <div id="lz-fd-status" style="margin-top:8px;font-size:12px;color:var(--sub)"></div>
+          <div id="lz-fd-files" style="margin-top:8px;font-size:12px;color:var(--sub);line-height:1.8"></div>
         </div>
-        <div id="lz-fd-status" style="margin-top:8px;font-size:12px;color:var(--sub)"></div>
-        <div id="lz-fd-files" style="margin-top:8px;font-size:12px;color:var(--sub);line-height:1.8"></div>
-      </div>
-      <div class="card" style="margin-top:12px;max-width:880px">
-        <h3 style="margin-top:0">备用直链</h3>
-        <textarea id="lz-dr-text" rows="4" spellcheck="false"
-          placeholder="每行填一个文件直链，程序按文件名自动识别类型。支持腾讯云 COS / 阿里云 OSS / GitHub / 任意可下载链接。&#10;例：&#10;https://xxx.cos.ap-guangzhou.myqcloud.com/wowassist_模组包.zip&#10;https://xxx.cos.ap-guangzhou.myqcloud.com/wowassist_插件包_part1.zip"
-          style="width:100%;resize:vertical;font-family:inherit;font-size:13px;line-height:1.6;padding:8px 10px;background:var(--card2);color:var(--fg);border:1px solid var(--line);border-radius:6px;box-sizing:border-box"></textarea>
-        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <button class="btn primary sm" id="lz-dr-save">保存直链</button>
-          <button class="btn sm" id="lz-dr-clear">清空</button>
-          <span id="lz-dr-status" style="font-size:12px;color:var(--sub)"></span>
+        <div style="margin-top:16px;border-top:1px dashed var(--line);padding-top:12px">
+          <h3 style="margin-top:0">备用直链 <span style="font-weight:400;font-size:12px">— 蓝奏云不稳时的高速直链（COS/OSS/GitHub）</span></h3>
+          <textarea id="lz-dr-text" rows="4" spellcheck="false"
+            placeholder="每行填一个文件直链，程序按文件名自动识别类型。&#10;例：&#10;https://xxx.cos.ap-guangzhou.myqcloud.com/wowassist_模组包.zip&#10;https://xxx.cos.ap-guangzhou.myqcloud.com/wowassist_插件包_part1.zip"
+            style="width:100%;resize:vertical;font-family:inherit;font-size:13px;line-height:1.6;padding:8px 10px;background:var(--card2);color:var(--txt);border:1px solid var(--line);border-radius:6px;box-sizing:border-box"></textarea>
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <button class="btn primary sm" id="lz-dr-save">保存直链</button>
+            <button class="btn sm" id="lz-dr-clear">清空</button>
+            <span id="lz-dr-status" style="font-size:12px;color:var(--sub)"></span>
+          </div>
+          <div id="lz-dr-info" style="margin-top:8px;font-size:12px;color:var(--sub);line-height:1.8"></div>
         </div>
-        <div id="lz-dr-info" style="margin-top:8px;font-size:12px;color:var(--sub);line-height:1.8"></div>
-      </div>
-      <div class="card" style="margin-top:12px;max-width:880px">
-        <h3 style="margin-top:0">更新清单</h3>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <input id="lz-mf-url" placeholder="https://xxx.lanzoux.com/xxx" style="flex:1;min-width:260px">
-          <input id="lz-mf-pwd" placeholder="提取码" style="width:110px">
-          <button class="btn sm" id="lz-mf-save">保存</button>
+        <div style="margin-top:16px;border-top:1px dashed var(--line);padding-top:12px">
+          <h3 style="margin-top:0">更新清单 <span style="font-weight:400;font-size:12px">— 插件增量更新用的清单链接</span></h3>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input id="lz-mf-url" placeholder="https://xxx.lanzoux.com/xxx" style="flex:1;min-width:260px">
+            <input id="lz-mf-pwd" placeholder="提取码" style="width:110px">
+            <button class="btn sm" id="lz-mf-save">保存</button>
+          </div>
+          <div id="lz-mf-status" style="margin-top:8px;font-size:12px;color:var(--sub)"></div>
         </div>
-        <div id="lz-mf-status" style="margin-top:8px;font-size:12px;color:var(--sub)"></div>
-      </div>
-      <div class="card" style="margin-top:12px;max-width:880px">
-        <h3 style="margin-top:0">应用更新（自动检测新版本）</h3>
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--txt);font-size:14px;margin:0 0 10px">
-          <input type="checkbox" id="au-on" style="width:18px;height:18px;padding:0;accent-color:#3fb95f;cursor:pointer">
-          启用启动后自动检查更新
-        </label>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <input id="au-fd-url" placeholder="蓝奏云 exe 专区文件夹分享链接（wow-assist 文件夹）" style="flex:1;min-width:260px">
-          <input id="au-fd-pwd" placeholder="提取码" style="width:110px">
-          <button class="btn primary sm" id="au-fd-save">保存</button>
+      </details>
+      <!-- 应用更新：自动检查新版本（默认收起） -->
+      <details class="card grow" style="max-width:880px;margin-top:12px">
+        <summary style="cursor:pointer;font-size:14px;font-weight:600;color:var(--sub)">▸ 应用更新（自动检查新版本）</summary>
+        <div style="margin-top:12px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--txt);font-size:14px;margin:0 0 10px">
+            <input type="checkbox" id="au-on" style="width:18px;height:18px;padding:0;accent-color:#3fb95f;cursor:pointer">
+            启用启动后自动检查更新
+          </label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <input id="au-fd-url" placeholder="蓝奏云 exe 专区文件夹分享链接（wow-assist 文件夹）" style="flex:1;min-width:260px">
+            <input id="au-fd-pwd" placeholder="提取码" style="width:110px">
+            <button class="btn primary sm" id="au-fd-save">保存</button>
+          </div>
+          <div id="au-fd-status" style="margin-top:8px;font-size:12px;color:var(--sub)"></div>
+          <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <button class="btn blue" id="au-check">检查更新</button>
+            <span id="au-check-msg" style="font-size:12px;color:var(--sub)"></span>
+          </div>
+          <div id="au-prog" style="display:none;margin-top:12px">
+            <div style="height:8px;background:var(--card2);border-radius:4px;overflow:hidden"><div id="au-bar" style="height:100%;width:0;background:#3fb95f;transition:.2s"></div></div>
+            <div id="au-msg" style="margin-top:4px;font-size:12px;color:var(--sub)"></div>
+          </div>
+          <p class="pill" style="margin-top:10px">发现新版本会自动下载并替换本程序、重启，全程无需手动操作。</p>
         </div>
-        <div id="au-fd-status" style="margin-top:8px;font-size:12px;color:var(--sub)"></div>
-        <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-          <button class="btn blue" id="au-check">检查更新</button>
-          <span id="au-check-msg" style="font-size:12px;color:var(--sub)"></span>
-        </div>
-        <div id="au-prog" style="display:none;margin-top:12px">
-          <div style="height:8px;background:var(--card2);border-radius:4px;overflow:hidden"><div id="au-bar" style="height:100%;width:0;background:#3fb95f;transition:.2s"></div></div>
-          <div id="au-msg" style="margin-top:4px;font-size:12px;color:var(--sub)"></div>
-        </div>
-        <p class="pill" style="margin-top:10px">更新源 = 你专门放 exe 的蓝奏云文件夹（wow-assist 文件夹）。该文件夹里需放 <b>release_manifest.txt</b>（版本/说明/exe 文件名+md5；蓝奏云拒收 .json，故用 .txt，内容仍是 JSON）与最新 <b>wowassist-v*.exe</b>。发现新版本会下载并自动替换自身、重启。</p>
-      </div>
+      </details>
     </section>
 
 
-    <!-- 更新日志 -->
+    <!-- 更新日志（v3.24：版本条目由 JS 动态包成 <details> 折叠，最近 2 版默认展开；关于卡移到最底） -->
     <section class="page" id="changelog">
       <h2>更新日志</h2>
-      <div class="card" style="max-width:720px;margin-bottom:12px">
-        <h3 style="margin-top:0">关于 WowAssist</h3>
-        <div style="font-size:13px;line-height:2">
-          简单好用又省心的<b>香草旧世魔兽游戏助手</b>。<br>
-          版本 <b id="about-ver">—</b>　作者 <b>Bro.Cui</b><br>
-          <span style="color:var(--sub);font-size:12px">© 2026 Bro.Cui · 原创自研作品，仅供玩家免费学习交流，请勿倒卖、冒充官方或用于商业用途。</span>
+      <div class="card grow" id="cl-card" style="max-width:720px;margin-bottom:12px">
+        <div class="kv"><span class="k">v3.24 ｜ 界面全面优化：下载页重组 + 插件筛选 + 布局瘦身</span><span class="tag">待发布</span></div>
+        <div class="cl-detail">
+          <div><span class="ct ct-imp">改进</span>下载页重组：「一键下载全部资源」提到页面第一行；模组/插件/字体改为一行一资源的紧凑表（含状态/分卷/最近使用）；缓存设置与「资源地址/备用直链/更新清单」全部收进默认收起的折叠区，删掉实现机制说明文案</div>
+          <div><span class="ct ct-add">新增</span>插件页搜索框 + 分类/状态筛选：150 个插件可按名称/中文名搜索、按分类（职业/界面/增强/商业…）和安装状态过滤，不必再肉眼滚动</div>
+          <div><span class="ct ct-imp">改进</span>「服务器」页并入首页信息行，侧栏导航 7 项减为 6 项；更新日志页「关于」收进底部折叠，日志按版本折叠、最近 2 版默认展开</div>
+          <div><span class="ct ct-imp">改进</span>按钮颜色语义统一：就绪/成功=绿色（「启动游戏」就绪态、完成提示），琥珀只表示警示；移除/清理类确认弹窗确定钮改红色，危险「移除」按钮统一右置</div>
+          <div><span class="ct ct-add">新增</span>提示气泡分类型着色：成功绿边、失败红边（停留 4 秒）、警告琥珀边，失败信息不再一闪而过</div>
+          <div><span class="ct ct-imp">改进</span>细节：首页未检测状态改一行小字提示；独立「检查更新」按钮并入更新横幅（无更新静默显示"已是最新"）；删三个资源页的手动「刷新」按钮（自动加载）；模组页去重复「类型」列；输入框加焦点高亮；下载进度显示当前文件名</div>
         </div>
-      </div>
-      <div class="card grow" style="max-width:720px">
-        <div class="kv"><span class="k">v3.23 ｜ 配置日志精简 + 日志显示修复 + 账号改用客户端记录</span><span class="tag">待发布</span></div>
+        <div class="kv"><span class="k">v3.23 ｜ 2026-11-01 ｜ 配置日志精简 + 日志显示修复 + 账号改用客户端记录</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
           <div><span class="ct ct-imp">改进</span>配置组件日志精简：模组/插件/字体各合并为一行装入摘要（括号内标注按勾选与跳过未勾选的数量，模组行同时标注「写入dlls.txt」，不再单独列 dlls.txt 文件明细行）</div>
           <div><span class="ct ct-imp">改进</span>启动游戏反馈统一为「游戏正在启动……」，不再瞬间显示「已启动」造成误解</div>
@@ -541,6 +560,15 @@ th{color:var(--sub);font-weight:600;font-size:12px}
           <div><span class="ct ct-add">新增</span>自定义游戏路径：粘贴客户端根 / Interface / AddOns 任一层级自动纠正，配置持久化</div>
         </div>
       </div>
+      <!-- v3.24：「关于」收进折叠放最底（关于信息 ≠ 更新日志主题） -->
+      <details class="card" id="about-card" style="max-width:720px">
+        <summary style="cursor:pointer;font-size:14px;font-weight:600;color:var(--sub)">▸ 关于 WowAssist</summary>
+        <div style="font-size:13px;line-height:2;margin-top:10px">
+          简单好用又省心的<b>香草旧世魔兽游戏助手</b>。<br>
+          版本 <b id="about-ver">—</b>　作者 <b>Bro.Cui</b><br>
+          <span style="color:var(--sub);font-size:12px">© 2026 Bro.Cui · 原创自研作品，仅供玩家免费学习交流，请勿倒卖、冒充官方或用于商业用途。</span>
+        </div>
+      </details>
     </section>
   </main>
 </div>
@@ -559,21 +587,26 @@ async function api(path, body){
 function esc(s){ const d=document.createElement('div'); d.textContent=s==null?"":s; return d.innerHTML; }
 
 // 自定义确认弹窗（替代原生 confirm）：琥珀警示横条 + 居中正文 + 右侧确认（2026-10-27 定稿）
-function askConfirm(msg, title){
+// v3.24：第三参 danger=true → 确定钮红色（移除/清理类），默认琥珀（更新确认等普通操作）
+function askConfirm(msg, title, danger){
   return new Promise(res=>{
     const mask = document.createElement('div');
     mask.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;'
       + 'display:flex;align-items:center;justify-content:center';
+    const okBg = danger ? '#c0392b' : '#ef9f27';
+    const okFg = danger ? '#ffd7da' : '#412402';
+    const barBg = danger ? '#c0392b' : '#ef9f27';
+    const barFg = danger ? '#ffe3e3' : '#412402';
     mask.innerHTML = '<div style="background:#171a21;border:1px solid #3a3f4b;border-radius:12px;'
       + 'overflow:hidden;width:440px;max-width:88%;box-shadow:0 14px 40px rgba(0,0,0,.55)">'
-      + '<div style="background:#ef9f27;padding:10px 18px;display:flex;align-items:center;gap:10px">'
-      + '<svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 3 L22 20 H2 Z" fill="none" stroke="#412402" stroke-width="2" stroke-linejoin="round"/><line x1="12" y1="10" x2="12" y2="14" stroke="#412402" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16.8" r="1.1" fill="#412402"/></svg>'
-      + '<span style="color:#412402;font-size:15px;font-weight:600;letter-spacing:4px">' + esc(title || "清理还原确认") + '</span></div>'
+      + '<div style="background:'+barBg+';padding:10px 18px;display:flex;align-items:center;gap:10px">'
+      + '<svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 3 L22 20 H2 Z" fill="none" stroke="'+barFg+'" stroke-width="2" stroke-linejoin="round"/><line x1="12" y1="10" x2="12" y2="14" stroke="'+barFg+'" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="16.8" r="1.1" fill="'+barFg+'"/></svg>'
+      + '<span style="color:'+barFg+';font-size:15px;font-weight:600;letter-spacing:4px">' + esc(title || "清理还原确认") + '</span></div>'
       + '<div class="wb-msg" style="padding:22px 20px;font-size:14.5px;font-weight:500;color:#e8ecf3;line-height:1.9;'
       + 'font-family:\'Microsoft YaHei\',\'微软雅黑\',\'PingFang SC\',sans-serif;text-align:center"></div>'
       + '<div style="padding:0 20px 18px;display:flex;justify-content:center;gap:14px">'
       + '<button class="btn wb-no" style="min-width:96px;background:transparent;border:1px solid #3a3f4b;color:#c8cdd8">取 消</button>'
-      + '<button class="btn wb-ok" style="min-width:96px;background:#ef9f27;border:1px solid #ef9f27;color:#412402;font-weight:600">确 定</button></div></div>';
+      + '<button class="btn wb-ok" style="min-width:96px;background:'+okBg+';border:1px solid '+okBg+';color:'+okFg+';font-weight:600">确 定</button></div></div>';
     mask.querySelector('.wb-msg').textContent = msg;
     const done = v => { mask.remove(); res(v); };
     mask.querySelector('.wb-ok').onclick = ()=>done(true);
@@ -587,7 +620,6 @@ function nav(p){
   $('#'+p).classList.add('show');
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active', b.dataset.p===p));
   if(p==='home') loadHome();
-  if(p==='servers'){ loadTargets(); }
   if(p==='addons'){ loadAddons(); loadAddonSel(); }
   if(p==='dll') loadMods();
   if(p==='download'){ loadLanzou(); loadAppUpdateCfg(); }
@@ -617,8 +649,8 @@ async function loadTargets(){
   // 路径框始终显示完整主程序路径（如 D:\game\twmoa_1181\WoW.exe），不会变回根目录
   $('#s-path').value = state.exe || (state.current ? state.current.replace(/[\\/]+$/,'') + '\\WoW.exe' : '');
   const rl = await api('/api/realmlist?target='+encodeURIComponent(state.current));
-  // 服务器页：按 realmlist.wtf 原格式显示（set realmlist / set patchList 两行）
-  $('#s-realm').textContent = rl.realm||'—';
+  // 服务器信息已并入首页（v3.24）；这里取 realmlist 供 loadHome 使用
+  state._realmRaw = rl.realm||'';
 }
 
 async function loadHome(){
@@ -685,9 +717,9 @@ function renderProgress(p){
   pct.textContent = p.pct + '%';
   bar.style.width = p.pct + '%';
   msg.textContent = p.msg || p.stage || '';
-  // 完成态提示醒目：加大字号 + 琥珀金加粗（与「启动游戏」按钮就绪色一致）
+  // 完成态提示醒目：加大字号 + 绿色加粗（成功语义用绿，琥珀只留给警示）
   msg.style.cssText = p.done
-    ? 'font-size:15px;font-weight:700;color:#f5a623'
+    ? 'font-size:15px;font-weight:700;color:var(--accent)'
     : '';
   const order = [['下载','资源下载'],['模组','模组安装'],['插件','插件安装'],['字体','字体安装']];
   const done = p.steps || [], cur = p.stage || '';
@@ -707,9 +739,9 @@ function setLaunchEnabled(on){
   const b = $('#h-launch'); if(!b) return;
   b.disabled = !on;
   b.title = on ? '' : '请先点「配置组件」，全部完成后才能启动';
-  // 配置通过后按钮换醒目色（琥珀金），一眼看出"可以启动了"
+  // 配置通过后按钮换醒目绿色（就绪/成功=绿；琥珀全站只表示警示），一眼看出"可以启动了"
   b.style.cssText = on
-    ? 'background:#f5a623;border-color:#f5a623;color:#3a2604;font-weight:700'
+    ? 'background:var(--accent);color:#06210f;font-weight:700'
     : '';
 }
 // 【配置组件】= 启动游戏的前置工作：资源下载(缺则自动下载)→模组→插件→字体，
@@ -760,7 +792,7 @@ $('#h-check').onclick = async ()=>{
   }
   check_ok = !!r.ok;
   setLaunchEnabled(check_ok);
-  toast(r.summary || (r.ok ? '配置组件完成' : '配置未通过'));
+  toast(r.summary || (r.ok ? '配置组件完成' : '配置未通过'), r.ok ? 'ok' : 'err');
   loadHome();   // 已装插件数量等首页信息即时刷新（配置组件刚装完插件）
   refreshSession();
 };
@@ -772,7 +804,7 @@ $('#h-launch').onclick = async ()=>{
   toast('游戏正在启动……');             // 立即反馈，不等接口返回
   const r = await api('/api/launch', {target:state.current});
   btn.disabled = false; btn.textContent = '▶ 启动游戏';
-  toast(r.ok ? '游戏正在启动……' : '启动失败');
+  toast(r.ok ? '游戏正在启动……' : '启动失败', r.ok ? '' : 'err');
   refreshSession();
 };
 // 【打开】在资源管理器中打开游戏文件夹并选中主程序（WoW.exe）
@@ -784,11 +816,9 @@ $('#h-open').onclick = ()=>{
 async function refreshSession(p){
   const d = await api('/api/session_state?target='+encodeURIComponent(state.current||''));
   const el = $('#h-session'); if(!el) return;
-  // 没点过「配置组件」且当前没有安装在进行 → 一律显示「待检测」，不按磁盘判定已装
+  // 没点过「配置组件」且当前没有安装在进行 → 一行小字提示（不抢视觉，v3.24 降权）
   if(!prechecked && (!p || p.done)){
-    const pend = ['资源','模组','插件','字体'].map(k=>
-      '<span style="color:var(--txt)">'+k+'</span> <b style="color:#e8b34b">待检测</b>').join('　');
-    el.innerHTML = pend + '　<span style="color:var(--sub);font-size:12px">点「配置组件」检测后显示结果</span>';
+    el.innerHTML = '<span style="font-weight:400;font-size:13px;color:var(--sub)">点「配置组件」自动检测资源与安装状态</span>';
     return;
   }
   // p = 环境检测/安装进行中的进度对象。安装期间磁盘上的文件是拷一半的状态，
@@ -822,7 +852,7 @@ async function refreshSession(p){
 // 客户端恢复初始状态；倒计时结束后回到初始界面，程序继续可用（不退出）。
 // 注意：缓存【不删】，下次配置组件可直接复用。
 $('#h-exit').onclick = async ()=>{
-  if(!(await askConfirm('确定要移除全部已装入的模组、插件、字体，恢复客户端初始状态吗？'))) return;
+  if(!(await askConfirm('确定要移除全部已装入的模组、插件、字体，恢复客户端初始状态吗？', '清理还原确认', true))) return;
   const ov = document.createElement('div');
   ov.style.cssText = 'position:fixed;inset:0;background:#0e1014;z-index:999;'
     + 'display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px';
@@ -854,7 +884,7 @@ $('#h-exit').onclick = async ()=>{
     if(p.done && !finished){
       finished = true; clearInterval(progTimer);
       refreshSession();
-      toast('清理还原完成，客户端已恢复初始状态');
+      toast('清理还原完成，客户端已恢复初始状态', 'ok');
     }
   }, 300);
   refreshSession();
@@ -884,15 +914,53 @@ async function loadAddonSel(){
     const detail = info
       ? `<tr class="a-detail" data-for="${esc(a.name)}" style="display:none"><td colspan="4" style="background:var(--card2);border-radius:8px;line-height:1.7;text-indent:2em">${esc(info.d||'')}</td></tr>`
       : '';
-    return `<tr class="a-row" data-n="${esc(a.name)}" ${info?'title="点击查看用途说明" style="cursor:pointer"':''}><td>${cb}</td><td class="clip" title="${esc(a.name)}">${esc(a.name)}${disp}</td><td>${cat}${lock}</td><td>${st}</td></tr>` + detail;
+    return `<tr class="a-row" data-n="${esc(a.name)}" data-cat="${esc(info&&info.c||'')}" data-inst="${a.installed?1:0}" ${info?'title="点击查看用途说明" style="cursor:pointer"':''}><td>${cb}</td><td class="clip" title="${esc(a.name)}">${esc(a.name)}${disp}</td><td>${cat}${lock}</td><td>${st}</td></tr>` + detail;
   }).join('');
   syncASel();
-  // 点击插件行展开/收起用途说明（点复选框除外）
+  initAddonFilter();   // 填充分类下拉并应用当前过滤条件
+  // 点击插件行展开/收起用途说明（点复选框除外）；_open 标记供筛选重绘时保持状态
   document.querySelectorAll('#a-sel-table .a-row').forEach(r=> r.onclick=(e)=>{
     if(e.target.closest('input')) return;
     const dt = document.querySelector('#a-sel-table .a-detail[data-for="'+(window.CSS&&CSS.escape?CSS.escape(r.dataset.n):r.dataset.n)+'"]');
-    if(dt) dt.style.display = (dt.style.display === 'none') ? '' : 'none';
+    if(dt){ dt._open = (dt.style.display === 'none'); dt.style.display = dt._open ? '' : 'none'; }
   });
+}
+// ===== v3.24：插件搜索 + 分类/状态筛选（纯前端过滤，不重新请求）=====
+let _addonFilterInit = false;
+function initAddonFilter(){
+  const sel = $('#a-filter-cat'); if(!sel) return;
+  // 分类下拉只填一次（分类集合来自 PLUGIN_INFO）
+  if(!_addonFilterInit){
+    const cats = [...new Set(Object.values(PLUGIN_INFO).map(x=>x.c).filter(Boolean))].sort();
+    sel.innerHTML = '<option value="">全部分类</option>' + cats.map(c=>`<option>${esc(c)}</option>`).join('');
+    _addonFilterInit = true;
+    $('#a-search').addEventListener('input', filterAddons);
+    sel.addEventListener('change', filterAddons);
+    $('#a-filter-st').addEventListener('change', filterAddons);
+  }
+  filterAddons();
+}
+function filterAddons(){
+  const kw = ($('#a-search').value||'').trim().toLowerCase();
+  const cat = $('#a-filter-cat').value;
+  const st = $('#a-filter-st').value;
+  let shown = 0, total = 0;
+  document.querySelectorAll('#a-sel-table tbody .a-row').forEach(r=>{
+    total++;
+    const name = (r.dataset.n||'').toLowerCase();
+    // 中文名也在搜索范围：取行内文本的中文部分
+    const disp = (r.querySelector('.clip')||{}).textContent || '';
+    const hitKw = !kw || name.includes(kw) || disp.toLowerCase().includes(kw);
+    const hitCat = !cat || r.dataset.cat === cat;
+    const hitSt = !st || (st==='installed' ? r.dataset.inst==='1' : r.dataset.inst!=='1');
+    const show = hitKw && hitCat && hitSt;
+    r.style.display = show ? '' : 'none';
+    if(show) shown++;
+    const dt = document.querySelector('#a-sel-table .a-detail[data-for="'+(window.CSS&&CSS.escape?CSS.escape(r.dataset.n):r.dataset.n)+'"]');
+    if(dt) dt.style.display = (show && dt._open) ? '' : 'none';
+  });
+  const cnt = $('#a-filter-count');
+  if(cnt) cnt.textContent = (kw||cat||st) ? ('显示 '+shown+' / '+total) : '';
 }
 function syncASel(){
   const all = $('#a-sel-all'); if(!all) return;
@@ -925,7 +993,7 @@ $('#a-sel-all').addEventListener('change', async (e)=>{
 // 旧「插件列表（当前客户端）」卡片已移除（与勾选管理重复），loadAddons 保留为空实现兼容旧调用点
 async function loadAddons(){ return; }
 $('#a-removeall').onclick = async ()=>{
-  if(!(await askConfirm('移除本程序安装的所有插件文件并恢复客户端初始状态？', '移除插件确认'))) return;
+  if(!(await askConfirm('移除本程序安装的所有插件文件并恢复客户端初始状态？', '移除插件确认', true))) return;
   const r = await api('/api/uninstall_all', {target:state.current});
   const msg = $('#a-apply-msg'); if(msg) msg.textContent = r.summary || '';
   toast(r.summary || '完成');
@@ -948,10 +1016,10 @@ $('#a-install').onclick = async ()=>{
   clearInterval(timer);
   btn.disabled=false; btn.textContent=old;
   $('#a-apply-msg').textContent = r.summary || (r.ok?'完成':'失败');
-  toast(r.summary || (r.ok?'插件已同步':'操作失败'));
+  toast(r.summary || (r.ok?'插件已同步':'操作失败'), r.ok?'ok':'err');
   loadAddons(); loadAddonSel(); loadHome();
 };
-$('#a-refresh').onclick = loadAddons;
+// v3.24：手动「刷新」按钮已删（进入页面自动加载、操作后自动刷新）
 // 打开目录：插件目录 = 游戏根\Interface\AddOns（没装过则提示目录不存在）
 $('#a-open').onclick = async ()=>{
   if(!state.current){ toast('还没有可打开的目录'); return; }
@@ -974,19 +1042,19 @@ const MOD_INFO = {
 async function loadMods(){
   if(!state.current) await loadTargets();
   const tfoot = $('#dll-table tfoot');
-  if(!state.current){ $('#dll-table tbody').innerHTML='<tr><td colspan="4" class="empty">请先在「首页」设置游戏路径</td></tr>'; if(tfoot) tfoot.innerHTML=''; return; }
+  if(!state.current){ $('#dll-table tbody').innerHTML='<tr><td colspan="3" class="empty">请先在「首页」设置游戏路径</td></tr>'; if(tfoot) tfoot.innerHTML=''; return; }
   const d = await api('/api/mods?target='+encodeURIComponent(state.current));
-  if(!d.ok){ $('#dll-table tbody').innerHTML='<tr><td colspan="4" class="empty">'+esc(d.msg||'模组包无效')+'</td></tr>'; if(tfoot) tfoot.innerHTML=''; return; }
-  if(!d.mods.length){ $('#dll-table tbody').innerHTML='<tr><td colspan="4" class="empty">模组包里没有可选模组</td></tr>'; if(tfoot) tfoot.innerHTML=''; return; }
+  if(!d.ok){ $('#dll-table tbody').innerHTML='<tr><td colspan="3" class="empty">'+esc(d.msg||'模组包无效')+'</td></tr>'; if(tfoot) tfoot.innerHTML=''; return; }
+  if(!d.mods.length){ $('#dll-table tbody').innerHTML='<tr><td colspan="3" class="empty">模组包里没有可选模组</td></tr>'; if(tfoot) tfoot.innerHTML=''; return; }
   $('#dll-table tbody').innerHTML = d.mods.map(m=>{
       const info = MOD_INFO[(m.name||'').toLowerCase()];
+      // v3.24：类型列已删（与名称旁 SUNI tag 重复），详情行 colspan 同步改 3
       const detail = info
-        ? `<tr class="m-detail" data-for="${esc(m.name)}" style="display:none"><td colspan="4" style="background:var(--card2);border-radius:8px;line-height:1.7;text-indent:2em">${esc(info.d)}</td></tr>`
+        ? `<tr class="m-detail" data-for="${esc(m.name)}" style="display:none"><td colspan="3" style="background:var(--card2);border-radius:8px;line-height:1.7;text-indent:2em">${esc(info.d)}</td></tr>`
         : '';
       return `<tr class="m-row" data-n="${esc(m.name)}" ${info?'title="点击查看用途说明" style="cursor:pointer"':''}>
       <td><input type="checkbox" data-n="${esc(m.name)}" ${m.selected?'checked':''}></td>
       <td>${esc(m.name)} ${m.group?`<span class="tag" style="color:var(--accent);border:1px solid var(--accent)">${esc(m.group)}</span>`:''}${m.missing?' <span class="tag" style="color:var(--warn)">缺失</span>':''}</td>
-      <td>${m.group==='SUNI'?'<span class="tag">SUNI 增强</span>':'<span class="tag">增强模组</span>'}</td>
       <td>${m.installed?'<span style="color:var(--accent)">已安装</span>':'<span style="color:var(--sub)">未安装</span>'}</td>
     </tr>` + detail;
     }).join('');
@@ -1017,7 +1085,7 @@ $('#dll-apply').onclick = async ()=>{
   btn.disabled=false; btn.textContent=old;
   showLog('#dll-log', (r.log||[]).join('\n')+'\n'+(r.summary||''));
   $('#dll-apply-msg').textContent = r.summary || (r.ok?'完成':'失败');
-  toast(r.summary || (r.ok?'模组已更新':'操作失败'));
+  toast(r.summary || (r.ok?'模组已更新':'操作失败'), r.ok?'ok':'err');
   loadMods(); loadHome();
 };
 // 同步表头「全选」方框状态：全勾=打钩 / 部分勾=半选 / 没勾=空
@@ -1048,11 +1116,11 @@ $('#dll-all').addEventListener('change', async (e)=>{
   syncSelectAll();
   $('#dll-apply-msg').textContent = on ? '已全选 ' + boxes.length + ' 个模组' : '已取消全部模组';
 });
-$('#dll-refresh').onclick = ()=> loadMods();
+// v3.24：手动「刷新」按钮已删
 // 移除模组：删掉游戏根里的模组 DLL，dlls.txt 恢复初始内容（与字体页「移除字体」同形式）
 $('#dll-remove').onclick = async ()=>{
   if(!state.current){ alert('请先在「首页」设置游戏路径'); return; }
-  if(!(await askConfirm('移除本程序安装的所有模组文件并恢复客户端初始状态？', '移除模组确认'))) return;
+  if(!(await askConfirm('移除本程序安装的所有模组文件并恢复客户端初始状态？', '移除模组确认', true))) return;
   const r = await api('/api/mods_remove', {target:state.current});
   $('#dll-apply-msg').textContent = r.summary || '';
   toast(r.summary || '已移除');
@@ -1146,20 +1214,26 @@ $('#f-install').onclick = async ()=>{
 };
 $('#f-remove').onclick = async ()=>{
   if(!state.current){ alert('请先在「首页」设置游戏路径'); return; }
-  if(!(await askConfirm('移除本程序安装的所有字体文件并恢复客户端初始状态？', '移除字体确认'))) return;
+  if(!(await askConfirm('移除本程序安装的所有字体文件并恢复客户端初始状态？', '移除字体确认', true))) return;
   const r = await api('/api/fonts_remove', {target:state.current});
   showLog('#f-log', (r.log||[]).join('\n')+'\n'+(r.summary||''));
   toast(r.summary || '已移除');
   loadFonts(); loadHome();
 };
-$('#f-refresh').onclick = ()=> loadFonts();
+// v3.24：手动「刷新」按钮已删
 
 function showLog(sel, txt){
   const el = $(sel); if(!el) return; el.style.display='block'; el.textContent = txt;
 }
-function toast(msg){ const t=document.createElement('div'); t.textContent=msg;
-  t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#222735;border:1px solid #2b3140;color:#fff;padding:10px 18px;border-radius:10px;z-index:99';
-  document.body.appendChild(t); setTimeout(()=>t.remove(),2200);
+// v3.24：toast 分类型着色——ok=绿边（成功）/ err=红边（失败，4 秒）/ warn=琥珀边；
+// 不传 type 用中性样式。失败类信息停留更久，避免用户错过关键反馈。
+function toast(msg, type){
+  const t=document.createElement('div'); t.textContent=msg;
+  const bd = type==='ok' ? '2px solid var(--accent)'
+           : type==='err' ? '2px solid var(--danger)'
+           : type==='warn' ? '2px solid var(--warn)' : '1px solid #2b3140';
+  t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#222735;border:'+bd+';color:#fff;padding:10px 18px;border-radius:10px;z-index:99'+(type==='err'?';box-shadow:0 4px 18px rgba(0,0,0,.5)':'');
+  document.body.appendChild(t); setTimeout(()=>t.remove(), type==='err'?4000:2200);
 }
 
 // ================= 下载页：蓝奏云资源管理 =================
@@ -1170,21 +1244,22 @@ const LZ_STATE_TEXT = {ready:'已就绪', downloading:'下载中', need_download
 
 async function loadLanzou(){
   let d; try{ d = await api('/api/lanzou_state'); }catch(e){ return; }
-  // 资源卡：标题与状态同一行；不显示来源；清单对比信息在「更新清单」卡片展示
-  const cards = Object.keys(LZ_KINDS).map(k=>{
+  // v3.24：三张松散资源卡改紧凑表格（资源/状态/分卷/最近使用/操作 一行一资源）
+  const lu0 = d.cache_lastused||{};
+  const rows = Object.keys(LZ_KINDS).map(k=>{
     const info = LZ_KINDS[k], st = (d.kinds&&d.kinds[k])||{state:'no_links',volumes:0};
-    const stColor = st.state==='ready' ? 'var(--accent)' : (st.state==='need_download'?'var(--warn)':'var(--sub)');
-    return `<div class="card" style="margin:10px 0;padding:12px 14px">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-        <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
-          <b>${info.name}</b> <span style="color:var(--sub);font-size:12px">${info.desc}</span>
-          <span style="font-size:12px;color:${stColor}">● ${LZ_STATE_TEXT[st.state]||st.state}</span>
-          ${st.volumes?`<span style="font-size:12px;color:var(--sub)">· ${st.volumes} 个分卷</span>`:''}
-        </div>
-        <button class="btn sm" id="lz-dl-${k}" ${st.state==='ready'||st.state==='downloading'?'disabled':''}>${st.state==='ready'?'✓ 已缓存':'⬇ 下载'}</button>
-      </div></div>`;
+    const stColor = st.state==='ready' ? 'var(--accent)' : (st.state==='downloading'?'var(--accent2)':(st.state==='need_download'?'var(--warn)':'var(--sub)'));
+    const t = lu0[k];
+    const used = t? new Date(t*1000).toLocaleString() : '从未使用';
+    return `<tr>
+      <td style="white-space:nowrap"><b>${info.name}</b> <span style="color:var(--sub);font-size:12px">${info.desc}</span></td>
+      <td style="white-space:nowrap;font-size:12px;color:${stColor}">● ${LZ_STATE_TEXT[st.state]||st.state}</td>
+      <td style="white-space:nowrap;font-size:12px;color:var(--sub)">${st.volumes?st.volumes+' 个分卷':'—'}</td>
+      <td style="white-space:nowrap;font-size:12px;color:var(--sub)">${esc(used)}</td>
+      <td style="white-space:nowrap;text-align:right"><button class="btn sm" id="lz-dl-${k}" ${st.state==='ready'||st.state==='downloading'?'disabled':''}>${st.state==='ready'?'✓ 已缓存':'⬇ 下载'}</button></td>
+    </tr>`;
   }).join('');
-  $('#lz-cards').innerHTML = cards;
+  $('#lz-cards').innerHTML = '<table><thead><tr><th>资源</th><th style="width:90px">状态</th><th style="width:90px">分卷</th><th style="width:170px">最近使用</th><th style="width:100px"></th></tr></thead><tbody>'+rows+'</tbody></table>';
   const cdir = $('#lz-cache-dir');
   if(cdir) cdir.innerHTML = `缓存目录：${esc(d.cache_dir||'—')}（已用 ${d.cache_mb} MB，关闭工具后保留，换电脑需重新下载）`;
   // 缓存管理设置 + 各资源最近使用时间
@@ -1254,23 +1329,24 @@ async function loadLanzou(){
   if(dl.busy){
     $('#lz-progress').style.display='block';
     $('#lz-bar').style.width = (dl.pct||0)+'%';
-    $('#lz-dl-msg').textContent = (dl.msg||'下载中…') + (dl.speed?' · '+dl.speed:'') + (dl.error?' · '+dl.error:'');
+    // v3.24：进度带上当前文件名（下载多分卷时让用户知道在动）
+    $('#lz-dl-msg').textContent = (dl.file?('['+dl.file+'] '):'') + (dl.msg||'下载中…') + (dl.speed?' · '+dl.speed:'') + (dl.error?' · '+dl.error:'');
   }else{
     $('#lz-progress').style.display='none';
-    if(dl.error) toast('下载失败：'+dl.error);
+    if(dl.error) toast('下载失败：'+dl.error, 'err');
   }
 }
 
 let _lzTimer = null;
 function startLzDownload(kind){
   api('/api/lanzou_download', {kind}).then(r=>{
-    if(!r.ok){ toast(r.msg||'无法开始下载'); return; }
+    if(!r.ok){ toast(r.msg||'无法开始下载', 'err'); return; }
     toast('下载已开始（分卷较多时请耐心等待）');
     if(_lzTimer) clearInterval(_lzTimer);
     _lzTimer = setInterval(async ()=>{
       const d = await api('/api/lanzou_state');
       loadLanzou();
-      if(!(d.dl&&d.dl.busy)){ clearInterval(_lzTimer); _lzTimer=null; toast('下载流程结束'); }
+      if(!(d.dl&&d.dl.busy)){ clearInterval(_lzTimer); _lzTimer=null; toast('下载流程结束', 'ok'); }
     }, 800);
   });
 }
@@ -1282,16 +1358,16 @@ $('#lz-cache-save').onclick = async ()=>{
   let days = parseInt(($('#lz-cache-days') && $('#lz-cache-days').value)||'30', 10);
   if(isNaN(days) || days < 1) days = 1;
   const r = await api('/api/cache_config', {auto_clean: on, keep_days: days});
-  if(r.ok){ toast('缓存设置已保存（'+(on?('启用，'+days+'天未用自动清理'):'已关闭自动清理')+'）'); loadLanzou(); }
-  else { toast('保存失败'); }
+  if(r.ok){ toast('缓存设置已保存（'+(on?('启用，'+days+'天未用自动清理'):'已关闭自动清理')+'）', 'ok'); loadLanzou(); }
+  else { toast('保存失败', 'err'); }
 };
 $('#lz-fd-save').onclick = async ()=>{
   const url = ($('#lz-fd-url').value||'').trim();
   if(!url){ toast('已留空：继续使用内置默认资源地址'); loadLanzou(); return; }
   const r = await api('/api/lanzou_config', {kind:'folder',
     url, pwd:($('#lz-fd-pwd').value||'').trim()});
-  if(r.ok && r.err){ toast('解析失败：'+r.err); }
-  else if(r.ok && r.files && r.files.length){ toast(`已连接文件夹，共 ${r.files.length} 个文件`); }
+  if(r.ok && r.err){ toast('解析失败：'+r.err, 'err'); }
+  else if(r.ok && r.files && r.files.length){ toast(`已连接文件夹，共 ${r.files.length} 个文件`, 'ok'); }
   else { toast('已保存'); }
   loadLanzou();
 };
@@ -1302,7 +1378,7 @@ $('#lz-mf-save').onclick = async ()=>{
 };
 $('#lz-dr-save').onclick = async ()=>{
   const r = await api('/api/lanzou_config', {kind:'direct', text:($('#lz-dr-text').value||'')});
-  toast(r.ok ? '直链已保存' : ('保存失败：'+(r.msg||'未知错误')));
+  toast(r.ok ? '直链已保存' : ('保存失败：'+(r.msg||'未知错误')), r.ok?'ok':'err');
   loadLanzou();
 };
 $('#lz-dr-clear').onclick = async ()=>{
@@ -1324,6 +1400,11 @@ async function refreshAppUpdate(){
     $('#h-update-notes').textContent = s.notes || '';
   } else {
     banner.style.display = 'none';
+    // v3.24：无更新时不放独立「检查更新」按钮，静默显示一行小字
+    const m = $('#h-check-update-msg');
+    if(m && !s.downloading && !s.applying){
+      m.textContent = s.configured ? ('✓ 已是最新 v' + (s.latest || s.current || state.app_ver || '')) : '';
+    }
   }
   if(s.downloading){
     $('#h-update-prog').style.display = 'block';
@@ -1333,15 +1414,7 @@ async function refreshAppUpdate(){
     $('#h-update-prog').style.display = 'none';
   }
 }
-$('#h-check-update').onclick = async ()=>{
-  $('#h-check-update-msg').textContent = '检查中…';
-  const s = await api('/api/app_update_check', {});
-  if(s.err){ $('#h-check-update-msg').textContent = s.err; }
-  else if(s.available){ $('#h-check-update-msg').textContent = '发现新版本 v'+s.latest; }
-  else if(s.configured){ $('#h-check-update-msg').textContent = '已是最新（v'+(s.latest||s.current)+'）'; }
-  else { $('#h-check-update-msg').textContent = '未配置更新源（见「下载」页）'; }
-  refreshAppUpdate();
-};
+// v3.24：首页独立「检查更新」按钮已并入更新横幅（无更新静默显示"已是最新"）
 $('#h-update-now').onclick = async ()=>{
   const s = await api('/api/app_update_status');
   if(!(await askConfirm('下载并安装新版本（v'+(s.latest||'')+'）？程序将自动替换并重启。','更新确认'))) return;
@@ -1355,7 +1428,7 @@ $('#h-update-now').onclick = async ()=>{
     // 必须等它复位再收尾，否则直链解析慢时会被误判为“已是最新”而提前结束。
     if(st.applying) return;
     clearInterval(_auTimer); _auTimer=null;
-    if(st.err) toast(st.err);
+    if(st.err) toast(st.err, 'err');
     else if(!st.available) toast('已是最新版本');
   }, 1000);
 };
@@ -1380,7 +1453,7 @@ async function importLocal(kind){
   if(kind==='mods'){ showLog('#dll-log', logTxt); }
   else if(kind==='addons'){ const m=$('#a-apply-msg'); if(m) m.textContent = res.summary||''; }
   else { showLog('#f-log', logTxt); }
-  toast(res.summary || (res.ok?'导入完成':'导入失败'));
+  toast(res.summary || (res.ok?'导入完成':'导入失败'), res.ok?'ok':'err');
   if(kind==='mods') loadMods();
   else if(kind==='addons'){ loadAddons(); loadAddonSel(); }
   else loadFonts();
@@ -1416,6 +1489,31 @@ $('#au-check').onclick = async ()=>{
   else { $('#au-check-msg').textContent = '未配置更新源'; }
   loadAppUpdateCfg();
 };
+
+// ============ v3.24 更新日志按版本折叠：每版本一个 <details>，最近 2 版默认展开 ============
+function initChangelog(){
+  const card = $('#cl-card'); if(!card || card._done) return; card._done = true;
+  const kids = [...card.children];
+  const frag = document.createDocumentFragment();
+  let verIdx = 0;
+  for(let i=0; i<kids.length; i++){
+    const kv = kids[i];
+    if(!kv.classList.contains('kv')) continue;           // 跳过非版本行
+    const det = document.createElement('details');
+    det.style.margin = '4px 0';
+    const sum = document.createElement('summary');
+    sum.style.cssText = 'cursor:pointer;list-style:none';
+    sum.appendChild(kv);                                  // kv 行原样作为折叠标题
+    det.appendChild(sum);
+    const nxt = kids[i+1];
+    if(nxt && nxt.classList.contains('cl-detail')){ det.appendChild(nxt); i++; }
+    if(verIdx < 2) det.open = true;                       // 最近 2 版默认展开
+    frag.appendChild(det);
+    verIdx++;
+  }
+  card.appendChild(frag);
+}
+initChangelog();
 
 // ============ 游戏账号：改用客户端自带「记住帐号名」，本工具不再保存/填充 ============
 
