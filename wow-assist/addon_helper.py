@@ -3685,6 +3685,7 @@ def apply_overlay(target, mod_src, addon_src, log, font_src=None):
         if istate.get("mods", {}).get("done") and istate.get("mods", {}).get("sig") == sig \
                 and _kind_on_disk(target, "mods"):
             log("[模组] 已安装，无需重复安装")
+            _set_progress(step="模组")   # 跳过也要标记阶段完成，否则进度条显示「等待中」（v3.24 bug）
             status["mods"] = (False, "已安装(跳过)")
             _touch_cache("mods")
         else:
@@ -3747,6 +3748,7 @@ def apply_overlay(target, mod_src, addon_src, log, font_src=None):
         if istate.get("addons", {}).get("done") and istate.get("addons", {}).get("sig") == sig \
                 and _kind_on_disk(target, "addons"):
             log("[插件] 已安装，无需重复安装")
+            _set_progress(step="插件")   # 跳过也要标记阶段完成，否则进度条显示「等待中」（v3.24 bug）
             status["addons"] = (False, "已安装(跳过)")
             _touch_cache("addons")
         else:
@@ -3806,6 +3808,7 @@ def apply_overlay(target, mod_src, addon_src, log, font_src=None):
         if istate.get("fonts", {}).get("done") and istate.get("fonts", {}).get("sig") == sig \
                 and _kind_on_disk(target, "fonts"):
             log("[字体] 已安装，无需重复安装")
+            _set_progress(step="字体")   # 跳过也要标记阶段完成（防御：原靠 95 行兜底）
             status["fonts"] = (False, "已安装(跳过)")
             _touch_cache("fonts")
         else:

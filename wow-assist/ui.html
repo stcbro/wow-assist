@@ -34,10 +34,11 @@ h3{margin:18px 0 10px;font-size:15px;color:var(--sub);font-weight:600}
 .kv{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed var(--line);font-size:13px}
 .kv:last-child{border-bottom:0}
 .kv .k{color:var(--sub)}
-/* 首页信息行：字体加大、标签不折行、显示值在本列内居中 */
+/* 首页信息行：字体加大、标签不折行、显示值在本列内居中；
+   v3.24b：四个显示值统一绿色加粗（醒目，语义=就绪/有效） */
 .kv.home-kv{font-size:15px}
 .kv.home-kv .k{font-size:15px;white-space:nowrap}
-.kv.home-kv span:last-child{flex:1;text-align:center}
+.kv.home-kv span:last-child{flex:1;text-align:center;color:var(--accent);font-weight:600}
 .btn{background:var(--card2);color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:10px 16px;cursor:pointer;font-size:14px;transition:.15s}
 .btn:hover{border-color:var(--accent2)}
 .btn:active{transform:translateY(1px) scale(.98);filter:brightness(1.12)}
@@ -137,10 +138,7 @@ details[open]>summary .pill,details[open]>summary{color:var(--txt)}
             <div id="h-update-msg" style="margin-top:4px;font-size:12px;color:var(--sub)"></div>
           </div>
         </div>
-        <!-- v3.24：「检查更新」按钮并入更新横幅——无更新时这里显示一行"已是最新"小字 -->
-        <div style="margin-top:10px">
-          <span id="h-check-update-msg" style="font-size:12px;color:var(--sub)"></span>
-        </div>
+        <!-- v3.24b：首页不再显示「已是最新 vX」版本行（用户要求去掉） -->
         <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center">
           <button class="btn primary" id="h-check" title="自动下载资源并装入模组/插件/字体，全部就绪后才能启动游戏">🔧 配置组件</button>
           <button class="btn blue" id="h-launch" disabled title="请先点「配置组件」，全部完成后才能启动">▶ 启动游戏</button>
@@ -345,7 +343,9 @@ details[open]>summary .pill,details[open]>summary{color:var(--txt)}
           <div><span class="ct ct-imp">改进</span>「服务器」页并入首页信息行，侧栏导航 7 项减为 6 项；更新日志页「关于」收进底部折叠，日志按版本折叠、最近 2 版默认展开</div>
           <div><span class="ct ct-imp">改进</span>按钮颜色语义统一：就绪/成功=绿色（「启动游戏」就绪态、完成提示），琥珀只表示警示；移除/清理类确认弹窗确定钮改红色，危险「移除」按钮统一右置</div>
           <div><span class="ct ct-add">新增</span>提示气泡分类型着色：成功绿边、失败红边（停留 4 秒）、警告琥珀边，失败信息不再一闪而过</div>
-          <div><span class="ct ct-imp">改进</span>细节：首页未检测状态改一行小字提示；独立「检查更新」按钮并入更新横幅（无更新静默显示"已是最新"）；删三个资源页的手动「刷新」按钮（自动加载）；模组页去重复「类型」列；输入框加焦点高亮；下载进度显示当前文件名</div>
+          <div><span class="ct ct-imp">改进</span>细节：删三个资源页的手动「刷新」按钮（自动加载）；模组页去重复「类型」列；输入框加焦点高亮；下载进度显示当前文件名；首页不再显示「已是最新 vX」版本行（有新版本时才提示）</div>
+          <div><span class="ct ct-imp">改进</span>首页信息行四个显示值（客户端/服务器/插件数/地址）统一绿色加粗，一眼看清关键信息</div>
+          <div><span class="ct ct-fix">修复</span>插件已安装（跳过重装）时，配置进度条误显示「○ 插件安装：等待中」——跳过的阶段同样标记为完成，与状态行「✓已装」一致（模组/字体同防御）</div>
         </div>
         <div class="kv"><span class="k">v3.23 ｜ 2026-11-01 ｜ 配置日志精简 + 日志显示修复 + 账号改用客户端记录</span><span class="tag">已发布</span></div>
         <div class="cl-detail">
@@ -1400,11 +1400,7 @@ async function refreshAppUpdate(){
     $('#h-update-notes').textContent = s.notes || '';
   } else {
     banner.style.display = 'none';
-    // v3.24：无更新时不放独立「检查更新」按钮，静默显示一行小字
-    const m = $('#h-check-update-msg');
-    if(m && !s.downloading && !s.applying){
-      m.textContent = s.configured ? ('✓ 已是最新 v' + (s.latest || s.current || state.app_ver || '')) : '';
-    }
+    // v3.24b：首页不显示"已是最新 vX"版本行（用户要求去掉）
   }
   if(s.downloading){
     $('#h-update-prog').style.display = 'block';
